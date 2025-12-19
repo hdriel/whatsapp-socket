@@ -11,8 +11,10 @@ import makeWASocket, {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
+    type MessageUpsertType,
     type MiscMessageGenerationOptions,
     type UserFacingSocketConfig,
+    type WAMessage,
     type WASocket,
 } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
@@ -27,10 +29,12 @@ export class WhatsappSocketClient {
     private socket: null | WASocket;
     private readonly mongoURL: string;
     private readonly mongoCollection: string = 'whatsapp-auth';
-    private logger?: any;
+    private readonly logger?: any;
+    private readonly debug?: boolean;
     private onOpen?: () => Promise<void>;
     private onClose?: () => Promise<void>;
     private onQR?: (qr: string) => Promise<void>;
+    private onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
     static DEFAULT_COUNTRY_CODE: string = '972';
 
     static formatPhoneNumber(phone: string, countryCode: string = WhatsappSocketClient.DEFAULT_COUNTRY_CODE): string {
@@ -102,18 +106,24 @@ export class WhatsappSocketClient {
         onOpen,
         onClose,
         onQR,
+        onReceiveMessages,
+        debug,
     }: {
         logger: any;
         mongoURL: string;
         mongoCollection?: string;
         onOpen?: () => Promise<void>;
         onClose?: () => Promise<void>;
+        onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
         onQR?: (qr: string) => Promise<void>;
+        debug?: boolean;
     }) {
         this.mongoURL = mongoURL;
         this.mongoCollection = mongoCollection;
         this.logger = logger;
+        this.debug = debug;
         this.socket = null;
+        this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
         this.onClose = onClose;
         this.onQR = onQR;
@@ -145,7 +155,7 @@ export class WhatsappSocketClient {
         onOpen = this.onOpen,
         onClose = this.onClose,
         onQR = this.onQR,
-        debug,
+        debug: _debug,
     }: {
         options?: UserFacingSocketConfig;
         debug?: boolean;
@@ -155,11 +165,12 @@ export class WhatsappSocketClient {
         onQR?: (qr: string) => Promise<void>;
     } = {}): Promise<WASocket> {
         const { saveCreds, auth } = await this.authenticate();
+        const debug = _debug === undefined ? this.debug : _debug;
 
         // Fetch latest Baileys version for better compatibility
         const { version, isLatest } = await fetchLatestBaileysVersion();
         if (!isLatest) {
-            this.logger?.warn('WHATSAPP', 'baileys is not the latest version!');
+            if (debug) this.logger?.warn('WHATSAPP', 'current baileys service is not the latest version!');
         }
 
         const connect = () => {
@@ -179,17 +190,18 @@ export class WhatsappSocketClient {
                 const { connection, lastDisconnect, qr } = update;
 
                 if (qr) {
-                    this.logger?.info('WHATSAPP', 'QR Code received', { qr });
+                    if (debug) this.logger?.info('WHATSAPP', 'QR Code received', { qr });
                     await onQR?.(qr);
                 }
 
                 switch (connection) {
                     case 'connecting': {
-                        debug && this.logger?.debug('WHATSAPP', 'Connecting...');
+                        if (debug) this.logger?.debug('WHATSAPP', 'Connecting...');
                         break;
                     }
+
                     case 'open': {
-                        debug && this.logger?.info('WHATSAPP', 'Connection opened successfully!');
+                        if (debug) this.logger?.info('WHATSAPP', 'Connection opened successfully!');
                         this.socket = sock;
                         await onOpen?.();
                         break;
@@ -203,20 +215,21 @@ export class WhatsappSocketClient {
                         const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
                         const errorMessage = lastDisconnect?.error?.message;
 
-                        debug &&
+                        if (debug) {
                             this.logger?.info('WHATSAPP', 'Connection closed', {
                                 statusCode,
                                 errorMessage,
                                 shouldReconnect,
                             });
+                        }
 
                         // IMPORTANT: Error code 515 (Stream Errored) after QR scan is NORMAL
                         // The connection must restart after pairing - this is expected behavior
                         if (shouldReconnect && connectionAttempts) {
-                            debug && this.logger?.info('WHATSAPP', 'Reconnecting...');
+                            if (debug) this.logger?.info('WHATSAPP', 'Reconnecting...');
                             setTimeout(connect, 1000);
                         } else {
-                            debug && this.logger?.warn('WHATSAPP', 'Logged out, clearing auth state');
+                            if (debug) this.logger?.warn('WHATSAPP', 'Logged out, clearing auth state');
                             await onClose?.();
                             this.socket = null;
                         }
@@ -229,10 +242,12 @@ export class WhatsappSocketClient {
             sock.ev.on('creds.update', saveCreds);
 
             // Handle messages
-            // sock.ev.on('messages.upsert', async ({ messages, type }) => {
-            //     this.logger?.info('WHATSAPP', 'Received messages', { type, count: messages.length });
-            //  // Handle your messages here
-            // });
+            if (this.onReceiveMessages && typeof this.onReceiveMessages === 'function') {
+                sock.ev.on('messages.upsert', async ({ messages, type }) => {
+                    this.logger?.info('WHATSAPP', 'Received messages', { type, totalMessages: messages.length });
+                    this.onReceiveMessages?.(messages, type);
+                });
+            }
 
             return sock;
         };
@@ -242,7 +257,7 @@ export class WhatsappSocketClient {
 
     async closeConnection() {
         if (this.socket) {
-            this.logger?.info('WHATSAPP', 'Closing connection');
+            if (this.debug) this.logger?.info('WHATSAPP', 'Closing connection');
             this.socket.end(undefined);
             this.socket = null;
         }
@@ -251,14 +266,14 @@ export class WhatsappSocketClient {
     async clearAuthState() {
         const [collection, mongoClient] = await this.getAuthCollection();
 
-        this.logger?.info('WHATSAPP', 'Deleting auth state');
+        if (this.debug) this.logger?.info('WHATSAPP', 'Deleting auth state, required to scanning QR again');
         await collection.deleteMany({});
         await mongoClient.close();
     }
 
     async sendTextMessage(to: string, text: string, replayToMessageId?: string): Promise<any> {
         if (!this.socket) {
-            this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
             this.socket = await this.startConnection();
         }
 
