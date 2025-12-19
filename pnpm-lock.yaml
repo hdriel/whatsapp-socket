@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@hapi/boom':
-        specifier: ^10.0.1
-        version: 10.0.1
       '@whiskeysockets/baileys':
         specifier: ^7.0.0-rc.9
         version: 7.0.0-rc.9(sharp@0.34.5)
@@ -24,6 +21,9 @@ importers:
         specifier: ^1.5.3
         version: 1.5.4
     devDependencies:
+      '@hapi/boom':
+        specifier: ^10.0.1
+        version: 10.0.1
       '@types/node':
         specifier: ^20.12.11
         version: 20.19.27

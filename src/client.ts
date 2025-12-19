@@ -13,13 +13,13 @@ import makeWASocket, {
     makeCacheableSignalKeyStore,
     type UserFacingSocketConfig,
     type WASocket,
+    type MiscMessageGenerationOptions,
 } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
-import type { Boom } from '@hapi/boom';
-import useMongoDBAuthState from './mongoAuthState.ts';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
 import P from 'pino';
-import type { MiscMessageGenerationOptions } from '@whiskeysockets/baileys/lib/Types/Message';
+import type { Boom } from '@hapi/boom';
+import useMongoDBAuthState from './mongoAuthState.ts';
 
 const pinoLogger = P({ level: 'silent' });
 
