@@ -11,9 +11,9 @@ import makeWASocket, {
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
+    type MiscMessageGenerationOptions,
     type UserFacingSocketConfig,
     type WASocket,
-    type MiscMessageGenerationOptions,
 } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
@@ -25,8 +25,8 @@ const pinoLogger = P({ level: 'silent' });
 
 export class WhatsappSocketClient {
     private socket: null | WASocket;
-    private mongoURL: string;
-    private mongoCollection: string = 'whatsapp-auth';
+    private readonly mongoURL: string;
+    private readonly mongoCollection: string = 'whatsapp-auth';
     private logger?: any;
     private onOpen?: () => Promise<void>;
     private onClose?: () => Promise<void>;
@@ -52,6 +52,20 @@ export class WhatsappSocketClient {
         let strNumber = WhatsappSocketClient.formatPhoneNumber(phone, countryCode);
         strNumber = `${strNumber}@s.whatsapp.net`; // formatted Number should look like: '972513334444@s.whatsapp.net'
         return strNumber;
+    }
+
+    static getWhatsappPhoneLink({
+        phone,
+        message,
+        countryCode = this.DEFAULT_COUNTRY_CODE,
+    }: {
+        phone: string;
+        countryCode?: string;
+        message?: string;
+    }) {
+        const formattedPhone = this.formatPhoneNumber(phone, countryCode);
+        const query = { ...(message && { text: encodeURI(message) }) };
+        return `https://wa.me/${formattedPhone}?${query}`;
     }
 
     static async qrToImage(
