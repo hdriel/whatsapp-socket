@@ -32,7 +32,6 @@ function updateStatus(text, color = '#666') {
     el.style.color = color;
 }
 
-// בקשות רשת (POST)
 async function apiRequest(endpoint, data = {}) {
     try {
         updateStatus('שולח בקשה...');
