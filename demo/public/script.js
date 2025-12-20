@@ -3,10 +3,18 @@ const SOCKET_URL = '/';
 
 const socket = io(SOCKET_URL);
 
+socket.on('connected', () => console.log('connected!'));
+
 socket.on('qr', (qrData) => {
     const qrImage = document.getElementById('qr-image');
     qrImage.src = qrData;
     showQRSection(true);
+});
+
+socket.on('qr-connected', () => {
+    const qrImage = document.getElementById('qr-image');
+    qrImage.src = '';
+    showQRSection(false);
 });
 
 function showQRSection(show) {
@@ -63,5 +71,5 @@ async function sendMessage() {
     const message = document.getElementById('message').value;
     if (!phone) return alert('הכנס מספר טלפון');
 
-    await apiRequest('send-message', { number: phone, text: message });
+    await apiRequest('send-message', { phone, message });
 }

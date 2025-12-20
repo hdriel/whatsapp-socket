@@ -5,18 +5,28 @@ import logger from './logger';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
+import { WhatsappSocketClient } from '../../src';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server);
+
+io.on('connection', (socket) => {
+    logger.info(socket.id, 'Socket connection connected!');
+    socket.emit('connected');
+});
+
 const was = new WhatsappSocketClient({
     mongoURL: MONGODB_URI,
     logger,
     printQRInTerminal: true,
     debug: true,
     onQR: async (qr) => {
-        const qrImage = await WhatsappSocketClient.qrToImage(qr);
+        const qrImage = await WhatsappSocketClient.qrToImage(qr).catch(() => null);
         io.emit('qr', qrImage);
+    },
+    onOpen: async () => {
+        io.emit('qr-connected');
     },
 });
 
@@ -61,6 +71,6 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: any) => 
 });
 
 const PORT = 1010;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     logger.info(null, 'server is up', { port: PORT });
 });
