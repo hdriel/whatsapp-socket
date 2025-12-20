@@ -31,6 +31,7 @@ export class WhatsappSocketClient {
     private readonly mongoCollection: string = 'whatsapp-auth';
     private readonly logger?: any;
     private readonly debug?: boolean;
+    private readonly printQRInTerminal?: boolean;
     private onOpen?: () => Promise<void>;
     private onClose?: () => Promise<void>;
     private onQR?: (qr: string) => Promise<void>;
@@ -79,7 +80,7 @@ export class WhatsappSocketClient {
             width?: number;
             margin?: number;
             [key: string]: any;
-        }
+        } = {}
     ) {
         return QRCode.toDataURL(qr, {
             errorCorrectionLevel: 'H', // Changed to 'H' (High) for better reliability
@@ -94,9 +95,9 @@ export class WhatsappSocketClient {
         options: {
             small?: boolean;
             [key: string]: any;
-        }
+        } = {}
     ) {
-        return QRCode.toString(qr, { type: 'terminal', small: true, ...options }).catch(() => null);
+        return QRCode.toString(qr, { type: 'terminal', small: true, ...options });
     }
 
     constructor({
@@ -108,8 +109,9 @@ export class WhatsappSocketClient {
         onQR,
         onReceiveMessages,
         debug,
+        printQRInTerminal,
     }: {
-        logger: any;
+        logger?: any;
         mongoURL: string;
         mongoCollection?: string;
         onOpen?: () => Promise<void>;
@@ -117,11 +119,13 @@ export class WhatsappSocketClient {
         onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
         onQR?: (qr: string) => Promise<void>;
         debug?: boolean;
+        printQRInTerminal?: boolean;
     }) {
         this.mongoURL = mongoURL;
         this.mongoCollection = mongoCollection;
         this.logger = logger;
         this.debug = debug;
+        this.printQRInTerminal = printQRInTerminal;
         this.socket = null;
         this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
@@ -129,7 +133,7 @@ export class WhatsappSocketClient {
         this.onQR = onQR;
     }
 
-    private async getAuthCollection(): Promise<[Collection<MongoDocument>, MongoClient]> {
+    private async getAuthCollection(): Promise<[] | [Collection<MongoDocument>, MongoClient]> {
         const mongoClient = new MongoClient(this.mongoURL);
         await mongoClient.connect();
         const collection = mongoClient.db().collection(this.mongoCollection);
@@ -182,7 +186,7 @@ export class WhatsappSocketClient {
                 shouldSyncHistoryMessage: () => false,
                 shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
                 ...options,
-                auth,
+                ...{ auth },
             });
 
             // CRITICAL: Handle connection updates properly
@@ -191,6 +195,13 @@ export class WhatsappSocketClient {
 
                 if (qr) {
                     if (debug) this.logger?.info('WHATSAPP', 'QR Code received', { qr });
+                    if (this.printQRInTerminal) {
+                        const qrcode = await WhatsappSocketClient.qrToTerminalString(qr, { small: true }).catch(
+                            () => null
+                        );
+                        console.log(qrcode);
+                    }
+
                     await onQR?.(qr);
                 }
 
@@ -267,8 +278,8 @@ export class WhatsappSocketClient {
         const [collection, mongoClient] = await this.getAuthCollection();
 
         if (this.debug) this.logger?.info('WHATSAPP', 'Deleting auth state, required to scanning QR again');
-        await collection.deleteMany({});
-        await mongoClient.close();
+        await collection?.deleteMany({});
+        await mongoClient?.close();
     }
 
     async sendTextMessage(to: string, text: string, replayToMessageId?: string): Promise<any> {

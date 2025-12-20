@@ -1,20 +1,14 @@
-// הגדרות כתובות השרת (שנה לכתובות האמיתיות שלך)
-const BASE_URL = 'https://your-server-api.com';
-const SOCKET_URL = 'https://your-server-api.com';
-console.log('hello world!');
+const BASE_URL = '';
+const SOCKET_URL = '/';
 
-// חיבור ל-Websocket
 const socket = io(SOCKET_URL);
 
-// האזנה לקבלת QR Code מהשרת
 socket.on('qr', (qrData) => {
-    // מניח שהשרת שולח מחרוזת Base64 או URL של תמונה
     const qrImage = document.getElementById('qr-image');
     qrImage.src = qrData;
     showQRSection(true);
 });
 
-// פונקציות עזר לממשק
 function showQRSection(show) {
     document.getElementById('qr-section').style.display = show ? 'flex' : 'none';
     document.getElementById('divider').style.display = show ? 'block' : 'none';
@@ -51,30 +45,23 @@ async function apiRequest(endpoint, data = {}) {
     }
 }
 
-// פעולות כפתורים
-function login() {
-    apiRequest('login');
+async function login() {
+    return apiRequest('connect');
 }
 
-function logout() {
-    apiRequest('logout');
+async function logout() {
+    return apiRequest('disconnect');
 }
 
-function resetSystem() {
-    // שליחת בקשת איפוס והצגת אזור ה-QR (שימולא ע"י ה-Socket)
-    apiRequest('reset');
+async function resetSystem() {
+    await apiRequest('reset');
     showQRSection(true);
 }
 
 async function sendMessage() {
     const phone = document.getElementById('phone').value;
     const message = document.getElementById('message').value;
-
     if (!phone) return alert('הכנס מספר טלפון');
 
-    // שליחה לשרת המנגיש קבצים/הודעות כפי שביקשת
-    await apiRequest('send-message', {
-        number: phone,
-        text: message,
-    });
+    await apiRequest('send-message', { number: phone, text: message });
 }
