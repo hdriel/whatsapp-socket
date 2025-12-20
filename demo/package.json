@@ -1,0 +1,25 @@
+{
+    "name": "demo",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.ts",
+    "scripts": {
+        "start": "tsx src/server.ts"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "dependencies": {
+        "express": "^5.2.1",
+        "pathe": "^2.0.3",
+        "stack-trace-logger": "^1.1.2"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6",
+        "nodemon": "^3.1.11",
+        "ts-node": "^10.9.2",
+        "tsx": "^4.21.0",
+        "typescript": "^5.9.3"
+    }
+}

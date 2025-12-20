@@ -24,9 +24,5 @@ dist-ssr
 *.sln
 *.sw?
 
-demo-app/.yalc
-demo-server/.yalc
 demo/.yalc
-demo-app/yalc.lock
-demo-server/yalc.lock
 demo/yalc.lock
