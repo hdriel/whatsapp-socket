@@ -21,7 +21,7 @@ const was = new WhatsappSocketClient({
     mongoURL: MONGODB_URI,
     logger,
     printQRInTerminal: true,
-    // customPairingCode: '[asd]',
+    customPairingCode: 'a',
     debug: true,
     onQR: async (qr, qrCode) => {
         const qrImage = await WhatsappSocketClient.qrToImage(qr).catch(() => null);
@@ -39,7 +39,7 @@ const router = express.Router();
 
 {
     router.post('/connect', async (_req: Request, res: Response) => {
-        was.startConnection();
+        was.startConnection().catch(() => null);
         res.status(200).json({ message: 'OK' });
     });
 
@@ -50,7 +50,7 @@ const router = express.Router();
 
     router.post('/reset', async (req: Request, res: Response) => {
         const { phone } = req.body;
-        was.resetConnection({ pairingPhone: phone });
+        was.resetConnection({ pairingPhone: phone }).catch(() => null);
         res.status(200).json({ message: 'OK' });
     });
 

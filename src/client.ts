@@ -247,7 +247,7 @@ export class WhatsappSocketClient {
             const sock = makeWASocket({
                 version,
                 logger: pinoLogger,
-                browser: ['Ubuntu', 'Chrome', '20.0.04'],
+                browser: ['Chrome (Linux)', '', ''], // ['Ubuntu', 'Chrome', '20.0.04'],
                 syncFullHistory: false, // Don't sync full history on first connect
                 shouldSyncHistoryMessage: () => false,
                 shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
