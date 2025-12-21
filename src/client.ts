@@ -244,7 +244,11 @@ export class WhatsappSocketClient {
         // Fetch latest Baileys version for better compatibility
         const { version, isLatest } = await fetchLatestBaileysVersion();
         if (this.allowUseLastVersion && !isLatest) {
-            if (debug) this.logger?.warn('WHATSAPP', 'current baileys service is not the latest version!');
+            if (debug)
+                this.logger?.warn('WHATSAPP', 'current baileys service is not the latest version!', {
+                    version,
+                    isLatest,
+                });
         }
 
         const connect = () => {
