@@ -5,8 +5,8 @@ import logger from './logger';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-// import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
-import { WhatsappSocketClient } from '../../src';
+import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocketClient } from '../../src';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server);
