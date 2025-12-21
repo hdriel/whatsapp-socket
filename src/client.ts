@@ -7,7 +7,8 @@
 // https://www.npmjs.com/package/mudslide
 // https://www.npmjs.com/package/whatsapp-web.js
 // https://www.npmjs.com/package/wbm
-import makeWASocket, {
+import {
+    default as makeWASocket,
     DisconnectReason,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
@@ -304,23 +305,3 @@ export class WhatsappSocketClient {
         await this.startConnection();
     }
 }
-
-// https://www.npmjs.com/package/@adiwajshing/baileys/v/2.1.0
-// import { MessageType, MessageOptions, Mimetype } from '@adiwajshing/baileys'
-// const id = 'abcd@s.whatsapp.net' // the WhatsApp ID
-// // send a simple text!
-// client.sendMessage (id, 'oh hello there', MessageType.text)
-// // send a location!
-// client.sendMessage(id, {degreeslatitude: 24.121231, degreesLongitude: 55.1121221}, MessageType.location)
-// // send a contact!
-// const vcard = 'BEGIN:VCARD\n' // metadata of the contact card
-//     + 'VERSION:3.0\n'
-//     + 'FN:Jeff Singh\n' // full name
-//     + 'ORG:Ashoka Uni;\n' // the organization of the contact
-//     + 'TEL;type=CELL;type=VOICE;waid=911234567890:+91 12345 67890\n' // WhatsApp ID + phone number
-//     + 'END:VCARD'
-// client.sendMessage(id, {displayname: "Jeff", vcard: vcard}, MessageType.contact)
-// // send a gif
-// const buffer = fs.readFileSync("Media/ma_gif.mp4") // load some gif
-// const options: MessageOptions = {mimetype: Mimetype.gif, caption: "hello!"} // some metadata & caption
-// client.sendMessage(id, buffer, MessageType.video, options)

@@ -7,7 +7,7 @@
     "types": "dist/index.d.ts",
     "main": "./dist/index.js",
     "scripts": {
-        "build": "tsup src/index.ts --format esm,cjs --dts --out-dir dist",
+        "build": "tsup",
         "build:watch": "tsc --watch",
         "format": "prettier --write .",
         "clean": "rimraf ./dist",
