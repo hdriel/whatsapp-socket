@@ -35,6 +35,7 @@ export class WhatsappSocketClient {
     private readonly printQRInTerminal?: boolean;
     private readonly pairingPhone?: string;
     private readonly customPairingCode?: string;
+    private readonly allowUseLastVersion?: boolean;
     private onOpen?: () => Promise<void>;
     private onClose?: () => Promise<void>;
     private onQR?: (qr: string, code?: string | null) => Promise<void>;
@@ -169,6 +170,7 @@ export class WhatsappSocketClient {
         printQRInTerminal,
         pairingPhone,
         customPairingCode,
+        allowUseLastVersion = true,
     }: {
         logger?: any;
         mongoURL: string;
@@ -181,6 +183,7 @@ export class WhatsappSocketClient {
         printQRInTerminal?: boolean;
         pairingPhone?: string;
         customPairingCode?: string;
+        allowUseLastVersion?: boolean;
     }) {
         this.mongoURL = mongoURL;
         this.mongoCollection = mongoCollection;
@@ -189,6 +192,7 @@ export class WhatsappSocketClient {
         this.printQRInTerminal = printQRInTerminal;
         this.pairingPhone = pairingPhone;
         this.customPairingCode = customPairingCode;
+        this.allowUseLastVersion = allowUseLastVersion;
         this.socket = null;
         this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
@@ -239,15 +243,15 @@ export class WhatsappSocketClient {
 
         // Fetch latest Baileys version for better compatibility
         const { version, isLatest } = await fetchLatestBaileysVersion();
-        if (!isLatest) {
+        if (this.allowUseLastVersion && !isLatest) {
             if (debug) this.logger?.warn('WHATSAPP', 'current baileys service is not the latest version!');
         }
 
         const connect = () => {
             const sock = makeWASocket({
-                version,
+                version: this.allowUseLastVersion ? version : [2, 3000, 1027934701],
                 logger: pinoLogger,
-                browser: ['Chrome (Linux)', '', ''], // ['Ubuntu', 'Chrome', '20.0.04'],
+                browser: ['Ubuntu', 'Chrome', '20.0.04'],
                 syncFullHistory: false, // Don't sync full history on first connect
                 shouldSyncHistoryMessage: () => false,
                 shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter

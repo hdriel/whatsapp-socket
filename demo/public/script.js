@@ -5,33 +5,41 @@ const socket = io(SOCKET_URL);
 
 socket.on('connected', () => console.log('connected!'));
 
+let obj = {};
 const copyCodeToClipboard = (code) => {
-    return () =>
+    obj[code] ||= () =>
         new Promise((resolve) => {
             navigator.clipboard
                 .writeText(code)
                 .then(resolve)
                 .catch(() => null);
         });
+
+    return obj[code];
 };
 
 socket.on('qr', ({ qrImage, qrCode }) => {
     const qrImageEl = document.getElementById('qr-image');
-    const qrCodeEl = document.getElementById('qr-code');
     qrImageEl.src = qrImage;
+    qrImageEl.style.display = qrImage ? 'block' : 'none';
+
+    const qrCodeEl = document.getElementById('qr-code');
     qrCodeEl.style.display = qrCode ? 'block' : 'none';
     qrCodeEl.innerText = qrCode ? `${qrCode.substring(0, 4)}-${qrCode.substring(4)}`.split('').join(' ') : '';
-    qrCodeEl.removeEventListener('click', copyCodeToClipboard(qrCode));
+    qrCodeEl.removeEventListener('click', obj[qrCode]);
     qrCodeEl.addEventListener('click', copyCodeToClipboard(qrCode));
+
     showQRSection(true);
 });
 
 socket.on('qr-connected', () => {
     const qrImageEl = document.getElementById('qr-image');
-    const qrCodeEl = document.getElementById('qr-code');
     qrImageEl.src = '';
-    qrCodeEl.style.display = 'none';
+    qrImageEl.style.display = 'none';
+
+    const qrCodeEl = document.getElementById('qr-code');
     qrCodeEl.innerText = '';
+    qrCodeEl.style.display = 'none';
 
     showQRSection(false);
 });
