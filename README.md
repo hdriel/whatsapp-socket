@@ -11,7 +11,10 @@ This package is written in TypeScript and includes full type definitions
 
 ## 🔗 Links
 
-- [GitHub Baileys](https://github.com/WhiskeySockets/Baileys)
+- [GitHub WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys)
+- [@adiwajshing/baileys-md](https://pokoke-01.github.io/owh/index.html)
+- [Automating WhatsApp](https://medium.com/@elvisbrazil/automating-whatsapp-with-node-js-and-baileys-send-receive-and-broadcast-messages-with-code-0656c40bd928)
+- [baileys-pro](https://www.npmjs.com/package/baileys-pro?activeTab=readme)
 
 [//]: # (- [GitHub Demo Repository]&#40;https://github.com/hdriel/aws-utils-demo&#41;)
 

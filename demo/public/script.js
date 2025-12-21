@@ -5,15 +5,34 @@ const socket = io(SOCKET_URL);
 
 socket.on('connected', () => console.log('connected!'));
 
-socket.on('qr', (qrData) => {
-    const qrImage = document.getElementById('qr-image');
-    qrImage.src = qrData;
+const copyCodeToClipboard = (code) => {
+    return () =>
+        new Promise((resolve) => {
+            navigator.clipboard
+                .writeText(code)
+                .then(resolve)
+                .catch(() => null);
+        });
+};
+
+socket.on('qr', ({ qrImage, qrCode }) => {
+    const qrImageEl = document.getElementById('qr-image');
+    const qrCodeEl = document.getElementById('qr-code');
+    qrImageEl.src = qrImage;
+    qrCodeEl.style.display = qrCode ? 'block' : 'none';
+    qrCodeEl.innerText = qrCode ? `${qrCode.substring(0, 4)}-${qrCode.substring(4)}`.split('').join(' ') : '';
+    qrCodeEl.removeEventListener('click', copyCodeToClipboard(qrCode));
+    qrCodeEl.addEventListener('click', copyCodeToClipboard(qrCode));
     showQRSection(true);
 });
 
 socket.on('qr-connected', () => {
-    const qrImage = document.getElementById('qr-image');
-    qrImage.src = '';
+    const qrImageEl = document.getElementById('qr-image');
+    const qrCodeEl = document.getElementById('qr-code');
+    qrImageEl.src = '';
+    qrCodeEl.style.display = 'none';
+    qrCodeEl.innerText = '';
+
     showQRSection(false);
 });
 
@@ -61,7 +80,8 @@ async function logout() {
 }
 
 async function resetSystem() {
-    await apiRequest('reset');
+    const phone = document.getElementById('phone').value;
+    await apiRequest('reset', { phone });
     showQRSection(true);
 }
 

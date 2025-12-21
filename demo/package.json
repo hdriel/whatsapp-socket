@@ -13,7 +13,7 @@
     "license": "ISC",
     "type": "commonjs",
     "dependencies": {
-        "@hdriel/whatsapp-socket": "file:.yalc/@hdriel/whatsapp-socket",
+        "@hdriel/whatsapp-socket": "file:.yalc\\@hdriel\\whatsapp-socket",
         "dotenv": "^17.2.3",
         "dotenv-expand": "^12.0.3",
         "express": "^5.2.1",

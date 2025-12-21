@@ -5,8 +5,8 @@ import logger from './logger';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
-// import { WhatsappSocketClient } from '../../src';
+// import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
+import { WhatsappSocketClient } from '../../src';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server);
@@ -14,18 +14,23 @@ const io = new SocketIO(server);
 io.on('connection', (socket) => {
     logger.info(socket.id, 'Socket connection connected!');
     socket.emit('connected');
+    io.emit('qr-connected');
 });
 
 const was = new WhatsappSocketClient({
     mongoURL: MONGODB_URI,
     logger,
     printQRInTerminal: true,
+    // customPairingCode: '[asd]',
     debug: true,
-    onQR: async (qr) => {
+    onQR: async (qr, qrCode) => {
         const qrImage = await WhatsappSocketClient.qrToImage(qr).catch(() => null);
-        io.emit('qr', qrImage);
+        io.emit('qr', { qrImage, qrCode });
     },
     onOpen: async () => {
+        io.emit('qr-connected');
+    },
+    onClose: async () => {
         io.emit('qr-connected');
     },
 });
@@ -43,8 +48,9 @@ const router = express.Router();
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/reset', async (_req: Request, res: Response) => {
-        was.resetConnection();
+    router.post('/reset', async (req: Request, res: Response) => {
+        const { phone } = req.body;
+        was.resetConnection({ pairingPhone: phone });
         res.status(200).json({ message: 'OK' });
     });
 

@@ -27,8 +27,11 @@
             <div class="separator" id="divider"></div>
 
             <div id="qr-section">
-                <h3>QR Code לסריקה</h3>
-                <img id="qr-image" src="" alt="ממתין ל-QR...">
+                <h3>QR Code</h3>
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0">
+                    <img id="qr-image" src="" alt="ממתין ל-QR...">
+                    <span id="qr-code" style="display: none">---- ----</span>
+                </div>
                 <button class="btn-close-qr" onclick="closeQR()">סגור</button>
             </div>
         </div>

@@ -33,10 +33,12 @@ export class WhatsappSocketClient {
     private readonly logger?: any;
     private readonly debug?: boolean;
     private readonly printQRInTerminal?: boolean;
+    private readonly pairingPhone?: string;
+    private readonly customPairingCode?: string;
     private onOpen?: () => Promise<void>;
     private onClose?: () => Promise<void>;
-    private onQR?: (qr: string) => Promise<void>;
-    private onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
+    private onQR?: (qr: string, code?: string | null) => Promise<void>;
+    private readonly onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
     static DEFAULT_COUNTRY_CODE: string = '972';
 
     static formatPhoneNumber(phone: string, countryCode: string = WhatsappSocketClient.DEFAULT_COUNTRY_CODE): string {
@@ -101,6 +103,60 @@ export class WhatsappSocketClient {
         return QRCode.toString(qr, { type: 'terminal', small: true, ...options });
     }
 
+    // only 8 alphanumeric (no more or less), patterns [a-z0-8] | aaaa[0-8] xxzzvvcc [zaq0-8]
+    static randomPairingCode(pattern: string, length = 8) {
+        // no randomness needed
+        if (!pattern.includes('[') && pattern.length === length) {
+            return pattern;
+        }
+
+        let result = '';
+        let pool: string[] = [];
+
+        const buildPool = (block: string) => {
+            const chars = [];
+
+            for (let i = 0; i < block.length; i++) {
+                if (block[i + 1] === '-' && block[i + 2]) {
+                    const start = block.charCodeAt(i);
+                    const end = block.charCodeAt(i + 2);
+
+                    for (let c = start; c <= end; c++) {
+                        chars.push(String.fromCharCode(c));
+                    }
+
+                    i += 2;
+                } else {
+                    chars.push(block[i]);
+                }
+            }
+
+            return chars;
+        };
+
+        for (let i = 0; i < pattern.length && result.length < length; i++) {
+            const char = pattern[i];
+
+            if (char === '[') {
+                const end = pattern.indexOf(']', i);
+                const block = pattern.slice(i + 1, end);
+
+                pool = buildPool(block);
+                i = end;
+            } else {
+                result += char;
+            }
+        }
+
+        // fill remaining from pool
+        while (result.length < length && pool.length) {
+            result += pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        const upperCaseResult = result.toUpperCase();
+        return upperCaseResult.padEnd(length, upperCaseResult);
+    }
+
     constructor({
         mongoURL,
         mongoCollection = 'whatsapp-auth',
@@ -111,6 +167,8 @@ export class WhatsappSocketClient {
         onReceiveMessages,
         debug,
         printQRInTerminal,
+        pairingPhone,
+        customPairingCode,
     }: {
         logger?: any;
         mongoURL: string;
@@ -118,15 +176,19 @@ export class WhatsappSocketClient {
         onOpen?: () => Promise<void>;
         onClose?: () => Promise<void>;
         onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
-        onQR?: (qr: string) => Promise<void>;
+        onQR?: (qr: string, code?: string | null) => Promise<void>;
         debug?: boolean;
         printQRInTerminal?: boolean;
+        pairingPhone?: string;
+        customPairingCode?: string;
     }) {
         this.mongoURL = mongoURL;
         this.mongoCollection = mongoCollection;
         this.logger = logger;
         this.debug = debug;
         this.printQRInTerminal = printQRInTerminal;
+        this.pairingPhone = pairingPhone;
+        this.customPairingCode = customPairingCode;
         this.socket = null;
         this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
@@ -160,15 +222,18 @@ export class WhatsappSocketClient {
         onOpen = this.onOpen,
         onClose = this.onClose,
         onQR = this.onQR,
+        pairingPhone: _pairingPhone,
         debug: _debug,
     }: {
         options?: UserFacingSocketConfig;
         debug?: boolean;
+        pairingPhone?: string;
         connectionAttempts?: number;
         onOpen?: () => Promise<void>;
         onClose?: () => Promise<void>;
-        onQR?: (qr: string) => Promise<void>;
+        onQR?: (qr: string, code?: string | null) => Promise<void>;
     } = {}): Promise<WASocket> {
+        const pairingPhone = _pairingPhone ?? this.pairingPhone;
         const { saveCreds, auth } = await this.authenticate();
         const debug = _debug === undefined ? this.debug : _debug;
 
@@ -187,6 +252,7 @@ export class WhatsappSocketClient {
                 shouldSyncHistoryMessage: () => false,
                 shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
                 ...options,
+                printQRInTerminal: false,
                 ...{ auth },
             });
 
@@ -203,7 +269,18 @@ export class WhatsappSocketClient {
                         console.log(qrcode);
                     }
 
-                    await onQR?.(qr);
+                    const pair = this.customPairingCode
+                        ? WhatsappSocketClient.randomPairingCode(this.customPairingCode)
+                        : undefined;
+
+                    const pairing = pairingPhone ? WhatsappSocketClient.formatPhoneNumber(pairingPhone) : null;
+                    const code = pairing ? await sock.requestPairingCode(pairing, pair) : null;
+
+                    if (debug && this.printQRInTerminal) {
+                        this.logger?.info('WHATSAPP', 'QR Pairing Code', { code, pairingPhone: pairing });
+                    }
+
+                    await onQR?.(qr, code);
                 }
 
                 switch (connection) {
@@ -258,6 +335,18 @@ export class WhatsappSocketClient {
                 sock.ev.on('messages.upsert', async ({ messages, type }) => {
                     this.logger?.info('WHATSAPP', 'Received messages', { type, totalMessages: messages.length });
                     this.onReceiveMessages?.(messages, type);
+
+                    // const msg = messages[0]
+                    // if (!msg.key.fromMe && msg.message?.conversation) {
+                    //     const sender = msg.key.remoteJid
+                    //     const text = msg.message.conversation.toLowerCase()
+                    //
+                    //     console.log(`📩 Message from ${sender}: ${text}`)
+                    //
+                    //     if (text === 'hi') {
+                    //         await sock.sendMessage(sender, { text: 'Hello! How can I help you today?' })
+                    //     }
+                    // }
                 });
             }
 
@@ -297,11 +386,11 @@ export class WhatsappSocketClient {
         return this.socket?.sendMessage(jid, { text }, options);
     }
 
-    async resetConnection() {
+    async resetConnection({ pairingPhone }: { pairingPhone?: string } = {}) {
         await this.closeConnection();
         await this.clearAuthState();
         // Wait a bit before reconnecting
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        await this.startConnection();
+        await this.startConnection({ pairingPhone });
     }
 }
