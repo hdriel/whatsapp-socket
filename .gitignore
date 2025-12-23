@@ -27,3 +27,4 @@ dist-ssr
 demo/.yalc
 demo/yalc.lock
 authState/my-profile
+!authState/my-profile/.gitkeep
