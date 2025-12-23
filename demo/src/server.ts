@@ -5,8 +5,8 @@ import logger from './logger';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
-// import { WhatsappSocketClient } from '../../src';
+// import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
+import { WhatsappSocketClient } from '../../src';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server);
@@ -18,7 +18,8 @@ io.on('connection', (socket) => {
 });
 
 const was = new WhatsappSocketClient({
-    mongoURL: MONGODB_URI,
+    // mongoURL: MONGODB_URI,
+    fileAuthStateDirectoryPath: path.resolve(__dirname, '../..', 'authState/my-profile'),
     logger,
     printQRInTerminal: true,
     customPairingCode: 'a',
@@ -57,6 +58,8 @@ const router = express.Router();
     router.post('/send-message', async (req: Request, res: Response) => {
         const { phone, message } = req.body;
         await was.sendTextMessage(phone, message);
+        // const { phone } = req.body;
+        // await was.sendButtonMessage(phone);
         res.status(200).json({ message: 'OK' });
     });
 }

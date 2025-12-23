@@ -11,8 +11,20 @@
         "build:watch": "tsc --watch",
         "format": "prettier --write .",
         "clean": "rimraf ./dist",
-        "yalc:publish": "pnpm run build && yalc publish --private --push && cd demo && pnpm add @hdriel/whatsapp-socket && cd ../demo && npm run yalc:attach"
+        "yalc:publish": "pnpm run build && yalc publish --private --push",
+        "yalc:attach": "cd demo && pnpm add @hdriel/whatsapp-socket",
+        "yalc:add": "yalc remove baileys-pro"
     },
+    "keywords": [
+        "whatsapp",
+        "js-whatsapp",
+        "whatsapp-api",
+        "whatsapp-web",
+        "whatsapp-chat",
+        "whatsapp-group",
+        "automation",
+        "multi-device"
+    ],
     "repository": {
         "type": "git",
         "url": "git+https://github.com/hdriel/whatsapp-socket.git"
@@ -29,7 +41,6 @@
     "files": [
         "dist"
     ],
-    "keywords": [],
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/hdriel/whatsapp-socket/issues"

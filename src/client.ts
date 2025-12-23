@@ -17,7 +17,9 @@ import {
     type UserFacingSocketConfig,
     type WAMessage,
     type WASocket,
+    useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
+
 import QRCode from 'qrcode';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
 import P from 'pino';
@@ -28,7 +30,8 @@ const pinoLogger = P({ level: 'silent' });
 
 export class WhatsappSocketClient {
     private socket: null | WASocket;
-    private readonly mongoURL: string;
+    private readonly fileAuthStateDirectoryPath?: string;
+    private readonly mongoURL?: string;
     private readonly mongoCollection: string = 'whatsapp-auth';
     private readonly logger?: any;
     private readonly debug?: boolean;
@@ -115,7 +118,7 @@ export class WhatsappSocketClient {
         let pool: string[] = [];
 
         const buildPool = (block: string) => {
-            const chars = [];
+            const chars: string[] = [];
 
             for (let i = 0; i < block.length; i++) {
                 if (block[i + 1] === '-' && block[i + 2]) {
@@ -159,6 +162,7 @@ export class WhatsappSocketClient {
     }
 
     constructor({
+        fileAuthStateDirectoryPath,
         mongoURL,
         mongoCollection = 'whatsapp-auth',
         logger,
@@ -171,9 +175,11 @@ export class WhatsappSocketClient {
         pairingPhone,
         customPairingCode,
         allowUseLastVersion = true,
-    }: {
+    }: (
+        | { mongoURL: string; fileAuthStateDirectoryPath?: string }
+        | { mongoURL?: string; fileAuthStateDirectoryPath: string }
+    ) & {
         logger?: any;
-        mongoURL: string;
         mongoCollection?: string;
         onOpen?: () => Promise<void>;
         onClose?: () => Promise<void>;
@@ -186,6 +192,7 @@ export class WhatsappSocketClient {
         allowUseLastVersion?: boolean;
     }) {
         this.mongoURL = mongoURL;
+        this.fileAuthStateDirectoryPath = fileAuthStateDirectoryPath;
         this.mongoCollection = mongoCollection;
         this.logger = logger;
         this.debug = debug;
@@ -201,6 +208,8 @@ export class WhatsappSocketClient {
     }
 
     private async getAuthCollection(): Promise<[] | [Collection<MongoDocument>, MongoClient]> {
+        if (!this.mongoURL) return [];
+
         const mongoClient = new MongoClient(this.mongoURL);
         await mongoClient.connect();
         const collection = mongoClient.db().collection(this.mongoCollection);
@@ -209,6 +218,14 @@ export class WhatsappSocketClient {
     }
 
     private async authenticate() {
+        if (!this.mongoURL && !this.fileAuthStateDirectoryPath) {
+            throw new Error('fileAuthStateDirectoryPath/MongoURL is missing');
+        }
+        if (!this.mongoURL) {
+            const { saveCreds, state } = await useMultiFileAuthState(this.fileAuthStateDirectoryPath as string);
+            return { auth: state, saveCreds };
+        }
+
         const [collection] = await this.getAuthCollection();
 
         const { state, saveCreds } = await useMongoDBAuthState(collection);
