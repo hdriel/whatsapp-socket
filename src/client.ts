@@ -19,15 +19,15 @@ import {
     type WASocket,
     useMultiFileAuthState,
     type AuthenticationState,
-    // } from '@whiskeysockets/baileys';
+    generateWAMessageFromContent,
 } from '@fadzzzslebew/baileys';
-
 import type { Logger as MyLogger } from 'stack-trace-logger';
 import QRCode from 'qrcode';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState.ts';
+import { proto } from '@whiskeysockets/baileys';
 
 const pinoLogger: any = P({ level: 'silent' });
 
@@ -412,7 +412,64 @@ export class WhatsappSocketClient {
             ...(replayToMessageId && { quoted: { key: { id: replayToMessageId } } }),
         };
 
-        return this.socket?.sendMessage(jid, { text }, options);
+        return this.socket.sendMessage(jid, { text }, options);
+    }
+
+    async sendButtonsMessage(to: string): Promise<any> {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
+
+        const jid = WhatsappSocketClient.formatPhoneNumberToWhatsappPattern(to);
+
+        const msg = generateWAMessageFromContent(
+            jid,
+            {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: proto.Message.InteractiveMessage.create({
+                            body: proto.Message.InteractiveMessage.Body.create({
+                                text: 'Contact actions',
+                            }),
+                            footer: proto.Message.InteractiveMessage.Footer.create({
+                                text: 'Select an option',
+                            }),
+                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                buttons: [
+                                    {
+                                        name: 'cta_url',
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: '📄 Docs',
+                                            url: 'https://example.com',
+                                        }),
+                                    },
+                                    {
+                                        name: 'cta_copy',
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: '📋 Copy Code',
+                                            copy_code: 'ABC-123',
+                                        }),
+                                    },
+                                    {
+                                        name: 'cta_call',
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: '📞 Call',
+                                            phone_number: '+1234567890',
+                                        }),
+                                    },
+                                ],
+                            }),
+                        }),
+                    },
+                },
+            },
+            { userJid: jid }
+        );
+
+        return this.socket.relayMessage(jid, msg.message!, {
+            messageId: msg.key.id!,
+        });
     }
 
     async resetConnection({ pairingPhone }: { pairingPhone?: string } = {}) {

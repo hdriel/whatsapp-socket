@@ -56,10 +56,10 @@ const router = express.Router();
     });
 
     router.post('/send-message', async (req: Request, res: Response) => {
-        const { phone, message } = req.body;
-        await was.sendTextMessage(phone, message);
-        // const { phone } = req.body;
-        // await was.sendButtonMessage(phone);
+        // const { phone, message } = req.body;
+        // await was.sendTextMessage(phone, message);
+        const { phone } = req.body;
+        await was.sendButtonsMessage(phone);
         res.status(200).json({ message: 'OK' });
     });
 }
