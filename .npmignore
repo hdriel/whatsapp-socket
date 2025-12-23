@@ -4,5 +4,11 @@ logs/
 *.log
 *.test.ts
 tsconfig.json
-demo
+tsup.config.json
+.prettierrc
+.eslintrc.js
+.eslintignore
+demo/
+authState/
+.idea
 nodemon.json
