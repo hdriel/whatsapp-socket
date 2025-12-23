@@ -12,8 +12,7 @@
         "format": "prettier --write .",
         "clean": "rimraf ./dist",
         "yalc:publish": "pnpm run build && yalc publish --private --push",
-        "yalc:attach": "cd demo && pnpm add @hdriel/whatsapp-socket",
-        "yalc:add": "yalc remove baileys-pro"
+        "yalc:attach": "cd demo && pnpm add @hdriel/whatsapp-socket"
     },
     "keywords": [
         "whatsapp",
