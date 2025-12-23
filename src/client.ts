@@ -18,22 +18,25 @@ import {
     type WAMessage,
     type WASocket,
     useMultiFileAuthState,
-} from '@whiskeysockets/baileys';
+    type AuthenticationState,
+    // } from '@whiskeysockets/baileys';
+} from '@fadzzzslebew/baileys';
 
+import type { Logger as MyLogger } from 'stack-trace-logger';
 import QRCode from 'qrcode';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState.ts';
 
-const pinoLogger = P({ level: 'silent' });
+const pinoLogger: any = P({ level: 'silent' });
 
 export class WhatsappSocketClient {
     private socket: null | WASocket;
     private readonly fileAuthStateDirectoryPath?: string;
     private readonly mongoURL?: string;
     private readonly mongoCollection: string = 'whatsapp-auth';
-    private readonly logger?: any;
+    private readonly logger?: MyLogger;
     private readonly debug?: boolean;
     private readonly printQRInTerminal?: boolean;
     private readonly pairingPhone?: string;
@@ -217,7 +220,7 @@ export class WhatsappSocketClient {
         return [collection, mongoClient];
     }
 
-    private async authenticate() {
+    private async authenticate(): Promise<{ auth: AuthenticationState; saveCreds: any }> {
         if (!this.mongoURL && !this.fileAuthStateDirectoryPath) {
             throw new Error('fileAuthStateDirectoryPath/MongoURL is missing');
         }
@@ -231,8 +234,8 @@ export class WhatsappSocketClient {
         const { state, saveCreds } = await useMongoDBAuthState(collection);
         const auth = {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys),
-        };
+            keys: makeCacheableSignalKeyStore(state.keys, pinoLogger as any),
+        } as AuthenticationState;
 
         return { auth, saveCreds };
     }
@@ -294,12 +297,13 @@ export class WhatsappSocketClient {
                         console.log(qrcode);
                     }
 
+                    // @ts-ignore
                     const pair = this.customPairingCode
                         ? WhatsappSocketClient.randomPairingCode(this.customPairingCode)
                         : undefined;
 
                     const pairing = pairingPhone ? WhatsappSocketClient.formatPhoneNumber(pairingPhone) : null;
-                    const code = pairing ? await sock.requestPairingCode(pairing, pair) : null;
+                    const code = pairing ? await sock.requestPairingCode(pairing) : null;
 
                     if (debug && this.printQRInTerminal) {
                         this.logger?.info('WHATSAPP', 'QR Pairing Code', { code, pairingPhone: pairing });
