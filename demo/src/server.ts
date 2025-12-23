@@ -5,8 +5,8 @@ import logger from './logger';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-// import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
-import { WhatsappSocketClient } from '../../src';
+import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocketClient } from '../../src';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server);
@@ -58,8 +58,12 @@ const router = express.Router();
     router.post('/send-message', async (req: Request, res: Response) => {
         // const { phone, message } = req.body;
         // await was.sendTextMessage(phone, message);
-        const { phone } = req.body;
-        await was.sendButtonsMessage(phone);
+        const { phone, message } = req.body;
+        await was.sendButtonsMessage(phone, {
+            title: message || 'הודעה ממני אליך',
+            // subtitle: 'בחר מהאופציות',
+            buttons: [{ label: 'העתק קוד', copy: WhatsappSocketClient.randomPairingCode('[a-z0-9]') }],
+        });
         res.status(200).json({ message: 'OK' });
     });
 }

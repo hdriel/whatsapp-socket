@@ -31,6 +31,10 @@ import { proto } from '@whiskeysockets/baileys';
 
 const pinoLogger: any = P({ level: 'silent' });
 
+type ButtonURL = { label: string; url: string };
+type ButtonCopy = { label: string; copy: string };
+type ButtonPhone = { label: string; tel: string };
+
 export class WhatsappSocketClient {
     private socket: null | WASocket;
     private readonly fileAuthStateDirectoryPath?: string;
@@ -415,7 +419,87 @@ export class WhatsappSocketClient {
         return this.socket.sendMessage(jid, { text }, options);
     }
 
-    async sendButtonsMessage(to: string): Promise<any> {
+    async sendButtonsMessage(
+        to: string,
+        {
+            subtitle,
+            title,
+            buttons,
+        }: {
+            title: string;
+            subtitle?: string;
+            buttons?: Array<ButtonURL | ButtonCopy | ButtonPhone>;
+        }
+    ): Promise<any> {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
+
+        const jid = WhatsappSocketClient.formatPhoneNumberToWhatsappPattern(to);
+
+        const msg = generateWAMessageFromContent(
+            jid,
+            {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: proto.Message.InteractiveMessage.create({
+                            ...(title && {
+                                body: proto.Message.InteractiveMessage.Body.create({ text: title }),
+                            }),
+                            ...(subtitle && {
+                                footer: proto.Message.InteractiveMessage.Footer.create({ text: subtitle }),
+                            }),
+                            ...(!!buttons?.length && {
+                                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                    buttons: buttons
+                                        .map((btn) => {
+                                            const buttonParamsJson = {
+                                                display_text: btn.label,
+                                                ...((btn as ButtonURL).url && { url: (btn as ButtonURL).url }),
+                                                ...((btn as ButtonCopy).copy && {
+                                                    copy_code: (btn as ButtonCopy).copy,
+                                                }),
+                                                ...((btn as ButtonPhone).tel && {
+                                                    phone_number: (btn as ButtonPhone).tel,
+                                                }),
+                                            };
+
+                                            let name: string;
+                                            switch (true) {
+                                                case !!buttonParamsJson.url:
+                                                    name = 'cta_url';
+                                                    break;
+                                                case !!buttonParamsJson.copy_code:
+                                                    name = 'cta_copy';
+                                                    break;
+                                                case !!buttonParamsJson.phone_number:
+                                                    name = 'cta_call';
+                                                    break;
+                                                default:
+                                                    name = '';
+                                                    break;
+                                            }
+
+                                            return { name, buttonParamsJson: JSON.stringify(buttonParamsJson) };
+                                        })
+                                        .filter((v) => v.name),
+                                }),
+                            }),
+                        }),
+                    },
+                },
+            },
+            { userJid: jid }
+        );
+
+        return this.socket.relayMessage(jid, msg.message!, {
+            messageId: msg.key.id!,
+        });
+    }
+
+    // @ts-ignore
+    private async sendButtonsMessageTemplate(to: string): Promise<any> {
         if (!this.socket) {
             if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
             this.socket = await this.startConnection();
