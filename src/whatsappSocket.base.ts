@@ -13,13 +13,11 @@ import {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     type MessageUpsertType,
-    type MiscMessageGenerationOptions,
     type UserFacingSocketConfig,
     type WAMessage,
     type WASocket,
     useMultiFileAuthState,
     type AuthenticationState,
-    generateWAMessageFromContent,
 } from '@fadzzzslebew/baileys';
 import type { Logger as MyLogger } from 'stack-trace-logger';
 import QRCode from 'qrcode';
@@ -27,32 +25,44 @@ import { type Collection, type Document as MongoDocument, MongoClient } from 'mo
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState.ts';
-import { proto } from '@whiskeysockets/baileys';
 
 const pinoLogger: any = P({ level: 'silent' });
 
-type ButtonURL = { label: string; url: string };
-type ButtonCopy = { label: string; copy: string };
-type ButtonPhone = { label: string; tel: string };
+export type WhatsappSocketBaseProps = (
+    | { mongoURL: string; fileAuthStateDirectoryPath?: string }
+    | { mongoURL?: string; fileAuthStateDirectoryPath: string }
+) & {
+    logger?: any;
+    mongoCollection?: string;
+    onOpen?: () => Promise<void>;
+    onClose?: () => Promise<void>;
+    onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
+    onQR?: (qr: string, code?: string | null) => Promise<void>;
+    debug?: boolean;
+    printQRInTerminal?: boolean;
+    pairingPhone?: string;
+    customPairingCode?: string;
+    allowUseLastVersion?: boolean;
+};
 
-export class WhatsappSocketClient {
-    private socket: null | WASocket;
-    private readonly fileAuthStateDirectoryPath?: string;
-    private readonly mongoURL?: string;
-    private readonly mongoCollection: string = 'whatsapp-auth';
-    private readonly logger?: MyLogger;
-    private readonly debug?: boolean;
-    private readonly printQRInTerminal?: boolean;
-    private readonly pairingPhone?: string;
-    private readonly customPairingCode?: string;
-    private readonly allowUseLastVersion?: boolean;
+export class WhatsappSocketBase {
+    protected socket: null | WASocket;
+    protected readonly fileAuthStateDirectoryPath?: string;
+    protected readonly mongoURL?: string;
+    protected readonly mongoCollection: string = 'whatsapp-auth';
+    protected readonly logger?: MyLogger;
+    protected readonly debug?: boolean;
+    protected readonly printQRInTerminal?: boolean;
+    protected readonly pairingPhone?: string;
+    protected readonly customPairingCode?: string;
+    protected readonly allowUseLastVersion?: boolean;
     private onOpen?: () => Promise<void>;
     private onClose?: () => Promise<void>;
     private onQR?: (qr: string, code?: string | null) => Promise<void>;
     private readonly onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
     static DEFAULT_COUNTRY_CODE: string = '972';
 
-    static formatPhoneNumber(phone: string, countryCode: string = WhatsappSocketClient.DEFAULT_COUNTRY_CODE): string {
+    static formatPhoneNumber(phone: string, countryCode: string = WhatsappSocketBase.DEFAULT_COUNTRY_CODE): string {
         if (phone.endsWith('@s.whatsapp.net')) return phone;
 
         let strNumber = phone.replace(/[^0-9]/g, '');
@@ -64,11 +74,11 @@ export class WhatsappSocketClient {
 
     static formatPhoneNumberToWhatsappPattern(
         phone: string,
-        countryCode: string = WhatsappSocketClient.DEFAULT_COUNTRY_CODE
+        countryCode: string = WhatsappSocketBase.DEFAULT_COUNTRY_CODE
     ): string {
         if (phone.endsWith('@s.whatsapp.net')) return phone;
 
-        let strNumber = WhatsappSocketClient.formatPhoneNumber(phone, countryCode);
+        let strNumber = WhatsappSocketBase.formatPhoneNumber(phone, countryCode);
         strNumber = `${strNumber}@s.whatsapp.net`; // formatted Number should look like: '972513334444@s.whatsapp.net'
         return strNumber;
     }
@@ -182,22 +192,7 @@ export class WhatsappSocketClient {
         pairingPhone,
         customPairingCode,
         allowUseLastVersion = true,
-    }: (
-        | { mongoURL: string; fileAuthStateDirectoryPath?: string }
-        | { mongoURL?: string; fileAuthStateDirectoryPath: string }
-    ) & {
-        logger?: any;
-        mongoCollection?: string;
-        onOpen?: () => Promise<void>;
-        onClose?: () => Promise<void>;
-        onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
-        onQR?: (qr: string, code?: string | null) => Promise<void>;
-        debug?: boolean;
-        printQRInTerminal?: boolean;
-        pairingPhone?: string;
-        customPairingCode?: string;
-        allowUseLastVersion?: boolean;
-    }) {
+    }: WhatsappSocketBaseProps) {
         this.mongoURL = mongoURL;
         this.fileAuthStateDirectoryPath = fileAuthStateDirectoryPath;
         this.mongoCollection = mongoCollection;
@@ -295,7 +290,7 @@ export class WhatsappSocketClient {
                 if (qr) {
                     if (debug) this.logger?.info('WHATSAPP', 'QR Code received', { qr });
                     if (this.printQRInTerminal) {
-                        const qrcode = await WhatsappSocketClient.qrToTerminalString(qr, { small: true }).catch(
+                        const qrcode = await WhatsappSocketBase.qrToTerminalString(qr, { small: true }).catch(
                             () => null
                         );
                         console.log(qrcode);
@@ -303,10 +298,10 @@ export class WhatsappSocketClient {
 
                     // @ts-ignore
                     const pair = this.customPairingCode
-                        ? WhatsappSocketClient.randomPairingCode(this.customPairingCode)
+                        ? WhatsappSocketBase.randomPairingCode(this.customPairingCode)
                         : undefined;
 
-                    const pairing = pairingPhone ? WhatsappSocketClient.formatPhoneNumber(pairingPhone) : null;
+                    const pairing = pairingPhone ? WhatsappSocketBase.formatPhoneNumber(pairingPhone) : null;
                     const code = pairing ? await sock.requestPairingCode(pairing) : null;
 
                     if (debug && this.printQRInTerminal) {
@@ -403,136 +398,6 @@ export class WhatsappSocketClient {
         if (this.debug) this.logger?.info('WHATSAPP', 'Deleting auth state, required to scanning QR again');
         await collection?.deleteMany({});
         await mongoClient?.close();
-    }
-
-    async sendTextMessage(to: string, text: string, replayToMessageId?: string): Promise<any> {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
-
-        const jid = WhatsappSocketClient.formatPhoneNumberToWhatsappPattern(to);
-        const options: MiscMessageGenerationOptions = {
-            ...(replayToMessageId && { quoted: { key: { id: replayToMessageId } } }),
-        };
-
-        return this.socket.sendMessage(jid, { text }, options);
-    }
-
-    async sendButtonsMessage(
-        to: string,
-        {
-            subtitle,
-            title,
-            buttons,
-        }: {
-            title: string;
-            subtitle?: string;
-            buttons: Array<ButtonURL | ButtonCopy | ButtonPhone>;
-        }
-    ): Promise<any> {
-        if (!title || !buttons.length) {
-            throw new Error('sendButtonsMessage: No title or buttons required field found.');
-        }
-
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
-
-        const jid = WhatsappSocketClient.formatPhoneNumberToWhatsappPattern(to);
-
-        const msg = generateWAMessageFromContent(
-            jid,
-            {
-                viewOnceMessage: {
-                    message: {
-                        interactiveMessage: proto.Message.InteractiveMessage.create({
-                            ...(title && {
-                                body: proto.Message.InteractiveMessage.Body.create({ text: title }),
-                            }),
-                            ...(subtitle && {
-                                footer: proto.Message.InteractiveMessage.Footer.create({ text: subtitle }),
-                            }),
-                            ...(!!buttons?.length && {
-                                nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                                    buttons: buttons
-                                        .map((btn) => {
-                                            const buttonParamsJson = {
-                                                display_text: btn.label,
-                                                ...((btn as ButtonURL).url && { url: (btn as ButtonURL).url }),
-                                                ...((btn as ButtonCopy).copy && {
-                                                    copy_code: (btn as ButtonCopy).copy,
-                                                }),
-                                                ...((btn as ButtonPhone).tel && {
-                                                    phone_number: (btn as ButtonPhone).tel,
-                                                }),
-                                            };
-
-                                            let name: string;
-                                            switch (true) {
-                                                case !!buttonParamsJson.url:
-                                                    name = 'cta_url';
-                                                    break;
-                                                case !!buttonParamsJson.copy_code:
-                                                    name = 'cta_copy';
-                                                    break;
-                                                case !!buttonParamsJson.phone_number:
-                                                    name = 'cta_call';
-                                                    break;
-                                                default:
-                                                    name = '';
-                                                    break;
-                                            }
-
-                                            return { name, buttonParamsJson: JSON.stringify(buttonParamsJson) };
-                                        })
-                                        .filter((v) => v.name),
-                                }),
-                            }),
-                        }),
-                    },
-                },
-            },
-            { userJid: jid }
-        );
-
-        return this.socket.relayMessage(jid, msg.message!, {
-            messageId: msg.key.id!,
-        });
-    }
-
-    async sendReplyButtonsMessage(
-        to: string,
-        {
-            title,
-            subtitle,
-            buttons,
-        }: {
-            title: string;
-            subtitle?: string;
-            buttons: string[];
-        }
-    ): Promise<any> {
-        if (!title || !buttons.length) {
-            throw new Error('sendReplyButtonsMessage: No title or buttons required field found.');
-        }
-
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
-
-        const jid = WhatsappSocketClient.formatPhoneNumberToWhatsappPattern(to);
-
-        return this.socket.sendMessage(jid, {
-            text: title,
-            ...(subtitle && { footer: subtitle }),
-            buttons: buttons
-                .filter((v) => v)
-                .map((displayText, index) => ({ buttonId: `id${index}`, buttonText: { displayText }, type: 1 })),
-            /* type: UNKNOWN = 0, RESPONSE = 1, NATIVE_FLOW = 2 */
-        });
     }
 
     async resetConnection({ pairingPhone }: { pairingPhone?: string } = {}) {

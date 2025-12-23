@@ -1,4 +1,9 @@
-import {type AuthenticationCreds, type SignalDataTypeMap, initAuthCreds, proto } from '@whiskeysockets/baileys';
+import {
+    type AuthenticationCreds,
+    type SignalDataTypeMap,
+    initAuthCreds,
+    WAProto as proto,
+} from '@fadzzzslebew/baileys';
 
 const BufferJSON = {
     replacer: (_k: string, value: any) => {

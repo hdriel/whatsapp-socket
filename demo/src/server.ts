@@ -5,8 +5,8 @@ import logger from './logger';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
-// import { WhatsappSocketClient } from '@hdriel/whatsapp-socket';
-import { WhatsappSocketClient } from '../../src';
+import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocket } from '../../src';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server);
@@ -17,15 +17,15 @@ io.on('connection', (socket) => {
     io.emit('qr-connected');
 });
 
-const was = new WhatsappSocketClient({
+const was = new WhatsappSocket({
     mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
     fileAuthStateDirectoryPath: path.resolve(__dirname, '../..', 'authState/my-profile'),
     logger,
     printQRInTerminal: true,
     customPairingCode: 'a',
     debug: true,
-    onQR: async (qr, qrCode) => {
-        const qrImage = await WhatsappSocketClient.qrToImage(qr).catch(() => null);
+    onQR: async (qr: string, qrCode: string | null | undefined) => {
+        const qrImage = await WhatsappSocket.qrToImage(qr).catch(() => null);
         io.emit('qr', { qrImage, qrCode });
     },
     onOpen: async () => {
@@ -57,7 +57,7 @@ const router = express.Router();
     });
 
     router.post('/send-message', async (req: Request, res: Response) => {
-        const code = WhatsappSocketClient.randomPairingCode('[a-z0-9]');
+        const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
         const { phone, message, subtitle, tel, url, authCode } = req.body;
         logger.info(null, 'Sending message...', { ...req.body, code });
 
