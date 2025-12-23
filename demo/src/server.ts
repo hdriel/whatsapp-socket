@@ -35,6 +35,7 @@ const was = new WhatsappSocketClient({
         io.emit('qr-connected');
     },
 });
+was.startConnection().catch(() => null);
 
 const router = express.Router();
 
@@ -56,14 +57,25 @@ const router = express.Router();
     });
 
     router.post('/send-message', async (req: Request, res: Response) => {
-        // const { phone, message } = req.body;
-        // await was.sendTextMessage(phone, message);
-        const { phone, message } = req.body;
-        await was.sendButtonsMessage(phone, {
-            title: message || 'הודעה ממני אליך',
-            // subtitle: 'בחר מהאופציות',
-            buttons: [{ label: 'העתק קוד', copy: WhatsappSocketClient.randomPairingCode('[a-z0-9]') }],
-        });
+        const code = WhatsappSocketClient.randomPairingCode('[a-z0-9]');
+        const { phone, message, subtitle, tel, url, authCode } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body, code });
+
+        const buttons = [];
+        if (url) buttons.push({ label: 'קישור לאתר', url });
+        if (authCode) buttons.push({ label: 'העתק קוד אישי', copy: code });
+        if (tel) buttons.push({ label: 'חיוג למספר', tel });
+
+        if (buttons.length) {
+            await was.sendButtonsMessage(phone, {
+                title: message || 'שדה חובה! שכחת למלא אותו בטופס',
+                subtitle,
+                buttons,
+            });
+        } else {
+            await was.sendTextMessage(phone, message);
+        }
+
         res.status(200).json({ message: 'OK' });
     });
 }

@@ -11,8 +11,15 @@
             <div class="form-section">
                 <h2>WhatsApp Socket Demo</h2>
 
-                <label for="phone">מספר פלאפון</label><input type="tel" id="phone" placeholder="למשל 0501234567">
-                <label for="message">הודעה</label><textarea id="message" rows="3" placeholder="כתבו כאן את ההודעה..."></textarea>
+                <label for="phone">שלח למספר הבא</label><input type="tel" id="phone" placeholder="למשל 0501234567">
+                <label for="message">כותרת / הודעה</label><textarea id="message" rows="2" placeholder="כתבו כאן את ההודעה..."></textarea>
+                <label for="subtitle">כותרת פעולות</label><textarea id="subtitle" rows="1" placeholder="כתבו כאן כותרת לפעולות הבאות מתחת (אופציונאלי)"></textarea>
+                <label for="phone">קישור לטלפון</label><input type="tel" id="tel" placeholder="למשל 0501234567">
+                <label for="url">קישור URL</label><input type="url" id="url" placeholder="https://example.com">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="auth-code">
+                    <label for="auth-code">קוד אישי להתחברות</label>
+                </div>
 
                 <button class="btn-primary" onclick="sendMessage()">שלח הודעה</button>
                 <div id="status-msg">מוכן לפעולה</div>

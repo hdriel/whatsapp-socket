@@ -95,8 +95,13 @@ async function resetSystem() {
 
 async function sendMessage() {
     const phone = document.getElementById('phone').value;
-    const message = document.getElementById('message').value;
     if (!phone) return alert('הכנס מספר טלפון');
 
-    await apiRequest('send-message', { phone, message });
+    const message = document.getElementById('message').value;
+    const subtitle = document.getElementById('subtitle').value;
+    const tel = document.getElementById('tel').value;
+    const url = document.getElementById('url').value;
+    const authCode = document.getElementById('auth-code').checked;
+
+    await apiRequest('send-message', { phone, message, subtitle, tel, url, authCode });
 }
