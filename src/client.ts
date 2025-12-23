@@ -431,6 +431,10 @@ export class WhatsappSocketClient {
             buttons: Array<ButtonURL | ButtonCopy | ButtonPhone>;
         }
     ): Promise<any> {
+        if (!title || !buttons.length) {
+            throw new Error('sendButtonsMessage: No title or buttons required field found.');
+        }
+
         if (!this.socket) {
             if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
             this.socket = await this.startConnection();
@@ -498,8 +502,22 @@ export class WhatsappSocketClient {
         });
     }
 
-    // @ts-ignore
-    private async sendButtonsMessageTemplate(to: string): Promise<any> {
+    async sendReplyButtonsMessage(
+        to: string,
+        {
+            title,
+            subtitle,
+            buttons,
+        }: {
+            title: string;
+            subtitle?: string;
+            buttons: string[];
+        }
+    ): Promise<any> {
+        if (!title || !buttons.length) {
+            throw new Error('sendReplyButtonsMessage: No title or buttons required field found.');
+        }
+
         if (!this.socket) {
             if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
             this.socket = await this.startConnection();
@@ -507,52 +525,13 @@ export class WhatsappSocketClient {
 
         const jid = WhatsappSocketClient.formatPhoneNumberToWhatsappPattern(to);
 
-        const msg = generateWAMessageFromContent(
-            jid,
-            {
-                viewOnceMessage: {
-                    message: {
-                        interactiveMessage: proto.Message.InteractiveMessage.create({
-                            body: proto.Message.InteractiveMessage.Body.create({
-                                text: 'Contact actions',
-                            }),
-                            footer: proto.Message.InteractiveMessage.Footer.create({
-                                text: 'Select an option',
-                            }),
-                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                                buttons: [
-                                    {
-                                        name: 'cta_url',
-                                        buttonParamsJson: JSON.stringify({
-                                            display_text: '📄 Docs',
-                                            url: 'https://example.com',
-                                        }),
-                                    },
-                                    {
-                                        name: 'cta_copy',
-                                        buttonParamsJson: JSON.stringify({
-                                            display_text: '📋 Copy Code',
-                                            copy_code: 'ABC-123',
-                                        }),
-                                    },
-                                    {
-                                        name: 'cta_call',
-                                        buttonParamsJson: JSON.stringify({
-                                            display_text: '📞 Call',
-                                            phone_number: '+1234567890',
-                                        }),
-                                    },
-                                ],
-                            }),
-                        }),
-                    },
-                },
-            },
-            { userJid: jid }
-        );
-
-        return this.socket.relayMessage(jid, msg.message!, {
-            messageId: msg.key.id!,
+        return this.socket.sendMessage(jid, {
+            text: title,
+            ...(subtitle && { footer: subtitle }),
+            buttons: buttons
+                .filter((v) => v)
+                .map((displayText, index) => ({ buttonId: `id${index}`, buttonText: { displayText }, type: 1 })),
+            /* type: UNKNOWN = 0, RESPONSE = 1, NATIVE_FLOW = 2 */
         });
     }
 
