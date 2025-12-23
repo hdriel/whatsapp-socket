@@ -1,48 +1,68 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>מערכת ניהול וואטסאפ</title>
-        <link rel="stylesheet" href="style.css"> <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    </head>
-    <body>
-        <div class="main-wrapper" id="main-container">
-            <div class="form-section">
-                <h2>WhatsApp Socket Demo</h2>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת ניהול וואטסאפ</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+<div class="main-wrapper" id="main-container">
+    <div class="form-section">
+        <h2>WhatsApp Socket Demo</h2>
 
-                <label for="phone">שלח למספר הבא</label><input type="tel" id="phone" placeholder="למשל 0501234567">
-                <label for="message">כותרת / הודעה</label><textarea id="message" rows="2" placeholder="כתבו כאן את ההודעה..."></textarea>
-                <label for="subtitle">כותרת פעולות</label><textarea id="subtitle" rows="1" placeholder="כתבו כאן כותרת לפעולות הבאות מתחת (אופציונאלי)"></textarea>
-                <label for="phone">קישור לטלפון</label><input type="tel" id="tel" placeholder="למשל 0501234567">
-                <label for="url">קישור URL</label><input type="url" id="url" placeholder="https://example.com">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="auth-code">
-                    <label for="auth-code">קוד אישי להתחברות</label>
-                </div>
+        <label for="phone">שלח למספר הבא</label>
+        <input type="tel" id="phone" placeholder="למשל 0501234567">
 
-                <button class="btn-primary" onclick="sendMessage()">שלח הודעה</button>
-                <div id="status-msg">מוכן לפעולה</div>
+        <label for="message">כותרת / הודעה</label>
+        <textarea id="message" rows="2" placeholder="כתבו כאן את ההודעה..."></textarea>
 
-                <div class="action-buttons">
-                    <button class="btn-login" onclick="login()">התחבר</button>
-                    <button class="btn-logout" onclick="logout()">התנתק</button>
-                    <button class="btn-reset" onclick="resetSystem()">איפוס</button>
-                </div>
-            </div>
+        <div class="toggle-wrapper">
+            <button class="btn-toggle" onclick="toggleAdvanced()">
+                <span id="toggle-text">הצג אפשרויות מתקדמות</span>
+                <span id="toggle-icon">▼</span>
+            </button>
+        </div>
 
-            <div class="separator" id="divider"></div>
+        <div id="advanced-options" class="advanced-options">
+            <label for="subtitle">כותרת פעולות</label>
+            <textarea id="subtitle" rows="1" placeholder="כתבו כאן כותרת לפעולות הבאות מתחת (אופציונאלי)"></textarea>
 
-            <div id="qr-section">
-                <h3>QR Code</h3>
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0">
-                    <img id="qr-image" src="" alt="ממתין ל-QR...">
-                    <span id="qr-code" style="display: none">---- ----</span>
-                </div>
-                <button class="btn-close-qr" onclick="closeQR()">סגור</button>
+            <label for="tel">קישור לטלפון</label>
+            <input type="tel" id="tel" placeholder="למשל 0501234567">
+
+            <label for="url">קישור URL</label>
+            <input type="url" id="url" placeholder="https://example.com">
+
+            <div class="checkbox-wrapper">
+                <input type="checkbox" id="auth-code">
+                <label for="auth-code">קוד אישי להתחברות</label>
             </div>
         </div>
 
-        <script src="script.js"></script>
-    </body>
+        <button class="btn-primary" onclick="sendMessage()">שלח הודעה</button>
+        <div id="status-msg">מוכן לפעולה</div>
+
+        <div class="action-buttons">
+            <button class="btn-login" onclick="login()">התחבר</button>
+            <button class="btn-logout" onclick="logout()">התנתק</button>
+            <button class="btn-reset" onclick="resetSystem()">איפוס</button>
+        </div>
+    </div>
+
+    <div class="separator" id="divider"></div>
+
+    <div id="qr-section">
+        <h3>QR Code</h3>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0">
+            <img id="qr-image" src="" alt="ממתין ל-QR...">
+            <span id="qr-code" style="display: none">---- ----</span>
+        </div>
+        <button class="btn-close-qr" onclick="closeQR()">סגור</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
 </html>

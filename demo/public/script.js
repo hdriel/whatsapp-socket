@@ -79,6 +79,22 @@ async function apiRequest(endpoint, data = {}) {
     }
 }
 
+function toggleAdvanced() {
+    const advancedOptions = document.getElementById('advanced-options');
+    const toggleText = document.getElementById('toggle-text');
+    const toggleIcon = document.getElementById('toggle-icon');
+
+    advancedOptions.classList.toggle('show');
+
+    if (advancedOptions.classList.contains('show')) {
+        toggleText.textContent = 'הסתר אפשרויות מתקדמות';
+        toggleIcon.classList.add('toggle-icon-rotate');
+    } else {
+        toggleText.textContent = 'הצג אפשרויות מתקדמות';
+        toggleIcon.classList.remove('toggle-icon-rotate');
+    }
+}
+
 async function login() {
     return apiRequest('connect');
 }
