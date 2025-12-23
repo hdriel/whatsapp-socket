@@ -1,4 +1,4 @@
-import { MONGODB_URI } from './dotenv';
+import { MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import express, { Express, json, urlencoded, type Request, type Response } from 'express';
 export const app: Express = express();
 import logger from './logger';
@@ -18,7 +18,7 @@ io.on('connection', (socket) => {
 });
 
 const was = new WhatsappSocketClient({
-    // mongoURL: MONGODB_URI,
+    mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
     fileAuthStateDirectoryPath: path.resolve(__dirname, '../..', 'authState/my-profile'),
     logger,
     printQRInTerminal: true,

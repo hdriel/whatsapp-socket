@@ -12,4 +12,5 @@ expand(myEnv);
 export default myEnv.parsed;
 
 export const MONGODB_URI = myEnv.parsed?.MONGODB_URI as string;
+export const USE_MONGODB_STORAGE = +((myEnv.parsed?.USE_MONGODB_STORAGE as string) ?? '0');
 logger.info('SYSTEM', 'env', myEnv.parsed);
