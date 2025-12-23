@@ -428,7 +428,7 @@ export class WhatsappSocketClient {
         }: {
             title: string;
             subtitle?: string;
-            buttons?: Array<ButtonURL | ButtonCopy | ButtonPhone>;
+            buttons: Array<ButtonURL | ButtonCopy | ButtonPhone>;
         }
     ): Promise<any> {
         if (!this.socket) {
