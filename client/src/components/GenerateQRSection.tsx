@@ -11,11 +11,6 @@ export const GenerateQRSection = () => {
     const { QRImage, QRCode } = useQR();
 
     const handleGenerateQR = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
-            return;
-        }
-
         setLoading(true);
         setError('');
 
