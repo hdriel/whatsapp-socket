@@ -12,7 +12,7 @@ import {
     CssBaseline,
     Tooltip,
 } from '@mui/material';
-import { FiberManualRecord } from '@mui/icons-material';
+import { FiberManualRecord, QrCode2 } from '@mui/icons-material';
 import { GenerateQRSection } from './components/GenerateQRSection';
 import { FileUploadSection } from './components/FileUploadSection';
 import { ImageUploadSection } from './components/ImageUploadSection';
@@ -21,6 +21,7 @@ import { VideoUploadSection } from './components/VideoUploadSection';
 import { MessageActionsSection } from './components/MessageActionsSection';
 import { MultipleInputsSection } from './components/MultipleInputsSection';
 import { useSocketConnection } from './hooks/useSocketConnection';
+import { useQR } from './hooks/useQR.ts';
 
 const theme = createTheme({
     palette: { mode: 'light', primary: { main: '#2563eb' }, secondary: { main: '#10b981' } },
@@ -52,6 +53,7 @@ const TabPanel = (props: TabPanelProps) => {
 function App() {
     const [currentTab, setCurrentTab] = useState(0);
     const connected = useSocketConnection();
+    const { QRImage } = useQR();
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setCurrentTab(newValue);
@@ -85,7 +87,7 @@ function App() {
                             scrollButtons="auto"
                             aria-label="feature tabs"
                         >
-                            <Tab label="QR Code" />
+                            <Tab label="QR Code" icon={QRImage ? <QrCode2 /> : undefined} iconPosition="start" />
                             <Tab label="File Upload" disabled={!connected} />
                             <Tab label="Image Upload" disabled={!connected} />
                             <Tab label="Audio Record" disabled={!connected} />
