@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, Snackbar } from '@mui/material';
+import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { QrCode } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 import { useQR } from '../hooks/useQR.ts';
