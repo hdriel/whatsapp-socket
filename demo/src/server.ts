@@ -2,6 +2,7 @@ import { MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import express, { Express, json, urlencoded, type Request, type Response } from 'express';
 export const app: Express = express();
 import logger from './logger';
+import cors from 'cors';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
 import { Server as SocketIO } from 'socket.io';
@@ -9,7 +10,9 @@ import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 // import { WhatsappSocket } from '../../src';
 
 const server: HttpServer = http.createServer(app);
-const io = new SocketIO(server);
+const io = new SocketIO(server, {
+    cors: { origin: 'http://localhost:5173', methods: ['GET', 'POST'], credentials: true },
+});
 
 io.on('connection', (socket) => {
     logger.info(socket.id, 'Socket connection connected!');
@@ -40,23 +43,23 @@ was.startConnection().catch(() => null);
 const router = express.Router();
 
 {
-    router.post('/connect', async (_req: Request, res: Response) => {
+    router.post('/api/connect', async (_req: Request, res: Response) => {
         was.startConnection().catch(() => null);
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/disconnect', async (_req: Request, res: Response) => {
+    router.post('/api/disconnect', async (_req: Request, res: Response) => {
         await was.closeConnection();
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/reset', async (req: Request, res: Response) => {
+    router.post('/api/generate-qr', async (req: Request, res: Response) => {
         const { phone } = req.body;
         was.resetConnection({ pairingPhone: phone }).catch(() => null);
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/send-message', async (req: Request, res: Response) => {
+    router.post('/api/send-message', async (req: Request, res: Response) => {
         const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
         const { phone, message, subtitle, tel, url, authCode } = req.body;
         logger.info(null, 'Sending message...', { ...req.body, code });
@@ -81,6 +84,7 @@ const router = express.Router();
     });
 }
 
+app.use(cors());
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
