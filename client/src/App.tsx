@@ -71,7 +71,13 @@ function App() {
             <Box sx={{ flexGrow: 1 }}>
                 <AppBar position="static" elevation={2}>
                     <Toolbar sx={{ gap: '0.8em' }}>
-                        <Tooltip title={`whatsapp socket connection status: ${wasClientConnected}`}>
+                        <Tooltip
+                            title={
+                                serverConnected
+                                    ? `whatsapp socket connection status: ${wasClientConnected}`
+                                    : 'Server socket not connected!'
+                            }
+                        >
                             <FiberManualRecord
                                 color={
                                     ({ open: 'success', connecting: 'warning', close: 'error' }[wasClientConnected] ??
