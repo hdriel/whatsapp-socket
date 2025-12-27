@@ -15,7 +15,7 @@ import {
 import { FiberManualRecord, QrCode2 } from '@mui/icons-material';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useQR } from './hooks/useQR';
-import { AppTabs, TabPanel } from './Tabs';
+import AppTabs, { TabPanel } from './components';
 
 const theme = createTheme({
     palette: { mode: 'light', primary: { main: '#10b981' }, secondary: { main: '#dea842' } },

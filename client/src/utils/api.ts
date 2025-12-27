@@ -2,6 +2,7 @@ export const API_ENDPOINTS = {
     GENERATE_QR: '/api/generate-qr',
     UPLOAD_FILE: '/api/upload-file',
     UPLOAD_IMAGE: '/api/upload-image',
+    UPLOAD_STICKER: '/api/upload-sticker',
     UPLOAD_AUDIO: '/api/upload-audio',
     UPLOAD_VIDEO: '/api/upload-video',
     SEND_MESSAGE: '/api/send-message',

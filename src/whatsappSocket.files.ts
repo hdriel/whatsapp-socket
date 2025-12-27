@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { ReadStream } from 'node:fs';
 
 import { WhatsappSocketStream, type WhatsappSocketStreamProps } from './whatsappSocket.stream';
@@ -127,9 +126,29 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         });
     }
 
-    async sendStickerMessage() {
-        // Example 7: Send sticker
-        const stickerBuffer = fs.readFileSync('./sticker.webp');
-        await super.sendSticker('972501234567', stickerBuffer);
+    /**
+     * requirements:
+     * * format .webp
+     * * imageSize 512pxx512px
+     * * maxSize: 100kb
+     * * transparent background
+     * @param to
+     * @param imageSrc
+     * @param replyToMessageId
+     */
+    async sendStickerMessage(
+        to: string,
+        imageSrc: string | Buffer<any> | ReadStream,
+        { replyToMessageId }: { replyToMessageId?: string } = {}
+    ) {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
+
+        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
+
+        await super.sendSticker(jid, stickerBuffer, { replyToMessageId });
     }
 }

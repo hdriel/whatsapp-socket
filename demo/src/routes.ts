@@ -5,7 +5,7 @@ import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
 // import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { WhatsappSocket } from '../../src';
-import { uploadImage, uploadVideo, uploadAudio, uploadFile } from './upload';
+import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
 
 export const initRouters = (io: SocketIO) => {
     const was = new WhatsappSocket({
@@ -109,6 +109,21 @@ export const initRouters = (io: SocketIO) => {
         logger.info(null, 'Sending message...', { ...req.body, code });
 
         await was.sendReplyButtonsMessage(phoneTo, { title, subtitle, buttons: inputs });
+
+        res.status(200).json({ message: 'OK' });
+    });
+
+    router.post('/api/upload-sticker', uploadSticker.single('sticker'), async (req: Request, res: Response) => {
+        const stickerFile = req.file;
+        if (!stickerFile) {
+            res.status(400).json({ message: 'No sticker file provided' });
+            return;
+        }
+
+        const { phoneTo } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendStickerMessage(phoneTo, stickerFile.buffer);
 
         res.status(200).json({ message: 'OK' });
     });

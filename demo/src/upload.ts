@@ -21,6 +21,19 @@ export const uploadImage = multer({
     },
 });
 
+export const uploadSticker = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB input limit
+    fileFilter: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, success?: boolean) => void) => {
+        const allowed = ['image/webp'];
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only WebP images are allowed'));
+        }
+    },
+});
+
 export const uploadVideo = multer({
     storage,
     limits: { fileSize: bytes('100MB') as number },
