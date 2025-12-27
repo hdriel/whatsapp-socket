@@ -9,8 +9,8 @@ export const useQR = () => {
     useEffect(() => {
         const onQRStart = ({ qrImage, qrCode }: { qrCode: string; qrImage: string }) => {
             console.log('get new qr code/image', { qrImage, qrCode });
-            setQRCode(qrCode);
-            setQRImage(qrImage);
+            qrCode && setQRCode(qrCode);
+            qrImage && setQRImage(qrImage);
         };
 
         const onQRDone = () => {
