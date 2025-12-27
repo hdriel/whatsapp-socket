@@ -18,7 +18,7 @@ import { useQR } from './hooks/useQR';
 import AppTabs, { TabPanel } from './components';
 
 const theme = createTheme({
-    palette: { mode: 'light', primary: { main: '#10b981' }, secondary: { main: '#dea842' } },
+    palette: { mode: 'light', primary: { main: '#0b7853' }, secondary: { main: '#dea842' } },
     typography: { fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif' },
 });
 
