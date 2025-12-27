@@ -9,6 +9,7 @@ tsup.config.json
 .eslintrc.js
 .eslintignore
 demo/
+demo-client/
 authState/
 .idea
 nodemon.json
