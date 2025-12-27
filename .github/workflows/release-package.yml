@@ -31,13 +31,12 @@ jobs:
 
           - name: installing packages
             run: | # Install npm packages
-              npm i -g pnpm
-              pnpm install --frozen-lockfile --prod --ignore-scripts
-              pnpm i cross-env
+              npm install --frozen-lockfile --prod --ignore-scripts
+              npm i cross-env
 
           - name: building package
             run: | # build lib output before publish
-              pnpm run build
+              npm run build
 
           - name: publish step
             run: npm publish
