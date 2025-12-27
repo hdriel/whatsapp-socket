@@ -96,7 +96,7 @@ export const initRouters = (io: SocketIO) => {
         await was.sendButtonsMessage(phone, {
             title: message || 'שדה חובה! שכחת למלא אותו בטופס',
             subtitle,
-            buttons,
+            buttons: buttons as any,
         });
 
         res.status(200).json({ message: 'OK' });

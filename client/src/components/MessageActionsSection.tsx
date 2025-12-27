@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, Grid, Stack } from '@mui/material';
+import {
+    TextField,
+    Button,
+    Paper,
+    Typography,
+    Box,
+    CircularProgress,
+    Alert,
+    Grid,
+    Stack,
+    Tooltip,
+} from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
+import DoNotTouchIcon from '@mui/icons-material/DoNotTouch';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 import { MessageAction } from '../types';
 
@@ -192,8 +204,15 @@ export const MessageActionsSection: React.FC<{
                         </fieldset>
                     </Grid>
                     <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
-                        <fieldset style={{ borderRadius: '8px' }}>
-                            <legend>Email To</legend>
+                        <fieldset style={{ borderRadius: '8px', backgroundColor: 'rgba(119,119,119,0.13)' }}>
+                            <legend>
+                                <Typography align="center" display="flex" gap="0.4em">
+                                    <Tooltip title="This Feature not supported">
+                                        <DoNotTouchIcon fontSize="small" />
+                                    </Tooltip>
+                                    Email To
+                                </Typography>
+                            </legend>
                             <Stack spacing={2}>
                                 <TextField
                                     fullWidth
@@ -216,8 +235,15 @@ export const MessageActionsSection: React.FC<{
                     </Grid>
 
                     <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
-                        <fieldset style={{ borderRadius: '8px' }}>
-                            <legend>Reminder</legend>
+                        <fieldset style={{ borderRadius: '8px', backgroundColor: 'rgba(119,119,119,0.13)' }}>
+                            <legend>
+                                <Typography align="center" display="flex" gap="0.4em">
+                                    <Tooltip title="This Feature not supported">
+                                        <DoNotTouchIcon fontSize="small" />
+                                    </Tooltip>
+                                    Reminder
+                                </Typography>
+                            </legend>
                             <Stack spacing={2}>
                                 <TextField
                                     fullWidth
