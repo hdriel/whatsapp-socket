@@ -1,8 +1,10 @@
-import { WhatsappSocketStream, type WhatsappSocketStreamProps } from './whatsappSocket.stream';
-export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.stream';
 import fs from 'fs';
 import { ReadStream } from 'node:fs';
-import { getUrlBuffer } from './helpers.ts';
+
+import { WhatsappSocketStream, type WhatsappSocketStreamProps } from './whatsappSocket.stream';
+export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.stream';
+import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, streamToBuffer } from './helpers.ts';
+import { basename } from 'node:path';
 
 export class WhatsappSocketFiles extends WhatsappSocketStream {
     static DEFAULT_COUNTRY_CODE: string = '972';
@@ -11,7 +13,11 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         super(props);
     }
 
-    async sendImageMessage(to: string, imageSrc: string | Buffer | ReadStream, caption: string, filename?: string) {
+    async sendImageMessage(
+        to: string,
+        imageSrc: string | Buffer<any> | ReadStream,
+        { caption = '', filename }: { caption?: string; filename?: string } = {}
+    ) {
         if (!this.socket) {
             if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
             this.socket = await this.startConnection();
@@ -25,9 +31,12 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
 
     async sendVideoMessage(
         to: string,
-        videoSrc: string | Buffer | ReadStream,
-        caption: string,
-        sendAsGifPlayback = false
+        videoSrc: string | Buffer<any> | ReadStream,
+        {
+            caption = '',
+            filename,
+            sendAsGifPlayback: gifPlayback = false,
+        }: { caption?: string; sendAsGifPlayback?: boolean; filename?: string } = {}
     ) {
         if (!this.socket) {
             if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
@@ -37,31 +46,84 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
 
-        return await super.sendVideo(jid, videoBuffer, { caption, gifPlayback: sendAsGifPlayback });
+        return await super.sendVideo(jid, videoBuffer, { caption, gifPlayback, ...(filename && { filename }) });
     }
 
-    async sendFileMessage() {
-        // Example 3: Send PDF document
-        const pdfStream = fs.createReadStream('./report.pdf');
-        await super.sendDocument('972501234567', pdfStream, {
-            filename: 'monthly-report.pdf',
-            caption: 'Here is the monthly report',
-        });
+    async sendFileMessage(
+        to: string,
+        fileSrc: string | Buffer<any> | ReadStream,
+        {
+            caption = '',
+            mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            replyToMessageId,
+            jpegThumbnailSrc,
+            filename: _filename,
+        }: {
+            caption?: string;
+            mimetype?: string;
+            filename?: string;
+            replyToMessageId?: string;
+            jpegThumbnailSrc?: string | Buffer<any> | ReadStream;
+        } = {}
+    ) {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
 
-        // Example 6: Send generic file from stream
-        const fileStream = fs.createReadStream('./document.docx');
-        await super.sendFileFromStream('972501234567', fileStream, {
-            filename: 'document.docx',
-            caption: 'Important document',
-            mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const fileBuffer = typeof fileSrc === 'string' ? await getUrlBuffer(fileSrc) : fileSrc;
+
+        let jpegThumbnailBuffer: Buffer<any> | undefined;
+        if (typeof jpegThumbnailSrc === 'string') {
+            jpegThumbnailBuffer = await getUrlBuffer(jpegThumbnailSrc);
+        } else if (jpegThumbnailSrc instanceof ReadStream) {
+            jpegThumbnailBuffer = await streamToBuffer(jpegThumbnailSrc);
+        } else {
+            jpegThumbnailBuffer = jpegThumbnailSrc;
+        }
+
+        let filename = 'mu-document';
+        if (fileSrc instanceof ReadStream) {
+            const fname = getFilenameFromStream(fileSrc);
+            if (fname) filename = fname;
+        } else if (typeof fileSrc === 'string') {
+            filename = basename(fileSrc);
+        }
+
+        return await super.sendDocument(jid, fileBuffer, {
+            caption,
+            mimetype,
+            filename,
+            replyToMessageId,
+            jpegThumbnail: jpegThumbnailBuffer,
         });
     }
 
-    async sendAudioMessage() {
-        // Example 4: Send voice note
-        const audioStream = fs.createReadStream('./voice.ogg');
-        await super.sendVoiceNote('972501234567', audioStream, {
-            seconds: 15, // duration in seconds
+    async sendAudioMessage(
+        to: string,
+        audioSrc: string | Buffer<any> | ReadStream,
+        {
+            filename,
+            replyToMessageId,
+            mimetype,
+            seconds,
+        }: { filename?: string; replyToMessageId?: string; mimetype?: string; seconds?: number } = {}
+    ) {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
+
+        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const audioBuffer = typeof audioSrc === 'string' ? await getUrlBuffer(audioSrc) : audioSrc;
+        let durationInSeconds = seconds || (await getAudioFileDuration(audioBuffer, mimetype).catch(() => 0));
+
+        return await super.sendAudio(jid, audioBuffer, {
+            ...(filename && { filename }),
+            ...(mimetype && { mimetype: mimetype }),
+            ...(durationInSeconds && { seconds: durationInSeconds }),
+            ...(replyToMessageId && { replyToMessageId: replyToMessageId }),
         });
     }
 

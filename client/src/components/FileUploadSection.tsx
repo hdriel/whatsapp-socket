@@ -8,6 +8,7 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
     setMessageToPhone: setPhoneTo,
 }) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -38,6 +39,7 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
         try {
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
+            formData.append('message', message.trim());
             formData.append('file', selectedFile);
 
             await makeApiCall(API_ENDPOINTS.UPLOAD_FILE, formData);
@@ -65,6 +67,22 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
                     placeholder="e.g., +1234567890"
                     value={phoneTo}
                     onChange={(e) => setPhoneTo(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <TextField
+                    fullWidth
+                    label="Message"
+                    placeholder="Enter your message"
+                    multiline
+                    rows={1}
+                    value={message}
+                    onChange={(e) => {
+                        setMessage(e.target.value);
+                        setSuccess('');
+                        setError('');
+                    }}
                     disabled={loading}
                     sx={{ mb: 2 }}
                 />

@@ -49,6 +49,7 @@
     "dependencies": {
         "@fadzzzslebew/baileys": "^0.1.1",
         "ms": "^2.1.3",
+        "music-metadata": "^11.10.3",
         "pino": "^10.1.0",
         "qrcode": "^1.5.3"
     },

@@ -5,7 +5,7 @@ import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
 // import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { WhatsappSocket } from '../../src';
-import { uploadImage, uploadVideo } from './upload';
+import { uploadImage, uploadVideo, uploadAudio, uploadFile } from './upload';
 
 export const initRouters = (io: SocketIO) => {
     const was = new WhatsappSocket({
@@ -123,7 +123,7 @@ export const initRouters = (io: SocketIO) => {
         const { phoneTo, message } = req.body;
         logger.info(null, 'Sending message...', { ...req.body });
 
-        await was.sendImageMessage(phoneTo, imageFile.buffer, message, imageFile.originalname);
+        await was.sendImageMessage(phoneTo, imageFile.buffer, { caption: message, filename: imageFile.originalname });
 
         res.status(200).json({ message: 'OK' });
     });
@@ -139,6 +139,44 @@ export const initRouters = (io: SocketIO) => {
         logger.info(null, 'Sending message...', { ...req.body });
 
         await was.sendVideoMessage(phoneTo, videoFile.buffer, message);
+
+        res.status(200).json({ message: 'OK' });
+    });
+
+    router.post('/api/upload-audio', uploadAudio.single('audio'), async (req: Request, res: Response) => {
+        const audioFile = req.file;
+        if (!audioFile) {
+            res.status(400).json({ message: 'No audio file provided' });
+            return;
+        }
+
+        const { phoneTo } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendAudioMessage(phoneTo, audioFile.buffer, {
+            filename: audioFile.originalname,
+            mimetype: audioFile.mimetype,
+        });
+
+        res.status(200).json({ message: 'OK' });
+    });
+
+    router.post('/api/upload-file', uploadFile.single('file'), async (req: Request, res: Response) => {
+        const docFile = req.file;
+        if (!docFile) {
+            res.status(400).json({ message: 'No document file provided' });
+            return;
+        }
+
+        const { phoneTo, message } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendFileMessage(phoneTo, docFile.buffer, {
+            filename: docFile.originalname,
+            mimetype: docFile.mimetype,
+            caption: message,
+            // jpegThumbnailSrc: '',
+        });
 
         res.status(200).json({ message: 'OK' });
     });

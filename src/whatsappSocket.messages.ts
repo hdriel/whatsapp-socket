@@ -38,7 +38,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
         super(props);
     }
 
-    async sendTextMessage(to: string, text: string, replayToMessageId?: string): Promise<any> {
+    async sendTextMessage(to: string, text: string, replyToMessageId?: string): Promise<any> {
         if (!this.socket) {
             if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
             this.socket = await this.startConnection();
@@ -46,7 +46,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
 
         const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
         const options: MiscMessageGenerationOptions = {
-            ...(replayToMessageId && { quoted: { key: { id: replayToMessageId } } }),
+            ...(replyToMessageId && { quoted: { key: { id: replyToMessageId } } }),
         };
 
         return this.socket.sendMessage(jid, { text }, options);
