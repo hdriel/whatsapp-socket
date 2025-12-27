@@ -130,6 +130,15 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
             { userJid: jid }
         );
 
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send buttons message', {
+                jid,
+                footer: subtitle,
+                body: title,
+                buttons: buttonsValue,
+            });
+        }
+
         return this.socket.relayMessage(jid, msg.message!, { messageId: msg.key.id! });
     }
 
@@ -156,13 +165,23 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
 
         const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
 
+        const buttonsValue = buttons
+            .filter((v) => v)
+            .map((displayText, index) => ({ buttonId: `id${index}`, buttonText: { displayText }, type: 1 }));
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send reply buttons message', {
+                jid,
+                text: title,
+                footer: subtitle,
+                buttons: buttonsValue,
+            });
+        }
+
         return this.socket.sendMessage(jid, {
             text: title,
             ...(subtitle && { footer: subtitle }),
-            buttons: buttons
-                .filter((v) => v)
-                .map((displayText, index) => ({ buttonId: `id${index}`, buttonText: { displayText }, type: 1 })),
-            /* type: UNKNOWN = 0, RESPONSE = 1, NATIVE_FLOW = 2 */
+            buttons: buttonsValue /* type: UNKNOWN = 0, RESPONSE = 1, NATIVE_FLOW = 2 */,
         });
     }
 }

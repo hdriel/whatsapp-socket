@@ -33,7 +33,7 @@ export const GenerateQRSection = () => {
             <Box sx={{ mt: 2 }}>
                 <TextField
                     fullWidth
-                    label="Peering Phone Number"
+                    label="Pairing Phone Number"
                     placeholder="e.g., 050-000-0000"
                     value={phoneTo}
                     onChange={(e) => setPhoneTo(e.target.value)}
@@ -55,7 +55,7 @@ export const GenerateQRSection = () => {
                     <Box sx={{ mt: 3 }}>
                         {QRCode && (
                             <Alert severity="success" sx={{ mb: 2 }}>
-                                Peering Phone Number Code: {QRCode}
+                                Pairing Phone Number Code: {QRCode}
                             </Alert>
                         )}
                         {QRImage && (

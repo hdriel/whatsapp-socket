@@ -4,7 +4,6 @@ import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
 import { WhatsappSocket } from '@hdriel/whatsapp-socket';
-// import { WhatsappSocket } from '../../src';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
 
 export const initRouters = (io: SocketIO) => {
@@ -53,7 +52,7 @@ export const initRouters = (io: SocketIO) => {
 
     router.post('/api/generate-qr', async (req: Request, res: Response) => {
         const { phone } = req.body;
-        logger.info(null, 'reset connection and create new QR image/code', { peering: phone });
+        logger.info(null, 'reset connection and create new QR image/code', { pairingPhone: phone });
 
         await was.resetConnection({ pairingPhone: phone }).catch(() => null);
 

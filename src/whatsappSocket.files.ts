@@ -25,6 +25,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const imageData = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
+        if (this.debug) this.logger?.debug('WHATSAPP', 'send image message', { jid, caption, filename });
         return await super.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
     }
 
@@ -45,6 +46,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
 
+        if (this.debug) this.logger?.debug('WHATSAPP', 'send video message', { jid, caption, filename, gifPlayback });
         return await super.sendVideo(jid, videoBuffer, { caption, gifPlayback, ...(filename && { filename }) });
     }
 
@@ -90,6 +92,15 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
             filename = basename(fileSrc);
         }
 
+        if (this.debug)
+            this.logger?.debug('WHATSAPP', 'send file message', {
+                jid,
+                caption,
+                mimetype,
+                filename,
+                replyToMessageId,
+                includeJpegThumbnail: !!jpegThumbnailBuffer,
+            });
         return await super.sendDocument(jid, fileBuffer, {
             caption,
             mimetype,
@@ -117,6 +128,16 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const audioBuffer = typeof audioSrc === 'string' ? await getUrlBuffer(audioSrc) : audioSrc;
         let durationInSeconds = seconds || (await getAudioFileDuration(audioBuffer, mimetype).catch(() => 0));
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send audio message', {
+                jid,
+                mimetype,
+                filename,
+                seconds: durationInSeconds,
+                replyToMessageId,
+            });
+        }
 
         return await super.sendAudio(jid, audioBuffer, {
             ...(filename && { filename }),
@@ -149,6 +170,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
+        if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid, replyToMessageId });
         await super.sendSticker(jid, stickerBuffer, { replyToMessageId });
     }
 }

@@ -71,7 +71,7 @@ This application expects the following API endpoints to be available on your bac
 **Expected Response:**
 ```json
 {
-  "peeringPhoneNumber": "050-000-0000",
+  "PairingPhoneNumber": "050-000-0000",
   "qrCodeImage": "data:image/png;base64,..." // Optional base64 image
 }
 ```
@@ -224,7 +224,7 @@ src/
 ### QR Code Generation
 - Input a phone number
 - Generate QR code via API
-- Display peering phone number and QR code image
+- Display pairing phone number and QR code image
 
 ### File Upload
 - Select any file type
