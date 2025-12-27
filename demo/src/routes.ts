@@ -5,6 +5,7 @@ import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
 // import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { WhatsappSocket } from '../../src';
+import { uploadImage } from './upload';
 
 export const initRouters = (io: SocketIO) => {
     const was = new WhatsappSocket({
@@ -108,6 +109,21 @@ export const initRouters = (io: SocketIO) => {
         logger.info(null, 'Sending message...', { ...req.body, code });
 
         await was.sendReplyButtonsMessage(phoneTo, { title, subtitle, buttons: inputs });
+
+        res.status(200).json({ message: 'OK' });
+    });
+
+    router.post('/api/upload-image', uploadImage.single('image'), async (req: Request, res: Response) => {
+        const imageFile = req.file;
+        if (!imageFile) {
+            res.status(400).json({ message: 'No image file provided' });
+            return;
+        }
+
+        const { phoneTo, message } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendImageMessage(phoneTo, imageFile.buffer, message, imageFile.originalname);
 
         res.status(200).json({ message: 'OK' });
     });

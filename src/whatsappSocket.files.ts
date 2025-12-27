@@ -1,6 +1,8 @@
 import { WhatsappSocketStream, type WhatsappSocketStreamProps } from './whatsappSocket.stream';
 export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.stream';
 import fs from 'fs';
+import { ReadStream } from 'node:fs';
+import { getImageBuffer } from './helpers.ts';
 
 export class WhatsappSocketFiles extends WhatsappSocketStream {
     static DEFAULT_COUNTRY_CODE: string = '972';
@@ -9,19 +11,16 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         super(props);
     }
 
-    async sendImageMessage() {
-        // Example 1: Send image from file stream
-        const imageStream = fs.createReadStream('./photo.jpg');
-        await super.sendImage('972501234567', imageStream, {
-            caption: 'Check out this photo!',
-            filename: 'vacation.jpg',
-        });
+    async sendImageMessage(to: string, imageSrc: string | Buffer | ReadStream, caption: string, filename?: string) {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
 
-        // Example 2: Send image from buffer
-        const imageBuffer = fs.readFileSync('./photo.jpg');
-        await super.sendImage('972501234567', imageBuffer, {
-            caption: 'Another photo',
-        });
+        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const imageData = typeof imageSrc === 'string' ? await getImageBuffer(imageSrc) : imageSrc;
+
+        return await super.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
     }
 
     async sendFileMessage() {
