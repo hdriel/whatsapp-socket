@@ -45,7 +45,7 @@ export const MessageSection: React.FC<{
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <MessageSquare fontSize="large" />
+                <MessageSquare fontSize="medium" />
                 Message with Actions
             </Typography>
 

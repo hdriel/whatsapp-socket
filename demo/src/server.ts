@@ -21,7 +21,7 @@ io.on('connection', (socket) => {
 app.use(cors());
 app.use(json());
 app.use(urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../../demo-client')));
+app.use(express.static(path.join(__dirname, '../../demo-client/dist')));
 app.use('/', initRouters(io));
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: any) => {

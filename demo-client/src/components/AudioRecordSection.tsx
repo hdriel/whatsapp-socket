@@ -109,7 +109,7 @@ export const AudioRecordSection: React.FC<{ messageToPhone: string; setMessageTo
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Mic fontSize={'medium'} />
+                <Mic fontSize="medium" />
                 Audio Record & Upload
             </Typography>
 
