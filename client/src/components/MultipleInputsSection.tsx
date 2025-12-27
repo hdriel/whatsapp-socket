@@ -20,6 +20,8 @@ export const MultipleInputsSection: React.FC<{
     setMessageToPhone: (phone: string) => void;
 }> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
     const [currentInput, setCurrentInput] = useState('');
+    const [message, setMessage] = useState('');
+    const [subtitle, setSubtitle] = useState('');
     const [inputs, setInputs] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -55,6 +57,8 @@ export const MultipleInputsSection: React.FC<{
         try {
             const payload = {
                 phoneTo: phoneTo.trim(),
+                message: message.trim(),
+                subtitle: subtitle.trim(),
                 inputs: inputs,
             };
 
@@ -89,6 +93,30 @@ export const MultipleInputsSection: React.FC<{
                     placeholder="e.g., +1234567890"
                     value={phoneTo}
                     onChange={(e) => setPhoneTo(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <TextField
+                    fullWidth
+                    label="Message"
+                    placeholder="Enter your title message"
+                    multiline
+                    rows={1}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <TextField
+                    fullWidth
+                    label="Subtitle"
+                    placeholder="Enter your footer here"
+                    multiline
+                    rows={1}
+                    value={subtitle}
+                    onChange={(e) => setSubtitle(e.target.value)}
                     disabled={loading}
                     sx={{ mb: 2 }}
                 />

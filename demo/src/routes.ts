@@ -102,5 +102,15 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
+    router.post('/api/send-multiple-inputs', async (req: Request, res: Response) => {
+        const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
+        const { phoneTo, message: title, subtitle, inputs } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body, code });
+
+        await was.sendReplyButtonsMessage(phoneTo, { title, subtitle, buttons: inputs });
+
+        res.status(200).json({ message: 'OK' });
+    });
+
     return router;
 };
