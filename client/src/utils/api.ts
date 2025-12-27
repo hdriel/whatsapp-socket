@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
     UPLOAD_IMAGE: '/api/upload-image',
     UPLOAD_AUDIO: '/api/upload-audio',
     UPLOAD_VIDEO: '/api/upload-video',
+    SEND_MESSAGE: '/api/send-message',
     SEND_MESSAGE_ACTIONS: '/api/send-message-actions',
     SEND_MULTIPLE_INPUTS: '/api/send-multiple-inputs',
 };

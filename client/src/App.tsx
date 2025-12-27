@@ -19,6 +19,7 @@ import { ImageUploadSection } from './components/ImageUploadSection';
 import { AudioRecordSection } from './components/AudioRecordSection';
 import { VideoUploadSection } from './components/VideoUploadSection';
 import { MessageActionsSection } from './components/MessageActionsSection';
+import { MessageSection } from './components/MessageSection';
 import { MultipleInputsSection } from './components/MultipleInputsSection';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useQR } from './hooks/useQR.ts';
@@ -53,7 +54,7 @@ const TabPanel = (props: TabPanelProps) => {
 function App() {
     const [currentTab, setCurrentTab] = useState(0);
     const [messageToPhone, setMessageToPhone] = useState('');
-    const connected = useSocketConnection();
+    const [serverConnected, wasClientConnected] = useSocketConnection();
     const { QRImage } = useQR();
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -61,21 +62,26 @@ function App() {
     };
 
     useEffect(() => {
-        if (!connected) setCurrentTab(0);
-    }, [connected]);
+        if (!serverConnected) setCurrentTab(0);
+    }, [serverConnected]);
 
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <Box sx={{ flexGrow: 1 }}>
                 <AppBar position="static" elevation={2}>
-                    <Toolbar>
-                        <Typography variant="h6" component="div" sx={{ flexGrow: 1, alignItems: 'center' }}>
-                            Multi-Feature Communication App
-                        </Typography>
-                        <Tooltip title={connected ? 'Connected' : 'Disconnected'}>
-                            <FiberManualRecord color={connected ? 'secondary' : 'error'} />
+                    <Toolbar sx={{ gap: '0.8em' }}>
+                        <Tooltip title={`whatsapp socket connection status: ${wasClientConnected}`}>
+                            <FiberManualRecord
+                                color={
+                                    ({ open: 'success', connecting: 'warning', close: 'error' }[wasClientConnected] ??
+                                        'disabled') as any
+                                }
+                            />
                         </Tooltip>
+                        <Typography variant="h6" component="div" sx={{ flexGrow: 1, alignItems: 'center' }}>
+                            Whatsapp Socket Demo
+                        </Typography>
                     </Toolbar>
                 </AppBar>
 
@@ -89,12 +95,13 @@ function App() {
                             aria-label="feature tabs"
                         >
                             <Tab label="QR Code" icon={QRImage ? <QrCode2 /> : undefined} iconPosition="start" />
-                            <Tab label="File Upload" disabled={!connected} />
-                            <Tab label="Image Upload" disabled={!connected} />
-                            <Tab label="Audio Record" disabled={!connected} />
-                            <Tab label="Video Upload" disabled={!connected} />
-                            <Tab label="Message Actions" disabled={!connected} />
-                            <Tab label="Multiple Inputs" disabled={!connected} />
+                            <Tab label="Message" disabled={!serverConnected} />
+                            <Tab label="File Upload" disabled={!serverConnected} />
+                            <Tab label="Image Upload" disabled={!serverConnected} />
+                            <Tab label="Audio Record" disabled={!serverConnected} />
+                            <Tab label="Video Upload" disabled={!serverConnected} />
+                            <Tab label="Message Actions" disabled={!serverConnected} />
+                            <Tab label="Multiple Inputs" disabled={!serverConnected} />
                         </Tabs>
                     </Box>
 
@@ -102,21 +109,24 @@ function App() {
                         <GenerateQRSection />
                     </TabPanel>
                     <TabPanel value={currentTab} index={1}>
-                        <FileUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                        <MessageSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={2}>
-                        <ImageUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                        <FileUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={3}>
-                        <AudioRecordSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                        <ImageUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={4}>
-                        <VideoUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                        <AudioRecordSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={5}>
-                        <MessageActionsSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                        <VideoUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={6}>
+                        <MessageActionsSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                    </TabPanel>
+                    <TabPanel value={currentTab} index={7}>
                         <MultipleInputsSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                 </Container>

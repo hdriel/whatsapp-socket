@@ -20,6 +20,7 @@ import {
     type AuthenticationState,
 } from '@fadzzzslebew/baileys';
 import type { Logger as MyLogger } from 'stack-trace-logger';
+import fs from 'node:fs';
 import QRCode from 'qrcode';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
 import P from 'pino';
@@ -34,10 +35,11 @@ export type WhatsappSocketBaseProps = (
 ) & {
     logger?: any;
     mongoCollection?: string;
-    onOpen?: () => Promise<void>;
-    onClose?: () => Promise<void>;
-    onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
-    onQR?: (qr: string, code?: string | null) => Promise<void>;
+    onOpen?: () => Promise<void> | void;
+    onClose?: () => Promise<void> | void;
+    onConnectionStatusChange?: (connectionStatus: 'connecting' | 'close' | 'open') => Promise<void> | void;
+    onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void> | void;
+    onQR?: (qr: string, code?: string | null) => Promise<void> | void;
     debug?: boolean;
     printQRInTerminal?: boolean;
     pairingPhone?: string;
@@ -56,10 +58,11 @@ export class WhatsappSocketBase {
     protected readonly pairingPhone?: string;
     protected readonly customPairingCode?: string;
     protected readonly allowUseLastVersion?: boolean;
-    private onOpen?: () => Promise<void>;
-    private onClose?: () => Promise<void>;
-    private onQR?: (qr: string, code?: string | null) => Promise<void>;
-    private readonly onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void>;
+    private onOpen?: () => Promise<void> | void;
+    private onClose?: () => Promise<void> | void;
+    private onQR?: (qr: string, code?: string | null) => Promise<void> | void;
+    private onConnectionStatusChange?: (connectionStatus: 'open' | 'close' | 'connecting') => Promise<void> | void;
+    private readonly onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void> | void;
     static DEFAULT_COUNTRY_CODE: string = '972';
 
     static formatPhoneNumber(phone: string, countryCode: string = WhatsappSocketBase.DEFAULT_COUNTRY_CODE): string {
@@ -187,6 +190,7 @@ export class WhatsappSocketBase {
         onClose,
         onQR,
         onReceiveMessages,
+        onConnectionStatusChange,
         debug,
         printQRInTerminal,
         pairingPhone,
@@ -202,6 +206,7 @@ export class WhatsappSocketBase {
         this.pairingPhone = pairingPhone;
         this.customPairingCode = customPairingCode;
         this.allowUseLastVersion = allowUseLastVersion;
+        this.onConnectionStatusChange = onConnectionStatusChange;
         this.socket = null;
         this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
@@ -245,6 +250,7 @@ export class WhatsappSocketBase {
         onOpen = this.onOpen,
         onClose = this.onClose,
         onQR = this.onQR,
+        onConnectionStatusChange = this.onConnectionStatusChange,
         pairingPhone: _pairingPhone,
         debug: _debug,
     }: {
@@ -252,9 +258,10 @@ export class WhatsappSocketBase {
         debug?: boolean;
         pairingPhone?: string;
         connectionAttempts?: number;
-        onOpen?: () => Promise<void>;
-        onClose?: () => Promise<void>;
-        onQR?: (qr: string, code?: string | null) => Promise<void>;
+        onOpen?: () => Promise<void> | void;
+        onClose?: () => Promise<void> | void;
+        onQR?: (qr: string, code?: string | null) => Promise<void> | void;
+        onConnectionStatusChange?: (status: 'open' | 'close' | 'connecting') => Promise<void> | void;
     } = {}): Promise<WASocket> {
         const pairingPhone = _pairingPhone ?? this.pairingPhone;
         const { saveCreds, auth } = await this.authenticate();
@@ -314,6 +321,7 @@ export class WhatsappSocketBase {
                 switch (connection) {
                     case 'connecting': {
                         if (debug) this.logger?.debug('WHATSAPP', 'Connecting...');
+                        onConnectionStatusChange?.('connecting');
                         break;
                     }
 
@@ -321,6 +329,7 @@ export class WhatsappSocketBase {
                         if (debug) this.logger?.info('WHATSAPP', 'Connection opened successfully!');
                         this.socket = sock;
                         await onOpen?.();
+                        onConnectionStatusChange?.('open');
                         break;
                     }
 
@@ -350,6 +359,8 @@ export class WhatsappSocketBase {
                             await onClose?.();
                             this.socket = null;
                         }
+
+                        onConnectionStatusChange?.('close');
                         break;
                     }
                 }
@@ -393,11 +404,15 @@ export class WhatsappSocketBase {
     }
 
     async clearAuthState() {
-        const [collection, mongoClient] = await this.getAuthCollection();
+        if (this.mongoURL) {
+            const [collection, mongoClient] = await this.getAuthCollection();
 
-        if (this.debug) this.logger?.info('WHATSAPP', 'Deleting auth state, required to scanning QR again');
-        await collection?.deleteMany({});
-        await mongoClient?.close();
+            if (this.debug) this.logger?.info('WHATSAPP', 'Deleting auth state, required to scanning QR again');
+            await collection?.deleteMany({});
+            await mongoClient?.close();
+        } else if (this.fileAuthStateDirectoryPath) {
+            fs.rmSync(this.fileAuthStateDirectoryPath, { recursive: true, force: true });
+        }
     }
 
     async resetConnection({ pairingPhone }: { pairingPhone?: string } = {}) {
@@ -406,5 +421,9 @@ export class WhatsappSocketBase {
         // Wait a bit before reconnecting
         await new Promise((resolve) => setTimeout(resolve, 2000));
         await this.startConnection({ pairingPhone });
+    }
+
+    async isConnected() {
+        return this.socket !== null && this.socket.user !== undefined;
     }
 }
