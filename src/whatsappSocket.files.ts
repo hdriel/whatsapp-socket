@@ -2,7 +2,7 @@ import { WhatsappSocketStream, type WhatsappSocketStreamProps } from './whatsapp
 export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.stream';
 import fs from 'fs';
 import { ReadStream } from 'node:fs';
-import { getImageBuffer } from './helpers.ts';
+import { getUrlBuffer } from './helpers.ts';
 
 export class WhatsappSocketFiles extends WhatsappSocketStream {
     static DEFAULT_COUNTRY_CODE: string = '972';
@@ -18,9 +18,26 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         }
 
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
-        const imageData = typeof imageSrc === 'string' ? await getImageBuffer(imageSrc) : imageSrc;
+        const imageData = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
         return await super.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
+    }
+
+    async sendVideoMessage(
+        to: string,
+        videoSrc: string | Buffer | ReadStream,
+        caption: string,
+        sendAsGifPlayback = false
+    ) {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection();
+        }
+
+        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
+
+        return await super.sendVideo(jid, videoBuffer, { caption, gifPlayback: sendAsGifPlayback });
     }
 
     async sendFileMessage() {
@@ -45,15 +62,6 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         const audioStream = fs.createReadStream('./voice.ogg');
         await super.sendVoiceNote('972501234567', audioStream, {
             seconds: 15, // duration in seconds
-        });
-    }
-
-    async sendVideoMessage() {
-        // Example 5: Send video with GIF playback
-        const videoBuffer = fs.readFileSync('./animation.mp4');
-        await super.sendVideo('972501234567', videoBuffer, {
-            gifPlayback: true,
-            caption: 'Cool animation!',
         });
     }
 

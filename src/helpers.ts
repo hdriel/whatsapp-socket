@@ -5,7 +5,7 @@ export const getTotalSeconds = (msValue: StringValue) => {
     return value / 1000;
 };
 
-export async function getImageBuffer(url: string) {
+export async function getUrlBuffer(url: string) {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
