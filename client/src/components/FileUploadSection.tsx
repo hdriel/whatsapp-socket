@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Upload } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 
-export const FileUploadSection = () => {
-    const [phoneTo, setPhoneTo] = useState('');
+export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
+    messageToPhone: phoneTo,
+    setMessageToPhone: setPhoneTo,
+}) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

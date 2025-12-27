@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Image } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 
-export const ImageUploadSection = () => {
-    const [phoneTo, setPhoneTo] = useState('');
+export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
+    messageToPhone: phoneTo,
+    setMessageToPhone: setPhoneTo,
+}) => {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ export const ImageUploadSection = () => {
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Image fontSize="large" />
+                <Image fontSize="medium" />
                 Image Upload
             </Typography>
 

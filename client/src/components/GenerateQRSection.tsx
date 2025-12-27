@@ -26,15 +26,15 @@ export const GenerateQRSection = () => {
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <QrCode fontSize="large" />
+                <QrCode fontSize="medium" />
                 Generate QR Code
             </Typography>
 
             <Box sx={{ mt: 2 }}>
                 <TextField
                     fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
+                    label="Peering Phone Number"
+                    placeholder="e.g., 050-000-0000"
                     value={phoneTo}
                     onChange={(e) => setPhoneTo(e.target.value)}
                     disabled={loading}
@@ -55,7 +55,7 @@ export const GenerateQRSection = () => {
                     <Box sx={{ mt: 3 }}>
                         {QRCode && (
                             <Alert severity="success" sx={{ mb: 2 }}>
-                                Peering Phone Number: {QRCode}
+                                Peering Phone Number Code: {QRCode}
                             </Alert>
                         )}
                         {QRImage && (

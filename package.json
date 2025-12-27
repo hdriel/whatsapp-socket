@@ -11,8 +11,8 @@
         "build:watch": "tsc --watch",
         "format": "prettier --write .",
         "clean": "rimraf ./dist",
-        "yalc:publish": "pnpm run build && yalc publish --private --push",
-        "yalc:attach": "cd demo && pnpm add @hdriel/whatsapp-socket"
+        "yalc:publish": "pnpm run build && yalc publish --private --push && npm run yalc:attach",
+        "yalc:attach": "cd demo && yalc add @hdriel/whatsapp-socket"
     },
     "keywords": [
         "baileys",

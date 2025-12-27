@@ -52,6 +52,7 @@ const TabPanel = (props: TabPanelProps) => {
 
 function App() {
     const [currentTab, setCurrentTab] = useState(0);
+    const [messageToPhone, setMessageToPhone] = useState('');
     const connected = useSocketConnection();
     const { QRImage } = useQR();
 
@@ -101,22 +102,22 @@ function App() {
                         <GenerateQRSection />
                     </TabPanel>
                     <TabPanel value={currentTab} index={1}>
-                        <FileUploadSection />
+                        <FileUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={2}>
-                        <ImageUploadSection />
+                        <ImageUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={3}>
-                        <AudioRecordSection />
+                        <AudioRecordSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={4}>
-                        <VideoUploadSection />
+                        <VideoUploadSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={5}>
-                        <MessageActionsSection />
+                        <MessageActionsSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                     <TabPanel value={currentTab} index={6}>
-                        <MultipleInputsSection />
+                        <MultipleInputsSection messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
                     </TabPanel>
                 </Container>
             </Box>

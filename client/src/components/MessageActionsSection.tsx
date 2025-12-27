@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, Grid } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 import { MessageAction } from '../types';
 
-export const MessageActionsSection = () => {
-    const [phoneTo, setPhoneTo] = useState('');
+export const MessageActionsSection: React.FC<{
+    messageToPhone: string;
+    setMessageToPhone: (phone: string) => void;
+}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
     const [message, setMessage] = useState('');
     const [actions, setActions] = useState<MessageAction>({
         copyButton: '',

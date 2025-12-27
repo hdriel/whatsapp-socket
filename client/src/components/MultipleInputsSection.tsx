@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     TextField,
     Button,
@@ -15,8 +15,10 @@ import {
 import { List as ListIcon, ControlPoint as Plus, Delete as Trash2 } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 
-export const MultipleInputsSection = () => {
-    const [phoneTo, setPhoneTo] = useState('');
+export const MultipleInputsSection: React.FC<{
+    messageToPhone: string;
+    setMessageToPhone: (phone: string) => void;
+}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
     const [currentInput, setCurrentInput] = useState('');
     const [inputs, setInputs] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);

@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { SmartDisplay as Video } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 
-export const VideoUploadSection = () => {
-    const [phoneTo, setPhoneTo] = useState('');
+export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
+    messageToPhone: phoneTo,
+    setMessageToPhone: setPhoneTo,
+}) => {
     const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
     const [videoPreview, setVideoPreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -57,7 +59,7 @@ export const VideoUploadSection = () => {
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Video fontSize="large" />
+                <Video fontSize="medium" />
                 Video Upload
             </Typography>
 
