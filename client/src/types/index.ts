@@ -5,8 +5,9 @@ export interface ApiResponse {
 }
 
 export interface MessageAction {
-    copyButton?: string;
-    urlLink?: string;
-    callAction?: string;
-    email?: string;
+    copyButton?: [string, string];
+    urlLink?: [string, string];
+    callTo?: [string, string];
+    email?: [string, string];
+    reminder?: [string, number];
 }

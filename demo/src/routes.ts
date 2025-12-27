@@ -29,7 +29,12 @@ export const initRouters = (io: SocketIO) => {
             io.emit('qr-connected');
         },
     });
-    was.startConnection().catch(() => null);
+    was.startConnection()
+        .then(() => {
+            const connected = was.isConnected();
+            io.emit('connection-status', connected ? 'open' : 'close');
+        })
+        .catch(() => null);
 
     const router = express.Router();
 
@@ -65,25 +70,34 @@ export const initRouters = (io: SocketIO) => {
     });
 
     router.post('/api/send-message-actions', async (req: Request, res: Response) => {
-        const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
-        const { phone, message, subtitle, tel, url, authCode } = req.body;
-        logger.info(null, 'Sending message...', { ...req.body, code });
+        // const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
+        const { phoneTo: phone, message, subtitle, actions } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
 
         const buttons = [];
-        if (url) buttons.push({ label: 'קישור לאתר', url });
-        if (authCode) buttons.push({ label: 'העתק קוד אישי', copy: code });
-        if (tel) buttons.push({ label: 'חיוג למספר', tel });
-
-        if (buttons.length) {
-            await was.sendButtonsMessage(phone, {
-                title: message || 'שדה חובה! שכחת למלא אותו בטופס',
-                subtitle,
-                buttons,
+        if (actions?.urlLink?.[1]) buttons.push({ label: actions.urlLink[0] ?? 'link', url: actions.urlLink[1] });
+        if (actions?.copyButton?.[1])
+            buttons.push({ label: actions.copyButton[0] ?? 'copy', copy: actions.copyButton[1] });
+        if (actions?.callTo?.[1]) buttons.push({ label: actions.callTo[0] ?? 'tel', tel: actions.callTo[1] });
+        if (actions?.email?.[1]) buttons.push({ label: actions.email[0] ?? 'email', email: actions.email[1] });
+        if (actions?.reminder?.[1])
+            buttons.push({
+                label: actions.reminder[0] ?? 'reminder',
+                reminderName: 'reminder name',
+                reminderOn: '20m',
+                // reminderDate: actions.reminder[1],
             });
-        } else {
-            await was.sendTextMessage(phone, message);
-            // await was.sendReplyButtonsMessage(phone, { title: message, subtitle, buttons: ['junior', 'medium', 'senior'] });
+
+        if (!buttons.length) {
+            res.status(403).json({ message: 'Missing button actions' });
+            return;
         }
+
+        await was.sendButtonsMessage(phone, {
+            title: message || 'שדה חובה! שכחת למלא אותו בטופס',
+            subtitle,
+            buttons,
+        });
 
         res.status(200).json({ message: 'OK' });
     });

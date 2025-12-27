@@ -2,10 +2,34 @@ import { type MiscMessageGenerationOptions, generateWAMessageFromContent } from 
 import { WAProto as proto } from '@fadzzzslebew/baileys';
 import { WhatsappSocketBase, type WhatsappSocketBaseProps } from './whatsappSocket.base.ts';
 export type { WhatsappSocketBaseProps as WhatsappSocketMessagesProps } from './whatsappSocket.base.ts';
+import { type StringValue } from 'ms';
+import { getTotalSeconds } from './helpers.ts';
 
 type ButtonURL = { label: string; url: string };
 type ButtonCopy = { label: string; copy: string };
 type ButtonPhone = { label: string; tel: string };
+type ButtonEmail = { label: string; email: string };
+type ButtonReminder = { label: string; reminderName: string } & (
+    | { reminderOn?: StringValue; reminderDate: number }
+    | { reminderOn: StringValue; reminderDate?: number | Date | string }
+);
+
+type ButtonParamsJson = {
+    display_text: string;
+    url?: string;
+    copy_code?: string;
+    phone_number?: string;
+    email?: string;
+    reminder_name?: string;
+    reminder_timestamp?: number;
+};
+
+type CallToActionButtons = Array<
+    ButtonURL | ButtonCopy | ButtonPhone
+    // ButtonEmail | ButtonReminder // not supported
+>;
+
+type CallToActionFullButtons = Array<ButtonURL | ButtonCopy | ButtonPhone | ButtonEmail | ButtonReminder>;
 
 export class WhatsappSocketMessages extends WhatsappSocketBase {
     static DEFAULT_COUNTRY_CODE: string = '972';
@@ -30,15 +54,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
 
     async sendButtonsMessage(
         to: string,
-        {
-            subtitle,
-            title,
-            buttons,
-        }: {
-            title: string;
-            subtitle?: string;
-            buttons: Array<ButtonURL | ButtonCopy | ButtonPhone>;
-        }
+        { subtitle, title, buttons }: { title: string; subtitle?: string; buttons: CallToActionButtons }
     ): Promise<any> {
         if (!title || !buttons.length) {
             throw new Error('sendButtonsMessage: No title or buttons required field found.');
@@ -50,6 +66,45 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
         }
 
         const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
+
+        const buttonsValue = (buttons as CallToActionFullButtons)
+            ?.map((btn) => {
+                const buttonParamsJson: ButtonParamsJson = { display_text: btn.label };
+
+                let name: string;
+                switch (true) {
+                    case !!(btn as ButtonURL).url:
+                        name = 'cta_url';
+                        buttonParamsJson.url = (btn as ButtonURL).url;
+                        break;
+                    case !!(btn as ButtonCopy).copy:
+                        name = 'cta_copy';
+                        buttonParamsJson.copy_code = (btn as ButtonCopy).copy;
+                        break;
+                    case !!(btn as ButtonPhone).tel:
+                        name = 'cta_call';
+                        buttonParamsJson.phone_number = (btn as ButtonPhone).tel;
+                        break;
+                    case !!(btn as ButtonEmail).email:
+                        name = 'cta_email';
+                        buttonParamsJson.email = (btn as ButtonEmail).email;
+                        break;
+                    case !!((btn as ButtonReminder).reminderOn || (btn as ButtonReminder).reminderDate):
+                        name = 'cta_reminder';
+                        const { reminderOn, reminderDate } = btn as ButtonReminder;
+                        buttonParamsJson.reminder_name = (btn as ButtonReminder).reminderName;
+                        buttonParamsJson.reminder_timestamp = reminderDate
+                            ? Math.floor(+new Date(reminderDate) / 1000)
+                            : Math.floor(Date.now() / 1000) + getTotalSeconds(reminderOn ?? '0s');
+                        break;
+                    default:
+                        name = '';
+                        break;
+                }
+
+                return { name, buttonParamsJson: JSON.stringify(buttonParamsJson) };
+            })
+            .filter((v) => v.name);
 
         const msg = generateWAMessageFromContent(
             jid,
@@ -63,40 +118,9 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
                             ...(subtitle && {
                                 footer: proto.Message.InteractiveMessage.Footer.create({ text: subtitle }),
                             }),
-                            ...(!!buttons?.length && {
+                            ...(!!buttonsValue?.length && {
                                 nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                                    buttons: buttons
-                                        .map((btn) => {
-                                            const buttonParamsJson = {
-                                                display_text: btn.label,
-                                                ...((btn as ButtonURL).url && { url: (btn as ButtonURL).url }),
-                                                ...((btn as ButtonCopy).copy && {
-                                                    copy_code: (btn as ButtonCopy).copy,
-                                                }),
-                                                ...((btn as ButtonPhone).tel && {
-                                                    phone_number: (btn as ButtonPhone).tel,
-                                                }),
-                                            };
-
-                                            let name: string;
-                                            switch (true) {
-                                                case !!buttonParamsJson.url:
-                                                    name = 'cta_url';
-                                                    break;
-                                                case !!buttonParamsJson.copy_code:
-                                                    name = 'cta_copy';
-                                                    break;
-                                                case !!buttonParamsJson.phone_number:
-                                                    name = 'cta_call';
-                                                    break;
-                                                default:
-                                                    name = '';
-                                                    break;
-                                            }
-
-                                            return { name, buttonParamsJson: JSON.stringify(buttonParamsJson) };
-                                        })
-                                        .filter((v) => v.name),
+                                    buttons: buttonsValue,
                                 }),
                             }),
                         }),
@@ -106,9 +130,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
             { userJid: jid }
         );
 
-        return this.socket.relayMessage(jid, msg.message!, {
-            messageId: msg.key.id!,
-        });
+        return this.socket.relayMessage(jid, msg.message!, { messageId: msg.key.id! });
     }
 
     async sendReplyButtonsMessage(

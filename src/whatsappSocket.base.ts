@@ -423,7 +423,7 @@ export class WhatsappSocketBase {
         await this.startConnection({ pairingPhone });
     }
 
-    async isConnected() {
+    isConnected() {
         return this.socket !== null && this.socket.user !== undefined;
     }
 }

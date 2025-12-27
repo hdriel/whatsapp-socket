@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, Grid } from '@mui/material';
+import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, Grid, Stack } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api';
 import { MessageAction } from '../types';
@@ -9,18 +9,24 @@ export const MessageActionsSection: React.FC<{
     setMessageToPhone: (phone: string) => void;
 }> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
     const [message, setMessage] = useState('');
+    const [subtitle, setSubtitle] = useState('');
     const [actions, setActions] = useState<MessageAction>({
-        copyButton: '',
-        urlLink: '',
-        callAction: '',
-        email: '',
+        copyButton: ['', ''],
+        urlLink: ['', ''],
+        callTo: ['', ''],
+        email: ['', ''],
+        reminder: ['', 0],
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const handleActionChange = (field: keyof MessageAction, value: string) => {
-        setActions((prev) => ({ ...prev, [field]: value }));
+    const handleActionChange = (
+        field: keyof MessageAction,
+        label: string | undefined,
+        value: string | number | undefined
+    ) => {
+        setActions((prev) => ({ ...prev, [field]: [label, value] }));
     };
 
     const handleSubmit = async () => {
@@ -42,11 +48,13 @@ export const MessageActionsSection: React.FC<{
             const payload = {
                 phoneTo: phoneTo.trim(),
                 message: message.trim(),
+                subtitle: subtitle.trim(),
                 actions: {
-                    ...(actions.copyButton && { copyButton: actions.copyButton }),
-                    ...(actions.urlLink && { urlLink: actions.urlLink }),
-                    ...(actions.callAction && { callAction: actions.callAction }),
-                    ...(actions.email && { email: actions.email }),
+                    ...(actions.copyButton?.[1].trim() && { copyButton: actions.copyButton }),
+                    ...(actions.urlLink?.[1].trim() && { urlLink: actions.urlLink }),
+                    ...(actions.callTo?.[1].trim() && { callTo: actions.callTo }),
+                    ...(actions.email?.[1].trim() && { email: actions.email }),
+                    ...(actions.reminder?.[1] && { reminder: actions.reminder }),
                 },
             };
 
@@ -80,7 +88,7 @@ export const MessageActionsSection: React.FC<{
                 <TextField
                     fullWidth
                     label="Message"
-                    placeholder="Enter your message"
+                    placeholder="Enter your title message"
                     multiline
                     rows={3}
                     value={message}
@@ -89,50 +97,151 @@ export const MessageActionsSection: React.FC<{
                     sx={{ mb: 2 }}
                 />
 
+                <TextField
+                    fullWidth
+                    label="Subtitle"
+                    placeholder="Enter your footer here"
+                    multiline
+                    rows={3}
+                    value={subtitle}
+                    onChange={(e) => setSubtitle(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
                 <Typography variant="subtitle2" gutterBottom>
                     Optional Actions:
                 </Typography>
 
-                <Grid container spacing={2} sx={{ mb: 2 }}>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            label="Copy Button Value"
-                            placeholder="Text to copy"
-                            value={actions.copyButton}
-                            onChange={(e) => handleActionChange('copyButton', e.target.value)}
-                            disabled={loading}
-                        />
+                <Grid container spacing={2} sx={{ mb: 2 }} width="100%">
+                    <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
+                        <fieldset style={{ borderRadius: '8px' }}>
+                            <legend>Copy Button</legend>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Label"
+                                    placeholder="Text to copy"
+                                    value={actions.copyButton?.[0]}
+                                    onChange={(e) =>
+                                        handleActionChange('copyButton', e.target.value, actions.copyButton?.[1])
+                                    }
+                                    disabled={loading}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Value"
+                                    placeholder="Text to copy"
+                                    value={actions.copyButton?.[1]}
+                                    onChange={(e) =>
+                                        handleActionChange('copyButton', actions.copyButton?.[0], e.target.value)
+                                    }
+                                    disabled={loading}
+                                />
+                            </Stack>
+                        </fieldset>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            label="URL Link"
-                            placeholder="https://example.com"
-                            value={actions.urlLink}
-                            onChange={(e) => handleActionChange('urlLink', e.target.value)}
-                            disabled={loading}
-                        />
+                    <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
+                        <fieldset style={{ borderRadius: '8px' }}>
+                            <legend>URL Link</legend>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Label"
+                                    placeholder="Text of link"
+                                    value={actions.urlLink?.[0]}
+                                    onChange={(e) =>
+                                        handleActionChange('urlLink', e.target.value, actions.urlLink?.[1])
+                                    }
+                                    disabled={loading}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Value"
+                                    placeholder="https://example.com"
+                                    value={actions.urlLink?.[1]}
+                                    onChange={(e) =>
+                                        handleActionChange('urlLink', actions.urlLink?.[0], e.target.value)
+                                    }
+                                    disabled={loading}
+                                />
+                            </Stack>
+                        </fieldset>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            label="Call Action"
-                            placeholder="+1234567890"
-                            value={actions.callAction}
-                            onChange={(e) => handleActionChange('callAction', e.target.value)}
-                            disabled={loading}
-                        />
+                    <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
+                        <fieldset style={{ borderRadius: '8px' }}>
+                            <legend>Call To</legend>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Label"
+                                    placeholder="Call Me"
+                                    value={actions.callTo?.[0]}
+                                    onChange={(e) => handleActionChange('callTo', e.target.value, actions.callTo?.[1])}
+                                    disabled={loading}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Value"
+                                    placeholder="+1234567890"
+                                    value={actions.callTo?.[1]}
+                                    onChange={(e) => handleActionChange('callTo', actions.callTo?.[0], e.target.value)}
+                                    disabled={loading}
+                                />
+                            </Stack>
+                        </fieldset>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            fullWidth
-                            label="Email"
-                            placeholder="email@example.com"
-                            value={actions.email}
-                            onChange={(e) => handleActionChange('email', e.target.value)}
-                            disabled={loading}
-                        />
+                    <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
+                        <fieldset style={{ borderRadius: '8px' }}>
+                            <legend>Email To</legend>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Label"
+                                    placeholder="Call Me"
+                                    value={actions.email?.[0]}
+                                    onChange={(e) => handleActionChange('email', e.target.value, actions.email?.[1])}
+                                    disabled={loading}
+                                />
+                                <TextField
+                                    fullWidth
+                                    label="Value"
+                                    placeholder="email@example.com"
+                                    value={actions.email?.[1]}
+                                    onChange={(e) => handleActionChange('email', actions.email?.[0], e.target.value)}
+                                    disabled={loading}
+                                />
+                            </Stack>
+                        </fieldset>
+                    </Grid>
+
+                    <Grid flexGrow={1} size={{ xs: 12, sm: 6 }}>
+                        <fieldset style={{ borderRadius: '8px' }}>
+                            <legend>Reminder</legend>
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Name"
+                                    placeholder="Event Name"
+                                    value={actions.reminder?.[0]}
+                                    onChange={(e) =>
+                                        handleActionChange('reminder', e.target.value, actions.reminder?.[1])
+                                    }
+                                    disabled={loading}
+                                />
+                                <TextField
+                                    type="date"
+                                    fullWidth
+                                    label="Value"
+                                    placeholder="Event Time"
+                                    value={actions.reminder?.[1]}
+                                    onChange={(e) =>
+                                        handleActionChange('reminder', actions.reminder?.[0], e.target.value)
+                                    }
+                                    disabled={loading}
+                                />
+                            </Stack>
+                        </fieldset>
                     </Grid>
                 </Grid>
 
