@@ -19,6 +19,7 @@ import {
     useMultiFileAuthState,
     type AuthenticationState,
 } from '@fadzzzslebew/baileys';
+import { type StringValue } from 'ms';
 import type { Logger as MyLogger } from 'stack-trace-logger';
 import fs from 'node:fs';
 import QRCode from 'qrcode';
@@ -26,6 +27,7 @@ import { type Collection, type Document as MongoDocument, MongoClient } from 'mo
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState.ts';
+import { sleep } from './helpers.ts';
 
 const pinoLogger: any = P({ level: 'silent' });
 
@@ -64,6 +66,7 @@ export class WhatsappSocketBase {
     private onConnectionStatusChange?: (connectionStatus: 'open' | 'close' | 'connecting') => Promise<void> | void;
     private readonly onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void> | void;
     static DEFAULT_COUNTRY_CODE: string = '972';
+    static CONNECTION_TIMEOUT: StringValue = '2s';
 
     static formatPhoneNumber(phone: string, countryCode: string = WhatsappSocketBase.DEFAULT_COUNTRY_CODE): string {
         if (phone.endsWith('@s.whatsapp.net')) return phone;
@@ -262,7 +265,7 @@ export class WhatsappSocketBase {
         onClose?: () => Promise<void> | void;
         onQR?: (qr: string, code?: string | null) => Promise<void> | void;
         onConnectionStatusChange?: (status: 'open' | 'close' | 'connecting') => Promise<void> | void;
-    } = {}): Promise<WASocket> {
+    } = {}): Promise<WASocket | null> {
         const pairingPhone = _pairingPhone ?? this.pairingPhone;
         const { saveCreds, auth } = await this.authenticate();
         const debug = _debug === undefined ? this.debug : _debug;
@@ -277,122 +280,127 @@ export class WhatsappSocketBase {
                 });
         }
 
-        const connect = () => {
-            const sock = makeWASocket({
-                version: this.allowUseLastVersion ? version : [2, 3000, 1027934701],
-                logger: pinoLogger,
-                browser: ['Ubuntu', 'Chrome', '20.0.04'],
-                syncFullHistory: false, // Don't sync full history on first connect
-                shouldSyncHistoryMessage: () => false,
-                shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
-                ...options,
-                printQRInTerminal: false,
-                ...{ auth },
-            });
-
-            // CRITICAL: Handle connection updates properly
-            sock.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect, qr } = update;
-
-                if (qr) {
-                    if (debug) this.logger?.info('WHATSAPP', 'QR Code received', { qr });
-                    if (this.printQRInTerminal) {
-                        const qrcode = await WhatsappSocketBase.qrToTerminalString(qr, { small: true }).catch(
-                            () => null
-                        );
-                        console.log(qrcode);
-                    }
-
-                    // @ts-ignore
-                    const pair = this.customPairingCode
-                        ? WhatsappSocketBase.randomPairingCode(this.customPairingCode)
-                        : undefined;
-
-                    const pairing = pairingPhone ? WhatsappSocketBase.formatPhoneNumber(pairingPhone) : null;
-                    const code = pairing ? await sock.requestPairingCode(pairing) : null;
-
-                    if (debug && this.printQRInTerminal) {
-                        this.logger?.info('WHATSAPP', 'QR Pairing Code', { code, pairingPhone: pairing });
-                    }
-
-                    await onQR?.(qr, code);
-                }
-
-                switch (connection) {
-                    case 'connecting': {
-                        if (debug) this.logger?.debug('WHATSAPP', 'Connecting...');
-                        onConnectionStatusChange?.('connecting');
-                        break;
-                    }
-
-                    case 'open': {
-                        if (debug) this.logger?.info('WHATSAPP', 'Connection opened successfully!');
-                        this.socket = sock;
-                        await onOpen?.();
-                        onConnectionStatusChange?.('open');
-                        break;
-                    }
-
-                    case 'close': {
-                        const shouldReconnect =
-                            connectionAttempts-- > 0 &&
-                            (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
-
-                        const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
-                        const errorMessage = lastDisconnect?.error?.message;
-
-                        if (debug) {
-                            this.logger?.info('WHATSAPP', 'Connection closed', {
-                                statusCode,
-                                errorMessage,
-                                shouldReconnect,
-                            });
-                        }
-
-                        // IMPORTANT: Error code 515 (Stream Errored) after QR scan is NORMAL
-                        // The connection must restart after pairing - this is expected behavior
-                        if (shouldReconnect && connectionAttempts) {
-                            if (debug) this.logger?.info('WHATSAPP', 'Reconnecting...');
-                            setTimeout(connect, 1000);
-                        } else {
-                            if (debug) this.logger?.warn('WHATSAPP', 'Logged out, clearing auth state');
-                            await onClose?.();
-                            this.socket = null;
-                        }
-
-                        onConnectionStatusChange?.('close');
-                        break;
-                    }
-                }
-            });
-
-            // Save credentials when they update
-            sock.ev.on('creds.update', saveCreds);
-
-            // Handle messages
-            if (this.onReceiveMessages && typeof this.onReceiveMessages === 'function') {
-                sock.ev.on('messages.upsert', async ({ messages, type }) => {
-                    this.logger?.info('WHATSAPP', 'Received messages', { type, totalMessages: messages.length });
-                    this.onReceiveMessages?.(messages, type);
-
-                    // const msg = messages[0]
-                    // if (!msg.key.fromMe && msg.message?.conversation) {
-                    //     const sender = msg.key.remoteJid
-                    //     const text = msg.message.conversation.toLowerCase()
-                    //
-                    //     console.log(`📩 Message from ${sender}: ${text}`)
-                    //
-                    //     if (text === 'hi') {
-                    //         await sock.sendMessage(sender, { text: 'Hello! How can I help you today?' })
-                    //     }
-                    // }
+        const connect = async (): Promise<WASocket | null> => {
+            return new Promise((resolve) => {
+                const sock = makeWASocket({
+                    version: this.allowUseLastVersion ? version : [2, 3000, 1027934701],
+                    logger: pinoLogger,
+                    browser: ['Ubuntu', 'Chrome', '20.0.04'],
+                    syncFullHistory: false, // Don't sync full history on first connect
+                    shouldSyncHistoryMessage: () => false,
+                    shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
+                    ...options,
+                    printQRInTerminal: false,
+                    ...{ auth },
                 });
-            }
 
-            return sock;
+                // CRITICAL: Handle connection updates properly
+                sock.ev.on('connection.update', async (update) => {
+                    const { connection, lastDisconnect, qr } = update;
+
+                    if (qr) {
+                        if (debug) this.logger?.info('WHATSAPP', 'QR Code received', { qr });
+                        if (this.printQRInTerminal) {
+                            const qrcode = await WhatsappSocketBase.qrToTerminalString(qr, { small: true }).catch(
+                                () => null
+                            );
+                            console.log(qrcode);
+                        }
+
+                        // @ts-ignore
+                        const pair = this.customPairingCode
+                            ? WhatsappSocketBase.randomPairingCode(this.customPairingCode)
+                            : undefined;
+
+                        const pairing = pairingPhone ? WhatsappSocketBase.formatPhoneNumber(pairingPhone) : null;
+                        const code = pairing ? await sock.requestPairingCode(pairing) : null;
+
+                        if (debug && this.printQRInTerminal) {
+                            this.logger?.info('WHATSAPP', 'QR Pairing Code', { code, pairingPhone: pairing });
+                        }
+
+                        await onQR?.(qr, code);
+                    }
+
+                    switch (connection) {
+                        case 'connecting': {
+                            if (debug) this.logger?.debug('WHATSAPP', 'Connecting...');
+                            onConnectionStatusChange?.('connecting');
+                            break;
+                        }
+
+                        case 'open': {
+                            if (debug) this.logger?.info('WHATSAPP', 'Connection opened successfully!');
+                            this.socket = sock;
+                            await onOpen?.();
+                            onConnectionStatusChange?.('open');
+                            resolve(this.socket);
+                            break;
+                        }
+
+                        case 'close': {
+                            const shouldReconnect =
+                                connectionAttempts-- > 0 &&
+                                (lastDisconnect?.error as Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+
+                            const statusCode = (lastDisconnect?.error as Boom)?.output?.statusCode;
+                            const errorMessage = lastDisconnect?.error?.message;
+
+                            if (debug) {
+                                this.logger?.info('WHATSAPP', 'Connection closed', {
+                                    statusCode,
+                                    errorMessage,
+                                    shouldReconnect,
+                                });
+                            }
+
+                            // IMPORTANT: Error code 515 (Stream Errored) after QR scan is NORMAL
+                            // The connection must restart after pairing - this is expected behavior
+                            if (shouldReconnect && connectionAttempts) {
+                                if (debug) this.logger?.info('WHATSAPP', 'Reconnecting...');
+                                await sleep(WhatsappSocketBase.CONNECTION_TIMEOUT);
+                                resolve(connect());
+                            } else {
+                                if (debug) this.logger?.warn('WHATSAPP', 'Logged out, clearing auth state');
+                                await onClose?.();
+                                this.socket = null;
+                                resolve(this.socket);
+                            }
+
+                            onConnectionStatusChange?.('close');
+                            break;
+                        }
+                    }
+                });
+
+                // Save credentials when they update
+                sock.ev.on('creds.update', saveCreds);
+
+                // Handle messages
+                if (this.onReceiveMessages && typeof this.onReceiveMessages === 'function') {
+                    sock.ev.on('messages.upsert', async ({ messages, type }) => {
+                        this.logger?.info('WHATSAPP', 'Received messages', { type, totalMessages: messages.length });
+                        this.onReceiveMessages?.(messages, type);
+
+                        // const msg = messages[0]
+                        // if (!msg.key.fromMe && msg.message?.conversation) {
+                        //     const sender = msg.key.remoteJid
+                        //     const text = msg.message.conversation.toLowerCase()
+                        //
+                        //     console.log(`📩 Message from ${sender}: ${text}`)
+                        //
+                        //     if (text === 'hi') {
+                        //         await sock.sendMessage(sender, { text: 'Hello! How can I help you today?' })
+                        //     }
+                        // }
+                    });
+                }
+            });
         };
 
-        return connect();
+        const socket = await connect();
+
+        return socket;
     }
 
     async closeConnection() {

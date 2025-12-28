@@ -63,3 +63,7 @@ export function getFilenameFromStream(stream: ReadStream): string | undefined {
     }
     return undefined;
 }
+
+export const sleep = (timeout: StringValue | number) => {
+    return new Promise((resolve) => setTimeout(resolve, typeof timeout === 'number' ? timeout : ms(timeout)));
+};
