@@ -17,16 +17,13 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         imageSrc: string | Buffer<any> | ReadStream,
         { caption = '', filename }: { caption?: string; filename?: string } = {}
     ) {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const imageData = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send image message', { jid, caption, filename });
-        return await super.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
+        return await this.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
     }
 
     async sendVideoMessage(
@@ -38,16 +35,13 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
             sendAsGifPlayback: gifPlayback = false,
         }: { caption?: string; sendAsGifPlayback?: boolean; filename?: string } = {}
     ) {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send video message', { jid, caption, filename, gifPlayback });
-        return await super.sendVideo(jid, videoBuffer, { caption, gifPlayback, ...(filename && { filename }) });
+        return await this.sendVideo(jid, videoBuffer, { caption, gifPlayback, ...(filename && { filename }) });
     }
 
     async sendFileMessage(
@@ -67,10 +61,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
             jpegThumbnailSrc?: string | Buffer<any> | ReadStream;
         } = {}
     ) {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const fileBuffer = typeof fileSrc === 'string' ? await getUrlBuffer(fileSrc) : fileSrc;
@@ -101,7 +92,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
                 replyToMessageId,
                 includeJpegThumbnail: !!jpegThumbnailBuffer,
             });
-        return await super.sendDocument(jid, fileBuffer, {
+        return await this.sendDocument(jid, fileBuffer, {
             caption,
             mimetype,
             filename,
@@ -120,10 +111,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
             seconds,
         }: { filename?: string; replyToMessageId?: string; mimetype?: string; seconds?: number } = {}
     ) {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const audioBuffer = typeof audioSrc === 'string' ? await getUrlBuffer(audioSrc) : audioSrc;
@@ -139,7 +127,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
             });
         }
 
-        return await super.sendAudio(jid, audioBuffer, {
+        return await this.sendAudio(jid, audioBuffer, {
             ...(filename && { filename }),
             ...(mimetype && { mimetype: mimetype }),
             ...(durationInSeconds && { seconds: durationInSeconds }),
@@ -162,15 +150,12 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
         imageSrc: string | Buffer<any> | ReadStream,
         { replyToMessageId }: { replyToMessageId?: string } = {}
     ) {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
         const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid, replyToMessageId });
-        await super.sendSticker(jid, stickerBuffer, { replyToMessageId });
+        await this.sendSticker(jid, stickerBuffer, { replyToMessageId });
     }
 }

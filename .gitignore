@@ -24,7 +24,7 @@ dist-ssr
 *.sln
 *.sw?
 
-demo/.yalc
-demo/yalc.lock
+demo-server/.yalc
+demo-server/yalc.lock
 authState/my-profile
 !authState/my-profile/.gitkeep

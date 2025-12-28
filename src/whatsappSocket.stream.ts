@@ -1,11 +1,10 @@
 import { type AnyMessageContent } from '@fadzzzslebew/baileys';
 import { Readable } from 'stream';
 import { WhatsappSocketMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.messages.ts';
+import { MIME_TYPES } from './helpers.ts';
 export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.messages';
 
 export class WhatsappSocketStream extends WhatsappSocketMessages {
-    static DEFAULT_COUNTRY_CODE: string = '972';
-
     constructor(props: WhatsappSocketMessagesProps) {
         super(props);
     }
@@ -26,10 +25,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
             jpegThumbnail?: Buffer | string; // Thumbnail for videos/documents
         }
     ): Promise<any> {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketStream.formatPhoneNumberToWhatsappPattern(to);
 
@@ -62,47 +58,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
 
     private getMimetypeFromFilename(filename: string): string {
         const ext = filename.split('.').pop()?.toLowerCase();
-
-        const mimetypes: { [key: string]: string } = {
-            // Images
-            jpg: 'image/jpeg',
-            jpeg: 'image/jpeg',
-            png: 'image/png',
-            gif: 'image/gif',
-            webp: 'image/webp',
-            bmp: 'image/bmp',
-            svg: 'image/svg+xml',
-
-            // Videos
-            mp4: 'video/mp4',
-            avi: 'video/x-msvideo',
-            mov: 'video/quicktime',
-            mkv: 'video/x-matroska',
-            webm: 'video/webm',
-
-            // Audio
-            mp3: 'audio/mpeg',
-            wav: 'audio/wav',
-            ogg: 'audio/ogg',
-            opus: 'audio/opus',
-            aac: 'audio/aac',
-            m4a: 'audio/mp4',
-
-            // Documents
-            pdf: 'application/pdf',
-            doc: 'application/msword',
-            docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            xls: 'application/vnd.ms-excel',
-            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            ppt: 'application/vnd.ms-powerpoint',
-            pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            txt: 'text/plain',
-            zip: 'application/zip',
-            rar: 'application/x-rar-compressed',
-            '7z': 'application/x-7z-compressed',
-        };
-
-        return mimetypes[ext || ''] || 'application/octet-stream';
+        return MIME_TYPES[ext || ''] || 'application/octet-stream';
     }
 
     private async createFileMessage(
@@ -149,6 +105,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
                         ...(options.seconds && { seconds: options.seconds }),
                     };
                 }
+
                 return {
                     audio: buffer,
                     mimetype,
@@ -266,10 +223,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
             replyToMessageId?: string;
         } = {}
     ): Promise<any> {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketStream.formatPhoneNumberToWhatsappPattern(to);
         const buffer =

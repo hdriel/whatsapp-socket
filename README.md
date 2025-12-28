@@ -69,7 +69,7 @@ const client = new WhatsappSocket({
   fileAuthStateDirectoryPath: path.resolve(__dirname, './authState/my-profile'),
   
   // Or use MongoDB for production (optional)
-  // mongoURL: 'mongodb://localhost:27017/whatsapp-sessions',
+  // mongoURL: 'mongodb://localhost:27017/whatsapp-sessions-app',
     
   // logger, // Custom logger (npm stack-trace-logger) instance (optional)
   
@@ -78,8 +78,11 @@ const client = new WhatsappSocket({
   
   // Enable debug mode
   debug: true,
-  
-  // Connection status callback
+
+   // When failed to connecting before sending messages
+  onPreConnectionSendMessageFailed: (error: Error) => {...}
+
+   // Connection status callback 
   onConnectionStatusChange: (status: 'open' | 'close' | 'connecting') => {
     console.log('Connection status:', status);
   },
@@ -313,7 +316,7 @@ app.use(express.json());
 
 // Initialize WhatsApp client
 const client = new WhatsappSocket({
-  fileAuthStateDirectoryPath: path.resolve(__dirname, './authState'),
+  fileAuthStateDirectoryPath: path.resolve(__dirname, './authState/my-profile-data'),
   printQRInTerminal: true,
   debug: true,
   onConnectionStatusChange: (status) => {

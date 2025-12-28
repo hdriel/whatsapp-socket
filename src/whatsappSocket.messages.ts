@@ -39,10 +39,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
     }
 
     async sendTextMessage(to: string, text: string, replyToMessageId?: string): Promise<any> {
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
         const options: MiscMessageGenerationOptions = {
@@ -60,10 +57,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
             throw new Error('sendButtonsMessage: No title or buttons required field found.');
         }
 
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
 
@@ -151,23 +145,23 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
         }: {
             title: string;
             subtitle?: string;
-            buttons: string[];
+            buttons: Array<string | { id: number | string; label: string }>;
         }
     ): Promise<any> {
         if (!title || !buttons.length) {
             throw new Error('sendReplyButtonsMessage: No title or buttons required field found.');
         }
-
-        if (!this.socket) {
-            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
-            this.socket = await this.startConnection();
-        }
+        await this.ensureSocketConnected();
 
         const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
 
         const buttonsValue = buttons
             .filter((v) => v)
-            .map((displayText, index) => ({ buttonId: `id${index}`, buttonText: { displayText }, type: 1 }));
+            .map((btn, index) =>
+                typeof btn === 'string'
+                    ? { buttonId: `id-${index}`, buttonText: { displayText: btn }, type: 1 }
+                    : { buttonId: `${btn.id}`, buttonText: { displayText: btn.label }, type: 1 }
+            );
 
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'send reply buttons message', {

@@ -67,3 +67,42 @@ export function getFilenameFromStream(stream: ReadStream): string | undefined {
 export const sleep = (timeout: StringValue | number) => {
     return new Promise((resolve) => setTimeout(resolve, typeof timeout === 'number' ? timeout : ms(timeout)));
 };
+
+export const MIME_TYPES: { [key: string]: string } = {
+    // Images
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    bmp: 'image/bmp',
+    svg: 'image/svg+xml',
+
+    // Videos
+    mp4: 'video/mp4',
+    avi: 'video/x-msvideo',
+    mov: 'video/quicktime',
+    mkv: 'video/x-matroska',
+    webm: 'video/webm',
+
+    // Audio
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    opus: 'audio/opus',
+    aac: 'audio/aac',
+    m4a: 'audio/mp4',
+
+    // Documents
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    txt: 'text/plain',
+    zip: 'application/zip',
+    rar: 'application/x-rar-compressed',
+    '7z': 'application/x-7z-compressed',
+};

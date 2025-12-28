@@ -3,7 +3,8 @@ import path from 'pathe';
 import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
-import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+import { WhatsappSocket } from '../../src';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
 
 export const initRouters = (io: SocketIO) => {
@@ -28,6 +29,8 @@ export const initRouters = (io: SocketIO) => {
         onClose: async () => {
             io.emit('qr-connected');
         },
+        // onReceiveMessages: console.log,
+        onPreConnectionSendMessageFailed: console.error,
     });
     was.startConnection()
         .then(() => {

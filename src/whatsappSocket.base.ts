@@ -10,7 +10,6 @@
 import {
     default as makeWASocket,
     DisconnectReason,
-    fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     type MessageUpsertType,
     type UserFacingSocketConfig,
@@ -35,18 +34,19 @@ export type WhatsappSocketBaseProps = (
     | { mongoURL: string; fileAuthStateDirectoryPath?: string }
     | { mongoURL?: string; fileAuthStateDirectoryPath: string }
 ) & {
-    logger?: any;
+    appName?: string;
+    logger?: MyLogger;
     mongoCollection?: string;
     onOpen?: () => Promise<void> | void;
     onClose?: () => Promise<void> | void;
     onConnectionStatusChange?: (connectionStatus: 'connecting' | 'close' | 'open') => Promise<void> | void;
     onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void> | void;
+    onPreConnectionSendMessageFailed?: (error: Error | string) => Promise<void> | void;
     onQR?: (qr: string, code?: string | null) => Promise<void> | void;
     debug?: boolean;
     printQRInTerminal?: boolean;
     pairingPhone?: string;
     customPairingCode?: string;
-    allowUseLastVersion?: boolean;
 };
 
 export class WhatsappSocketBase {
@@ -59,7 +59,8 @@ export class WhatsappSocketBase {
     protected readonly printQRInTerminal?: boolean;
     protected readonly pairingPhone?: string;
     protected readonly customPairingCode?: string;
-    protected readonly allowUseLastVersion?: boolean;
+    protected readonly appName?: string;
+    private onPreConnectionSendMessageFailed?: (error: Error | string) => Promise<void> | void;
     private onOpen?: () => Promise<void> | void;
     private onClose?: () => Promise<void> | void;
     private onQR?: (qr: string, code?: string | null) => Promise<void> | void;
@@ -120,13 +121,7 @@ export class WhatsappSocketBase {
         });
     }
 
-    static async qrToTerminalString(
-        qr: string,
-        options: {
-            small?: boolean;
-            [key: string]: any;
-        } = {}
-    ) {
+    static async qrToTerminalString(qr: string, options: { small?: boolean; [key: string]: any } = {}) {
         return QRCode.toString(qr, { type: 'terminal', small: true, ...options });
     }
 
@@ -198,8 +193,10 @@ export class WhatsappSocketBase {
         printQRInTerminal,
         pairingPhone,
         customPairingCode,
-        allowUseLastVersion = true,
+        onPreConnectionSendMessageFailed,
+        appName,
     }: WhatsappSocketBaseProps) {
+        this.appName = appName;
         this.mongoURL = mongoURL;
         this.fileAuthStateDirectoryPath = fileAuthStateDirectoryPath;
         this.mongoCollection = mongoCollection;
@@ -208,13 +205,42 @@ export class WhatsappSocketBase {
         this.printQRInTerminal = printQRInTerminal;
         this.pairingPhone = pairingPhone;
         this.customPairingCode = customPairingCode;
-        this.allowUseLastVersion = allowUseLastVersion;
-        this.onConnectionStatusChange = onConnectionStatusChange;
         this.socket = null;
+        this.onPreConnectionSendMessageFailed = onPreConnectionSendMessageFailed;
+        this.onConnectionStatusChange = onConnectionStatusChange;
         this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
         this.onClose = onClose;
         this.onQR = onQR;
+    }
+
+    private async getLatestWhatsAppVersion(): Promise<[number, number, number]> {
+        try {
+            // Try multiple sources
+            const sources = [
+                'https://raw.githubusercontent.com/WhiskeySockets/Baileys/master/src/Defaults/baileys-version.json',
+                'https://raw.githubusercontent.com/whiskeysockets/baileys/master/src/Defaults/baileys-version.json',
+            ];
+
+            for (const url of sources) {
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        return data.version as [number, number, number];
+                    }
+                } catch (err) {
+                    continue;
+                }
+            }
+
+            // Fallback to a known working version
+            console.log('Could not fetch version, using fallback');
+            return [2, 3000, 1015901307]; // Recent version as of late 2024
+        } catch (error) {
+            console.error('Error fetching version:', error);
+            return [2, 3000, 1015901307]; // Fallback
+        }
     }
 
     private async getAuthCollection(): Promise<[] | [Collection<MongoDocument>, MongoClient]> {
@@ -271,21 +297,14 @@ export class WhatsappSocketBase {
         const debug = _debug === undefined ? this.debug : _debug;
 
         // Fetch latest Baileys version for better compatibility
-        const { version, isLatest } = await fetchLatestBaileysVersion();
-        if (this.allowUseLastVersion && !isLatest) {
-            if (debug)
-                this.logger?.warn('WHATSAPP', 'current baileys service is not the latest version!', {
-                    version,
-                    isLatest,
-                });
-        }
+        const version = await this.getLatestWhatsAppVersion();
 
         const connect = async (): Promise<WASocket | null> => {
             return new Promise((resolve) => {
                 const sock = makeWASocket({
-                    version: this.allowUseLastVersion ? version : [2, 3000, 1027934701],
+                    version: version,
                     logger: pinoLogger,
-                    browser: ['Ubuntu', 'Chrome', '20.0.04'],
+                    browser: [this.appName || 'baileys', '1.0.0', ''], // ['Ubuntu', 'Chrome', '20.0.04'],
                     syncFullHistory: false, // Don't sync full history on first connect
                     shouldSyncHistoryMessage: () => false,
                     shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
@@ -318,7 +337,6 @@ export class WhatsappSocketBase {
                         if (debug && this.printQRInTerminal) {
                             this.logger?.info('WHATSAPP', 'QR Pairing Code', { code, pairingPhone: pairing });
                         }
-
                         await onQR?.(qr, code);
                     }
 
@@ -399,8 +417,21 @@ export class WhatsappSocketBase {
         };
 
         const socket = await connect();
+        await sleep(WhatsappSocketBase.CONNECTION_TIMEOUT);
 
         return socket;
+    }
+
+    async ensureSocketConnected(): Promise<WASocket | null> {
+        if (!this.socket) {
+            if (this.debug) this.logger?.warn('WHATSAPP', 'Client not connected, attempting to connect...');
+            this.socket = await this.startConnection().catch((error: Error) => {
+                this.onPreConnectionSendMessageFailed?.(error);
+                return null;
+            });
+        }
+
+        return this.socket;
     }
 
     async closeConnection() {
@@ -412,6 +443,8 @@ export class WhatsappSocketBase {
     }
 
     async clearAuthState() {
+        await this.closeConnection();
+
         if (this.mongoURL) {
             const [collection, mongoClient] = await this.getAuthCollection();
 
@@ -423,11 +456,11 @@ export class WhatsappSocketBase {
         }
     }
 
-    async resetConnection({ pairingPhone }: { pairingPhone?: string } = {}) {
-        await this.closeConnection();
+    async resetConnection({ pairingPhone, autoConnect = true }: { pairingPhone?: string; autoConnect?: boolean } = {}) {
         await this.clearAuthState();
-        // Wait a bit before reconnecting
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (!autoConnect) return;
+
+        await sleep(WhatsappSocketBase.CONNECTION_TIMEOUT); // Wait a bit before reconnecting
         await this.startConnection({ pairingPhone });
     }
 

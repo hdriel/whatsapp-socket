@@ -3,13 +3,13 @@ node_modules/
 logs/
 *.log
 *.test.ts
-tsconfig.json
-tsup.config.json
 .prettierrc
 .eslintrc.js
 .eslintignore
-demo/
+demo-server/
 demo-client/
 authState/
 .idea
 nodemon.json
+tsconfig.json
+tsup.config.json
