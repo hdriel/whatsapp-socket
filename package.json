@@ -1,6 +1,6 @@
 {
     "name": "@hdriel/whatsapp-socket",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "",
     "author": "Hadriel Benjo (https://github.com/hdriel)",
     "type": "module",

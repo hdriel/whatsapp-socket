@@ -31,8 +31,8 @@ import { sleep } from './helpers.ts';
 const pinoLogger: any = P({ level: 'silent' });
 
 export type WhatsappSocketBaseProps = (
-    | { mongoURL: string; fileAuthStateDirectoryPath?: string }
-    | { mongoURL?: string; fileAuthStateDirectoryPath: string }
+    | { mongoURL: string; fileAuthStateDirectoryPath?: string | undefined }
+    | { mongoURL?: string | undefined; fileAuthStateDirectoryPath: string }
 ) & {
     appName?: string;
     logger?: MyLogger;

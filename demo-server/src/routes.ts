@@ -13,6 +13,7 @@ export const initRouters = (io: SocketIO) => {
         logger,
         printQRInTerminal: true,
         customPairingCode: 'a',
+        appName: 'whatsapp-socket-demo',
         debug: true,
         onConnectionStatusChange: (status) => {
             io.emit('connection-status', status);
@@ -22,10 +23,10 @@ export const initRouters = (io: SocketIO) => {
             const qrImage = await WhatsappSocket.qrToImage(qr).catch(() => null);
             io.emit('qr', { qrImage, qrCode });
         },
-        onOpen: async () => {
+        onOpen: () => {
             io.emit('qr-connected');
         },
-        onClose: async () => {
+        onClose: () => {
             io.emit('qr-connected');
         },
         // onReceiveMessages: console.log,

@@ -1,4 +1,4 @@
-# @hdriel/whatsapp-socket
+# [@hdriel/whatsapp-socket](https://www.npmjs.com/package/@hdriel/whatsapp-socket)
 
 A TypeScript/JavaScript wrapper library for WhatsApp Web Socket communication, built on top of [@fadzzzslebew/baileys](https://github.com/fadzzzslebew/baileys). This package provides a simplified, high-level API for interacting with WhatsApp Web with support for multi-device connections.
 
@@ -22,6 +22,12 @@ This project is not affiliated, associated, authorized, endorsed by, or in any w
 - 🎨 Send stickers (WebP format, up to 5MB)
 - 💾 Session persistence (file-based or MongoDB)
 - 📝 Full TypeScript support
+- FULL DEMO SERVER & CLIENT: [github repo](https://github.com/hdriel/whatsapp-socket)
+  - demo-client directory run ```npm run build```
+  - demo-server directory run ```npm start```
+  - open browser ```http://localhost:1010```
+  
+    ![screenshoot](screenshoot.webp)
 
 ## ⚠️ Important: Server Requirements
 
