@@ -49,7 +49,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
             ...(replyToMessageId && { quoted: { key: { id: replyToMessageId } } }),
         };
 
-        return this.socket.sendMessage(jid, { text }, options);
+        return this.socket?.sendMessage(jid, { text }, options);
     }
 
     async sendButtonsMessage(
@@ -139,7 +139,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
             });
         }
 
-        return this.socket.relayMessage(jid, msg.message!, { messageId: msg.key.id! });
+        return this.socket?.relayMessage(jid, msg.message!, { messageId: msg.key.id! });
     }
 
     async sendReplyButtonsMessage(
@@ -178,7 +178,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
             });
         }
 
-        return this.socket.sendMessage(jid, {
+        return this.socket?.sendMessage(jid, {
             text: title,
             ...(subtitle && { footer: subtitle }),
             buttons: buttonsValue /* type: UNKNOWN = 0, RESPONSE = 1, NATIVE_FLOW = 2 */,

@@ -48,7 +48,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
             }),
         };
 
-        return this.socket.sendMessage(jid, messageContent, messageOptions);
+        return this.socket?.sendMessage(jid, messageContent, messageOptions);
     }
 
     private async streamToBuffer(stream: Readable): Promise<Buffer> {
@@ -180,7 +180,6 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
     ): Promise<any> {
         return this.sendFileFromStream(to, imageBuffer, {
             filename: options.filename || 'image.jpg',
-            mimetype: 'image/jpeg',
             caption: options.caption,
             replyToMessageId: options.replyToMessageId,
         });
@@ -199,7 +198,6 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
     ): Promise<any> {
         return this.sendFileFromStream(to, videoBuffer, {
             filename: options.filename || 'video.mp4',
-            mimetype: 'video/mp4',
             caption: options.caption,
             gifPlayback: options.gifPlayback,
             replyToMessageId: options.replyToMessageId,
@@ -219,7 +217,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
     ): Promise<any> {
         return this.sendFileFromStream(to, audioBuffer, {
             filename: options.filename || 'audio.mp3',
-            mimetype: options.ptt ? 'audio/ogg; codecs=opus' : 'audio/mpeg',
+            mimetype: options.ptt ? 'audio/ogg; codecs=opus' : '',
             ptt: options.ptt,
             seconds: options.seconds,
             replyToMessageId: options.replyToMessageId,
@@ -283,6 +281,6 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
             }),
         };
 
-        return this.socket.sendMessage(jid, { sticker: buffer }, messageOptions);
+        return this.socket?.sendMessage(jid, { sticker: buffer }, messageOptions);
     }
 }
