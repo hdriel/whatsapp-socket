@@ -100,8 +100,8 @@ export class WhatsappSocketBase {
         message?: string;
     }) {
         const formattedPhone = this.formatPhoneNumber(phone, countryCode);
-        const query = { ...(message && { text: encodeURI(message) }) };
-        return `https://wa.me/${formattedPhone}?${query}`;
+        const messageQuery = message ? `?text=${encodeURI(message)}` : '';
+        return `https://wa.me/${formattedPhone}${messageQuery}`;
     }
 
     static async qrToImage(
