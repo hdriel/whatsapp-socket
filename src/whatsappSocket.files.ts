@@ -6,8 +6,6 @@ import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, streamToBuff
 import { basename } from 'node:path';
 
 export class WhatsappSocketFiles extends WhatsappSocketStream {
-    static DEFAULT_COUNTRY_CODE: string = '972';
-
     constructor(props: WhatsappSocketStreamProps) {
         super(props);
     }

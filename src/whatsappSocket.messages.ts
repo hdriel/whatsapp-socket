@@ -32,8 +32,6 @@ type CallToActionButtons = Array<
 type CallToActionFullButtons = Array<ButtonURL | ButtonCopy | ButtonPhone | ButtonEmail | ButtonReminder>;
 
 export class WhatsappSocketMessages extends WhatsappSocketBase {
-    static DEFAULT_COUNTRY_CODE: string = '972';
-
     constructor(props: WhatsappSocketBaseProps) {
         super(props);
     }

@@ -511,16 +511,6 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 - [music-metadata](https://www.npmjs.com/package/music-metadata) - Audio metadata extraction
 - [ms](https://www.npmjs.com/package/ms) - Time string parsing
 
-## Support
-
-- 🐛 [Report Issues](https://github.com/hdriel/whatsapp-socket/issues)
-- 💬 [Discussions](https://github.com/hdriel/whatsapp-socket/discussions)
-- 📖 [Documentation](https://github.com/hdriel/whatsapp-socket#readme)
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
-
 ## Author
 
 **Hadriel Benjo**
@@ -532,15 +522,13 @@ See [CHANGELOG.md](CHANGELOG.md) for version history and updates.
 
 **Remember**: This is an unofficial library. Use responsibly and at your own risk. Always respect WhatsApp's Terms of Service.
 
-
-[//]: # (## 🔗 Links)
-[//]: # ()
-[//]: # (- [GitHub WhiskeySockets/Baileys]&#40;https://github.com/WhiskeySockets/Baileys&#41;)
-[//]: # (- [@adiwajshing/baileys-md]&#40;https://pokoke-01.github.io/owh/index.html&#41;)
-[//]: # (- [Automating WhatsApp]&#40;https://medium.com/@elvisbrazil/automating-whatsapp-with-node-js-and-baileys-send-receive-and-broadcast-messages-with-code-0656c40bd928&#41;)
-[//]: # (- [baileys-pro]&#40;https://www.npmjs.com/package/baileys-pro?activeTab=readme&#41;)
-[//]: # (- [GitHub Demo Repository]&#40;https://github.com/hdriel/aws-utils-demo&#41;)
+## 🔗 Links
+- [GitHub fadzzzslebew/Baileys](https://github.com/fadzzzslebew/baileys/tree/main)
+- [GitHub Demo Repository](https://github.com/hdriel/whatsapp-socket) 
+- [@hdriel/whatsapp-socket npm package](https://www.npmjs.com/package/@hdriel/whatsapp-socket) 
+- [Automating WhatsApp](https://medium.com/@elvisbrazil/automating-whatsapp-with-node-js-and-baileys-send-receive-and-broadcast-messages-with-code-0656c40bd928)
 
 ---
 
-Made with ❤️ for developers who want powerful Whatsapp Bot utilities without the complexity.
+Made with ❤️ for developers who want powerful Whatsapp Bot utilities without the complexity,<br/> 
+⭐ me on GitHub

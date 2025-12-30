@@ -60,7 +60,7 @@ export class WhatsappSocketBase {
     protected readonly pairingPhone?: string;
     protected readonly customPairingCode?: string;
     protected readonly appName?: string;
-    private onPreConnectionSendMessageFailed?: (error: Error | string) => Promise<void> | void;
+    private readonly onPreConnectionSendMessageFailed?: (error: Error | string) => Promise<void> | void;
     private onOpen?: () => Promise<void> | void;
     private onClose?: () => Promise<void> | void;
     private onQR?: (qr: string, code?: string | null) => Promise<void> | void;
@@ -93,7 +93,7 @@ export class WhatsappSocketBase {
     static getWhatsappPhoneLink({
         phone,
         message,
-        countryCode = this.DEFAULT_COUNTRY_CODE,
+        countryCode = WhatsappSocketBase.DEFAULT_COUNTRY_CODE,
     }: {
         phone: string;
         countryCode?: string;
