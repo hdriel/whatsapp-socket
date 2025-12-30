@@ -1,11 +1,11 @@
 import { ReadStream } from 'node:fs';
 
-import { WhatsappSocketStream, type WhatsappSocketStreamProps } from './whatsappSocket.stream';
-export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.stream';
+import { WhatsappSocketPrivateStream, type WhatsappSocketStreamProps } from './whatsappSocket.private.stream.ts';
+export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.private.stream.ts';
 import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, streamToBuffer } from './helpers.ts';
 import { basename } from 'node:path';
 
-export class WhatsappSocketFiles extends WhatsappSocketStream {
+export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
     constructor(props: WhatsappSocketStreamProps) {
         super(props);
     }
@@ -17,7 +17,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
     ) {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const imageData = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send image message', { jid, caption, filename });
@@ -35,7 +35,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
     ) {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send video message', { jid, caption, filename, gifPlayback });
@@ -61,7 +61,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
     ) {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const fileBuffer = typeof fileSrc === 'string' ? await getUrlBuffer(fileSrc) : fileSrc;
 
         let jpegThumbnailBuffer: Buffer<any> | undefined;
@@ -111,7 +111,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
     ) {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const audioBuffer = typeof audioSrc === 'string' ? await getUrlBuffer(audioSrc) : audioSrc;
         let durationInSeconds = seconds || (await getAudioFileDuration(audioBuffer, mimetype).catch(() => 0));
 
@@ -150,7 +150,7 @@ export class WhatsappSocketFiles extends WhatsappSocketStream {
     ) {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketFiles.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid, replyToMessageId });

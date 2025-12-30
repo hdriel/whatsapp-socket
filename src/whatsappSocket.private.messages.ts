@@ -1,37 +1,20 @@
 import { type MiscMessageGenerationOptions, generateWAMessageFromContent } from '@fadzzzslebew/baileys';
 import { WAProto as proto } from '@fadzzzslebew/baileys';
-import { WhatsappSocketBase, type WhatsappSocketBaseProps } from './whatsappSocket.base.ts';
-export type { WhatsappSocketBaseProps as WhatsappSocketMessagesProps } from './whatsappSocket.base.ts';
-import { type StringValue } from 'ms';
-import { getTotalSeconds } from './helpers.ts';
+import { WhatsappSocketBase, type WhatsappSocketBaseProps } from './whatsappSocket.base';
+export type { WhatsappSocketBaseProps as WhatsappSocketMessagesProps } from './whatsappSocket.base';
+import { getTotalSeconds } from './helpers';
+import type {
+    ButtonURL,
+    ButtonReminder,
+    ButtonEmail,
+    ButtonCopy,
+    ButtonPhone,
+    ButtonParamsJson,
+    CallToActionButtons,
+    CallToActionFullButtons,
+} from './decs';
 
-type ButtonURL = { label: string; url: string };
-type ButtonCopy = { label: string; copy: string };
-type ButtonPhone = { label: string; tel: string };
-type ButtonEmail = { label: string; email: string };
-type ButtonReminder = { label: string; reminderName: string } & (
-    | { reminderOn?: StringValue; reminderDate: number }
-    | { reminderOn: StringValue; reminderDate?: number | Date | string }
-);
-
-type ButtonParamsJson = {
-    display_text: string;
-    url?: string;
-    copy_code?: string;
-    phone_number?: string;
-    email?: string;
-    reminder_name?: string;
-    reminder_timestamp?: number;
-};
-
-type CallToActionButtons = Array<
-    ButtonURL | ButtonCopy | ButtonPhone
-    // ButtonEmail | ButtonReminder // not supported
->;
-
-type CallToActionFullButtons = Array<ButtonURL | ButtonCopy | ButtonPhone | ButtonEmail | ButtonReminder>;
-
-export class WhatsappSocketMessages extends WhatsappSocketBase {
+export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
     constructor(props: WhatsappSocketBaseProps) {
         super(props);
     }
@@ -39,7 +22,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
     async sendTextMessage(to: string, text: string, replyToMessageId?: string): Promise<any> {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
         const options: MiscMessageGenerationOptions = {
             ...(replyToMessageId && { quoted: { key: { id: replyToMessageId } } }),
         };
@@ -57,7 +40,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
 
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
 
         const buttonsValue = (buttons as CallToActionFullButtons)
             ?.map((btn) => {
@@ -151,7 +134,7 @@ export class WhatsappSocketMessages extends WhatsappSocketBase {
         }
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
 
         const buttonsValue = buttons
             .filter((v) => v)
