@@ -4,7 +4,9 @@
     "description": "",
     "main": "server.ts",
     "scripts": {
-        "start": "tsx src/server.ts",
+        "start": "npm run build && tsx src/server.ts",
+        "build": "cd ../demo-client && npm run build",
+        "dev": "tsx src/server.ts",
         "yalc:add": "yalc add @hdriel/whatsapp-socket",
         "yalc:remove": "tsx remove @hdriel/whatsapp-socket"
     },

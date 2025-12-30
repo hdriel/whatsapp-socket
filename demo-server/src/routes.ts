@@ -5,11 +5,12 @@ import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
 import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
+const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 
 export const initRouters = (io: SocketIO) => {
     const was = new WhatsappSocket({
         mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
-        fileAuthStateDirectoryPath: path.resolve(__dirname, '../..', 'authState/my-profile'),
+        fileAuthStateDirectoryPath: fileAuthPath,
         logger,
         printQRInTerminal: true,
         customPairingCode: 'a',
@@ -63,10 +64,11 @@ export const initRouters = (io: SocketIO) => {
     });
 
     router.post('/api/send-message', async (req: Request, res: Response) => {
-        const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
         const { phoneTo, message } = req.body;
-        logger.info(null, 'Sending message...', { ...req.body, code });
+        logger.info(null, 'Sending message...', req.body);
 
+        // Example for using singleton instance value for same appName key
+        const was = new WhatsappSocket({ appName: 'whatsapp-socket-demo', fileAuthStateDirectoryPath: fileAuthPath });
         await was.sendTextMessage(phoneTo, message);
 
         res.status(200).json({ message: 'OK' });

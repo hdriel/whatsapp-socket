@@ -50,7 +50,7 @@ export type WhatsappSocketBaseProps = (
 };
 
 export class WhatsappSocketBase {
-    protected socket: null | WASocket;
+    protected socket: null | WASocket | undefined;
     protected readonly fileAuthStateDirectoryPath?: string;
     protected readonly mongoURL?: string;
     protected readonly mongoCollection: string = 'whatsapp-auth';
@@ -179,6 +179,31 @@ export class WhatsappSocketBase {
         return upperCaseResult.padEnd(length, upperCaseResult);
     }
 
+    private static instances: Map<string, WhatsappSocketBase> = new Map();
+
+    static getInstance(props: WhatsappSocketBaseProps): WhatsappSocketBase {
+        const instanceKey =
+            props.appName ||
+            props.pairingPhone ||
+            props.mongoCollection ||
+            props.fileAuthStateDirectoryPath ||
+            'default';
+
+        if (!WhatsappSocketBase.instances.has(instanceKey)) {
+            new WhatsappSocketBase(props);
+        }
+
+        return WhatsappSocketBase.instances.get(instanceKey)!;
+    }
+
+    static clearInstance(key?: string): void {
+        if (key) {
+            WhatsappSocketBase.instances.delete(key);
+        } else {
+            WhatsappSocketBase.instances.clear();
+        }
+    }
+
     constructor({
         fileAuthStateDirectoryPath,
         mongoURL,
@@ -196,6 +221,13 @@ export class WhatsappSocketBase {
         onPreConnectionSendMessageFailed,
         appName,
     }: WhatsappSocketBaseProps) {
+        const instanceKey = appName || pairingPhone || mongoCollection || fileAuthStateDirectoryPath || 'default';
+        if (WhatsappSocketBase.instances.has(instanceKey)) {
+            const instance = WhatsappSocketBase.instances.get(instanceKey)!;
+            // instance.logger?.debug('WHATSAPP', 'RETURN SINGLETON INSTANCE!');
+            return instance;
+        }
+
         this.appName = appName;
         this.mongoURL = mongoURL;
         this.fileAuthStateDirectoryPath = fileAuthStateDirectoryPath;
@@ -212,6 +244,8 @@ export class WhatsappSocketBase {
         this.onOpen = onOpen;
         this.onClose = onClose;
         this.onQR = onQR;
+
+        WhatsappSocketBase.instances.set(instanceKey, this);
     }
 
     private async getLatestWhatsAppVersion(): Promise<[number, number, number]> {
@@ -465,6 +499,6 @@ export class WhatsappSocketBase {
     }
 
     isConnected() {
-        return this.socket !== null && this.socket.user !== undefined;
+        return !!this.socket?.user;
     }
 }

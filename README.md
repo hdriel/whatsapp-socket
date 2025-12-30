@@ -13,17 +13,20 @@ This project is not affiliated, associated, authorized, endorsed by, or in any w
 - 🚀 WebSocket-based communication with WhatsApp Web (powered by Baileys)
 - 📱 QR code authentication or pairing code authentication
 - 💬 Send text messages
-- 🔘 Send interactive button messages (URL, call, copy, email, reminder)
-- 📝 Send reply buttons messages
-- 🖼️ Send images with captions (up to 50MB)
-- 🎥 Send videos (up to 100MB)
-- 🎵 Send audio messages (up to 10MB)
-- 📄 Send documents/files (up to 500MB)
+- 🔗 Send interactive button messages (URL, call, copy, ~~email~~, ~~reminder~~)
+- 🔂 Send reply buttons messages
+- 🖼️ Send images with captions
+- 🎥 Send videos
+- 🎵 Send audio messages
+- 📄 Send documents/files
 - 🎨 Send stickers (WebP format, up to 5MB)
 - 💾 Session persistence (file-based or MongoDB)
+- 🔂 Singleton instances to prevent multiple connection for same WhatsApp Web token (by one of props: appName/pairingPhone/mongoCollection/fileAuthStateDirectoryPath)
 - 📝 Full TypeScript support
-- FULL DEMO SERVER & CLIENT: [github repo](https://github.com/hdriel/whatsapp-socket)
-  - demo-client directory run ```npm run build```
+- 🎬 FULL DEMO SERVER & CLIENT: [github repo](https://github.com/hdriel/whatsapp-socket)
+
+[//]: # (  - demo-client directory run ```npm run build```)
+
   - demo-server directory run ```npm start```
   - open browser ```http://localhost:1010```
   
