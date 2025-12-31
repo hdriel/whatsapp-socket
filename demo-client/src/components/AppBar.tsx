@@ -11,6 +11,7 @@ import {
     Autocomplete,
     AutocompleteRenderInputParams,
     TextField,
+    type SxProps,
 } from '@mui/material';
 import { useGroups } from '../hooks/useGroups.ts';
 import { getSocket } from '../socket.ts';
@@ -22,8 +23,15 @@ interface AppBarProps {
     wasClientConnectingStatus: 'open' | 'close' | 'connecting';
 }
 
+const textFieldStyles: SxProps = {
+    minWidth: '400px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '10px',
+};
+
 export const AppBar: React.FC<AppBarProps> = ({ wasClientConnectingStatus, serverConnected }) => {
-    const { actionType, setActionType, groupOption, setGroupOption } = useAppContext();
+    const { actionType, setActionType, groupOption, setGroupOption, setMessageToPhone, messageToPhone } =
+        useAppContext();
     const groups = useGroups();
     const socket = getSocket();
 
@@ -56,27 +64,43 @@ export const AppBar: React.FC<AppBarProps> = ({ wasClientConnectingStatus, serve
                 <Tooltip title={tooltip}>
                     <FiberManualRecord stroke="black" color={color as any} onClick={onStatusClick} />
                 </Tooltip>
-                <Typography variant="h6" component="div" sx={{ flexGrow: 1, alignItems: 'center', color: 'white' }}>
+                <Typography
+                    variant="h6"
+                    component="div"
+                    sx={{ flexGrow: 1, alignItems: 'center', color: 'white', minWidth: 'max-content' }}
+                >
                     Whatsapp Socket Demo
                 </Typography>
-                {actionType === ActionType.GROUP && (
-                    <Autocomplete
-                        value={groupOption}
-                        onChange={(_event, value) => setGroupOption(value)}
-                        options={groups}
-                        renderInput={function (params: AutocompleteRenderInputParams): React.ReactNode {
-                            return (
-                                <TextField
-                                    variant="filled"
-                                    label="Group"
-                                    {...params}
-                                    sx={{ padding: 0, margin: 0, minWidth: '400px' }}
-                                    color="secondary"
-                                />
-                            );
-                        }}
-                    />
-                )}
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                    {actionType === ActionType.GROUP && (
+                        <Autocomplete
+                            value={groupOption}
+                            onChange={(_event, value) => setGroupOption(value)}
+                            options={groups}
+                            renderInput={function (params: AutocompleteRenderInputParams): React.ReactNode {
+                                return (
+                                    <TextField
+                                        variant="filled"
+                                        label="Message to Group"
+                                        {...params}
+                                        sx={textFieldStyles}
+                                    />
+                                );
+                            }}
+                        />
+                    )}
+                    {actionType === ActionType.PRIVATE && (
+                        <TextField
+                            size="small"
+                            variant="filled"
+                            label="Message to Phone Number"
+                            placeholder="e.g., +1234567890"
+                            value={messageToPhone}
+                            onChange={(e) => setMessageToPhone(e.target.value)}
+                            sx={textFieldStyles}
+                        />
+                    )}
+                </Box>
                 <Box marginInlineStart="auto">
                     <ToggleButtonGroup
                         color="secondary"
