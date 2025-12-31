@@ -5,7 +5,7 @@ import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
 
 export const FileUploadSection: React.FC = ({}) => {
-    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
+    const { messageToPhone: phoneTo } = useAppContext();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
@@ -60,16 +60,6 @@ export const FileUploadSection: React.FC = ({}) => {
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <TextField
                     fullWidth
                     label="Message"

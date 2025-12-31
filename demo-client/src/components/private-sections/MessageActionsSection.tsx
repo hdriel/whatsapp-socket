@@ -18,7 +18,7 @@ import { MessageAction } from '../../types';
 import { useAppContext } from '../../AppContext.tsx';
 
 export const MessageActionsSection: React.FC = ({}) => {
-    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
+    const { messageToPhone: phoneTo } = useAppContext();
     const [message, setMessage] = useState('');
     const [subtitle, setSubtitle] = useState('');
     const [actions, setActions] = useState<MessageAction>({
@@ -86,16 +86,6 @@ export const MessageActionsSection: React.FC = ({}) => {
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <TextField
                     fullWidth
                     label="Message"
