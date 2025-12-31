@@ -10,6 +10,8 @@ export const API_ENDPOINTS = {
     SEND_MESSAGE: '/api/private/send-message',
     SEND_MESSAGE_ACTIONS: '/api/private/send-message-actions',
     SEND_MULTIPLE_INPUTS: '/api/private/send-multiple-inputs',
+    GROUP_CREATE: '/api/groups',
+    GROUP_INFO: '/api/groups/{groupId}',
     GROUP_UPLOAD_FILE: '/api/groups/{groupId}/upload-file',
     GROUP_UPLOAD_IMAGE: '/api/groups/{groupId}/upload-image',
     GROUP_UPLOAD_STICKER: '/api/groups/{groupId}/upload-sticker',

@@ -26,6 +26,38 @@ export const initRouterGroups = (io: SocketIO) => {
                 return [];
             });
 
+            /*
+            const groups = [
+                {
+                    "id": "120363423282807100@g.us",
+                    "addressingMode": "lid",
+                    "subject": "st-logger",
+                    "subjectOwner": "972559803211@s.whatsapp.net",
+                    "subjectOwnerLid": "150087984513026@lid",
+                    "subjectTime": 1767217700,
+                    "size": 1,
+                    "creation": 1767217700,
+                    "owner": "972559803211@s.whatsapp.net",
+                    "ownerLid": "150087984513026@lid",
+                    "descOwner": "",
+                    "descOwnerLid": "",
+                    "restrict": false,
+                    "announce": false,
+                    "isCommunity": false,
+                    "isCommunityAnnounce": false,
+                    "joinApprovalMode": false,
+                    "memberAddMode": false,
+                    "participants": [
+                        {
+                            "id": "150087984513026@lid",
+                            "jid": "972559803211@s.whatsapp.net",
+                            "admin": "superadmin"
+                        }
+                    ]
+                }
+            ]
+            */
+
             socket.emit('groups', groups);
         });
     });
@@ -34,9 +66,15 @@ export const initRouterGroups = (io: SocketIO) => {
         const { name, description, participants } = req.body;
         logger.info(null, 'Creating group...', req.body);
 
-        await was.createGroup({ name, description, participants });
-
-        res.status(200).json({ message: 'OK' });
+        await was
+            .createGroup({ name, description, participants })
+            .then(() => {
+                res.status(200).json({ message: 'OK' });
+            })
+            .catch((error) => {
+                logger.error(null, 'failed to create group', { error: error?.message ?? error });
+                res.status(403).json({ message: error });
+            });
     });
 
     router.post('/:groupId/send-message', async (req: Request, res: Response) => {

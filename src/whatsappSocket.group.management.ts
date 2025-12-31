@@ -48,7 +48,9 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
             if (!selfJid) {
                 throw new Error('createGroup: Could not get bot user ID. Make sure socket is connected.');
             }
-            formattedParticipants.push(selfJid);
+
+            const pId = WhatsappSocketGroups.formatPhoneNumberToWhatsappPattern(selfJid);
+            formattedParticipants.push(pId);
 
             if (this.debug) {
                 this.logger?.debug('WHATSAPP', 'No participants provided, creating group with self only', {

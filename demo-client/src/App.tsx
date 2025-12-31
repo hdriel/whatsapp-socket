@@ -3,7 +3,7 @@ import { Container, Box, Tabs, Tab, ThemeProvider, createTheme, CssBaseline } fr
 import { QrCode2 } from '@mui/icons-material';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useQR } from './hooks/useQR';
-import { TabPanel, privateTabs, groupTabs } from './components/private-sections';
+import { TabPanel, privateTabs, groupTabs } from './components';
 import { AppBar } from './components/AppBar';
 
 const theme = createTheme({
@@ -40,7 +40,7 @@ function App() {
                             scrollButtons="auto"
                             aria-label="feature tabs"
                         >
-                            {privateTabs.map((tab) => (
+                            {groupTabs.map((tab) => (
                                 <Tab
                                     key={tab.label}
                                     label={tab.label}
@@ -55,7 +55,7 @@ function App() {
                         </Tabs>
                     </Box>
 
-                    {privateTabs.map((tab, index) => {
+                    {groupTabs.map((tab, index) => {
                         return (
                             <TabPanel key={index} value={currentTab} index={index}>
                                 <tab.Component messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />

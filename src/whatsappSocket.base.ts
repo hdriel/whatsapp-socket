@@ -86,7 +86,7 @@ export class WhatsappSocketBase {
 
         let strNumber = WhatsappSocketBase.formatPhoneNumber(phone, countryCode);
         strNumber = `${strNumber}@s.whatsapp.net`; // formatted Number should look like: '972513334444@s.whatsapp.net'
-        return strNumber;
+        return strNumber.replace(/:\d+@/, '@'); // remove the sessionId
     }
 
     static getWhatsappPhoneLink({
