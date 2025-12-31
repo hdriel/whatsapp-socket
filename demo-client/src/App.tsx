@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Box, Tabs, Tab, ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { Box, Container, createTheme, CssBaseline, Tab, Tabs, ThemeProvider } from '@mui/material';
 import { QrCode2 } from '@mui/icons-material';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useQR } from './hooks/useQR';
-import { TabPanel, privateTabs, groupTabs } from './components';
+import { groupTabs, privateTabs, TabPanel } from './components';
 import { AppBar } from './components/AppBar';
+import { ActionType, useAppContext } from './AppContext.tsx';
 
 const theme = createTheme({
     palette: { mode: 'light', primary: { main: '#0b7853' }, secondary: { main: '#dea842' } },
@@ -12,8 +13,8 @@ const theme = createTheme({
 });
 
 function App() {
+    const { actionType } = useAppContext();
     const [currentTab, setCurrentTab] = useState(0);
-    const [messageToPhone, setMessageToPhone] = useState('');
     const [serverConnected, wasClientConnectingStatus] = useSocketConnection();
     const { QRImage } = useQR();
 
@@ -24,6 +25,8 @@ function App() {
     useEffect(() => {
         if (!serverConnected) setCurrentTab(0);
     }, [serverConnected]);
+
+    const tabs = actionType === ActionType.GROUP ? groupTabs : privateTabs;
 
     return (
         <ThemeProvider theme={theme}>
@@ -40,7 +43,7 @@ function App() {
                             scrollButtons="auto"
                             aria-label="feature tabs"
                         >
-                            {groupTabs.map((tab) => (
+                            {tabs.map((tab) => (
                                 <Tab
                                     key={tab.label}
                                     label={tab.label}
@@ -55,10 +58,10 @@ function App() {
                         </Tabs>
                     </Box>
 
-                    {groupTabs.map((tab, index) => {
+                    {tabs.map((tab, index) => {
                         return (
                             <TabPanel key={index} value={currentTab} index={index}>
-                                <tab.Component messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                                <tab.Component />
                             </TabPanel>
                         );
                     })}

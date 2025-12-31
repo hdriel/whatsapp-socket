@@ -2,11 +2,10 @@ import React, { useState, useRef } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, ButtonGroup } from '@mui/material';
 import { Mic, Square, PlayCircle as Play, Upload } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const AudioRecordSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const AudioRecordSection: React.FC = ({}) => {
+    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
     const [isRecording, setIsRecording] = useState(false);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [audioUrl, setAudioUrl] = useState<string>('');

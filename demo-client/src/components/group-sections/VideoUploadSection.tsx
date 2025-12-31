@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { SmartDisplay as Video } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const VideoUploadSection: React.FC = ({}) => {
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
+
     const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
     const [message, setMessage] = useState('');
     const [videoPreview, setVideoPreview] = useState<string>('');
@@ -26,8 +27,8 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
     };
 
     const handleUpload = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
+        if (!groupId.trim()) {
+            setError('Please select a group');
             return;
         }
 
@@ -42,11 +43,10 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
 
         try {
             const formData = new FormData();
-            formData.append('phoneTo', phoneTo.trim());
             formData.append('message', message.trim());
             formData.append('video', selectedVideo);
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_VIDEO, formData);
+            await makeApiCall(API_ENDPOINTS.GROUP_UPLOAD_VIDEO.replace('{groupId}', groupId), formData);
             setSuccess('Video uploaded successfully!');
             setSelectedVideo(null);
             setVideoPreview('');
@@ -66,16 +66,6 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <TextField
                     fullWidth
                     label="Message"

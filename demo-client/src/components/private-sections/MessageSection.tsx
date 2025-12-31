@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const MessageSection: React.FC<{
-    messageToPhone: string;
-    setMessageToPhone: (phone: string) => void;
-}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
+export const MessageSection: React.FC = ({}) => {
+    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

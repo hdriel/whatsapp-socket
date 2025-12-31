@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
+import { Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Image } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const StickerUploadSection: React.FC = ({}) => {
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
+
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -30,8 +31,8 @@ export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessage
     };
 
     const handleUpload = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
+        if (!groupId.trim()) {
+            setError('Please select a group');
             return;
         }
 
@@ -46,10 +47,9 @@ export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessage
 
         try {
             const formData = new FormData();
-            formData.append('phoneTo', phoneTo.trim());
             formData.append('sticker', selectedImage);
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_STICKER, formData);
+            await makeApiCall(API_ENDPOINTS.GROUP_UPLOAD_STICKER.replace('{groupId}', groupId), formData);
             setSuccess('Image uploaded successfully!');
             setSelectedImage(null);
             setImagePreview('');
@@ -69,16 +69,6 @@ export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessage
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={loading}>
                     {selectedImage ? selectedImage.name : 'Choose Image'}
                     <input id="image-upload-input" type="file" accept="image/*" hidden onChange={handleImageChange} />

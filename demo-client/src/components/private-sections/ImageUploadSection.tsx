@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Image } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const ImageUploadSection: React.FC = ({}) => {
+    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [message, setMessage] = useState('');
     const [imagePreview, setImagePreview] = useState<string>('');

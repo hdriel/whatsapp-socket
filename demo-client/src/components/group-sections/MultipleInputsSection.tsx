@@ -14,11 +14,12 @@ import {
 } from '@mui/material';
 import { List as ListIcon, ControlPoint as Plus, Delete as Trash2 } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const MultipleInputsSection: React.FC<{
-    messageToPhone: string;
-    setMessageToPhone: (phone: string) => void;
-}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
+export const MultipleInputsSection: React.FC = ({}) => {
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
+
     const [currentInput, setCurrentInput] = useState('');
     const [message, setMessage] = useState('');
     const [subtitle, setSubtitle] = useState('');
@@ -40,8 +41,8 @@ export const MultipleInputsSection: React.FC<{
     };
 
     const handleSubmit = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
+        if (!groupId.trim()) {
+            setError('Please select a group');
             return;
         }
 
@@ -56,13 +57,12 @@ export const MultipleInputsSection: React.FC<{
 
         try {
             const payload = {
-                phoneTo: phoneTo.trim(),
                 message: message.trim(),
                 subtitle: subtitle.trim(),
                 inputs: inputs,
             };
 
-            await makeApiCall(API_ENDPOINTS.SEND_MULTIPLE_INPUTS, payload);
+            await makeApiCall(API_ENDPOINTS.GROUP_SEND_MULTIPLE_INPUTS.replace('{groupId}', groupId), payload);
             setSuccess('Multiple inputs sent successfully!');
             setInputs([]);
         } catch (err) {
@@ -87,16 +87,6 @@ export const MultipleInputsSection: React.FC<{
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <TextField
                     fullWidth
                     label="Message"

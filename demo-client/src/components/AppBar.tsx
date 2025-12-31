@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { FiberManualRecord } from '@mui/icons-material';
 import {
     AppBar as MuiAppBar,
@@ -15,20 +15,15 @@ import {
 import { useGroups } from '../hooks/useGroups.ts';
 import { getSocket } from '../socket.ts';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api.ts';
+import { ActionType, useAppContext } from '../AppContext.tsx';
 
 interface AppBarProps {
     serverConnected: boolean;
     wasClientConnectingStatus: 'open' | 'close' | 'connecting';
 }
 
-export enum ActionType {
-    PRIVATE,
-    GROUP,
-}
-
 export const AppBar: React.FC<AppBarProps> = ({ wasClientConnectingStatus, serverConnected }) => {
-    const [actionType, setActionType] = useState(ActionType.PRIVATE);
-    const [groupOption, setGroupOption] = useState<{ label: string; value: string } | null>();
+    const { actionType, setActionType, groupOption, setGroupOption } = useAppContext();
     const groups = useGroups();
     const socket = getSocket();
 

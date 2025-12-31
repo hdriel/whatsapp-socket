@@ -2,19 +2,20 @@ import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const MessageSection: React.FC<{
-    messageToPhone: string;
-    setMessageToPhone: (phone: string) => void;
-}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
+export const MessageSection: React.FC = ({}) => {
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
+
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
     const handleSubmit = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
+        if (!groupId.trim()) {
+            setError('Please select a group');
             return;
         }
 
@@ -29,11 +30,10 @@ export const MessageSection: React.FC<{
 
         try {
             const payload = {
-                phoneTo: phoneTo.trim(),
                 message: message.trim(),
             };
 
-            await makeApiCall(API_ENDPOINTS.SEND_MESSAGE, payload);
+            await makeApiCall(API_ENDPOINTS.GROUP_SEND_MESSAGE.replace('{groupId}', groupId), payload);
             setSuccess('Message with actions sent successfully!');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to send message');
@@ -50,16 +50,6 @@ export const MessageSection: React.FC<{
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <TextField
                     fullWidth
                     label="Message"

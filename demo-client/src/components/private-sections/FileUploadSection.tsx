@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Upload } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const FileUploadSection: React.FC = ({}) => {
+    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);

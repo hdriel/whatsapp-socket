@@ -14,11 +14,10 @@ import {
 } from '@mui/material';
 import { List as ListIcon, ControlPoint as Plus, Delete as Trash2 } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const MultipleInputsSection: React.FC<{
-    messageToPhone: string;
-    setMessageToPhone: (phone: string) => void;
-}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
+export const MultipleInputsSection: React.FC = ({}) => {
+    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
     const [currentInput, setCurrentInput] = useState('');
     const [message, setMessage] = useState('');
     const [subtitle, setSubtitle] = useState('');

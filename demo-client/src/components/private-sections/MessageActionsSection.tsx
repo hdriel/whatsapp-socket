@@ -15,11 +15,10 @@ import { Chat as MessageSquare } from '@mui/icons-material';
 import DoNotTouchIcon from '@mui/icons-material/DoNotTouch';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { MessageAction } from '../../types';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const MessageActionsSection: React.FC<{
-    messageToPhone: string;
-    setMessageToPhone: (phone: string) => void;
-}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
+export const MessageActionsSection: React.FC = ({}) => {
+    const { setMessageToPhone: setPhoneTo, messageToPhone: phoneTo } = useAppContext();
     const [message, setMessage] = useState('');
     const [subtitle, setSubtitle] = useState('');
     const [actions, setActions] = useState<MessageAction>({
