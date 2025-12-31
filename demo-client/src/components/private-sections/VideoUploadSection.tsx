@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
-import { Upload } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { SmartDisplay as Video } from '@mui/icons-material';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+export const VideoUploadSection: React.FC = ({}) => {
+    const { messageToPhone: phoneTo } = useAppContext();
+    const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
     const [message, setMessage] = useState('');
+    const [videoPreview, setVideoPreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
+        if (file && file.type.startsWith('video/')) {
+            setSelectedVideo(file);
             setError('');
+            setVideoPreview(URL.createObjectURL(file));
+        } else {
+            setError('Please select a valid video file');
         }
     };
 
@@ -27,8 +30,8 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
             return;
         }
 
-        if (!selectedFile) {
-            setError('Please select a file');
+        if (!selectedVideo) {
+            setError('Please select a video');
             return;
         }
 
@@ -40,14 +43,15 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
             formData.append('message', message.trim());
-            formData.append('file', selectedFile);
+            formData.append('video', selectedVideo);
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_FILE, formData);
-            setSuccess('File uploaded successfully!');
-            setSelectedFile(null);
-            (document.getElementById('file-upload-input') as HTMLInputElement).value = '';
+            await makeApiCall(API_ENDPOINTS.UPLOAD_VIDEO, formData);
+            setSuccess('Video uploaded successfully!');
+            setSelectedVideo(null);
+            setVideoPreview('');
+            (document.getElementById('video-upload-input') as HTMLInputElement).value = '';
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to upload file');
+            setError(err instanceof Error ? err.message : 'Failed to upload video');
         } finally {
             setLoading(false);
         }
@@ -56,27 +60,17 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Upload fontSize="medium" />
-                Any File Upload
+                <Video fontSize="medium" />
+                Video Upload
             </Typography>
 
             <Box sx={{ mt: 2 }}>
                 <TextField
                     fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
-                <TextField
-                    fullWidth
                     label="Message"
                     placeholder="Enter your message"
                     multiline
-                    rows={1}
+                    rows={3}
                     value={message}
                     onChange={(e) => {
                         setMessage(e.target.value);
@@ -88,12 +82,22 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
                 />
 
                 <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={loading}>
-                    {selectedFile ? selectedFile.name : 'Choose File'}
-                    <input id="file-upload-input" type="file" hidden onChange={handleFileChange} />
+                    {selectedVideo ? selectedVideo.name : 'Choose Video'}
+                    <input id="video-upload-input" type="file" accept="video/*" hidden onChange={handleVideoChange} />
                 </Button>
 
-                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedFile} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload File'}
+                {videoPreview && (
+                    <Box sx={{ mb: 2 }}>
+                        <video
+                            src={videoPreview}
+                            controls
+                            style={{ width: '100%', maxHeight: '300px', borderRadius: '8px' }}
+                        />
+                    </Box>
+                )}
+
+                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedVideo} fullWidth>
+                    {loading ? <CircularProgress size={24} /> : 'Upload Video'}
                 </Button>
 
                 {error && (

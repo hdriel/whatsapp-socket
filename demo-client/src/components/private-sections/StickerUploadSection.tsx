@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
+import { Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Image } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const StickerUploadSection: React.FC = ({}) => {
+    const { messageToPhone: phoneTo } = useAppContext();
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -69,16 +68,6 @@ export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessage
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={loading}>
                     {selectedImage ? selectedImage.name : 'Choose Image'}
                     <input id="image-upload-input" type="file" accept="image/*" hidden onChange={handleImageChange} />

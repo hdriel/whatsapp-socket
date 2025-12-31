@@ -1,21 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import {
-    Container,
-    Box,
-    Tabs,
-    Tab,
-    AppBar,
-    Toolbar,
-    Typography,
-    ThemeProvider,
-    createTheme,
-    CssBaseline,
-    Tooltip,
-} from '@mui/material';
-import { FiberManualRecord, QrCode2 } from '@mui/icons-material';
+import { Box, Container, createTheme, CssBaseline, Tab, Tabs, ThemeProvider } from '@mui/material';
+import { QrCode2 } from '@mui/icons-material';
 import { useSocketConnection } from './hooks/useSocketConnection';
 import { useQR } from './hooks/useQR';
-import AppTabs, { TabPanel } from './components';
+import { groupTabs, privateTabs, TabPanel } from './components';
+import { AppBar } from './components/AppBar';
+import { ActionType, useAppContext } from './AppContext.tsx';
 
 const theme = createTheme({
     palette: { mode: 'light', primary: { main: '#0b7853' }, secondary: { main: '#dea842' } },
@@ -23,9 +13,9 @@ const theme = createTheme({
 });
 
 function App() {
+    const { actionType, messageToPhone, groupOption } = useAppContext();
     const [currentTab, setCurrentTab] = useState(0);
-    const [messageToPhone, setMessageToPhone] = useState('');
-    const [serverConnected, wasClientConnected] = useSocketConnection();
+    const [serverConnected, wasClientConnectingStatus] = useSocketConnection();
     const { QRImage } = useQR();
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -36,36 +26,21 @@ function App() {
         if (!serverConnected) setCurrentTab(0);
     }, [serverConnected]);
 
+    const tabs = actionType === ActionType.GROUP ? groupTabs : privateTabs;
+    useEffect(() => {
+        const tab = tabs[currentTab];
+        const initTab = tabs.findIndex((tab) => tab.init);
+
+        if (!serverConnected || (tab.group && !groupOption) || (tab.phone && !messageToPhone)) {
+            setCurrentTab(initTab >= 0 ? initTab : 0);
+        }
+    }, [groupOption, messageToPhone]);
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <Box sx={{ flexGrow: 1 }}>
-                <AppBar position="static" elevation={2}>
-                    <Toolbar sx={{ gap: '0.8em' }}>
-                        <Tooltip
-                            title={
-                                serverConnected
-                                    ? `whatsapp socket connection status: ${wasClientConnected}`
-                                    : 'Server socket not connected!'
-                            }
-                        >
-                            <FiberManualRecord
-                                stroke="black"
-                                color={
-                                    ({ open: 'success', connecting: 'warning', close: 'error' }[wasClientConnected] ??
-                                        'disabled') as any
-                                }
-                            />
-                        </Tooltip>
-                        <Typography
-                            variant="h6"
-                            component="div"
-                            sx={{ flexGrow: 1, alignItems: 'center', color: 'white' }}
-                        >
-                            Whatsapp Socket Demo
-                        </Typography>
-                    </Toolbar>
-                </AppBar>
+                <AppBar serverConnected={serverConnected} wasClientConnectingStatus={wasClientConnectingStatus} />
 
                 <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -76,7 +51,7 @@ function App() {
                             scrollButtons="auto"
                             aria-label="feature tabs"
                         >
-                            {AppTabs.map((tab) => (
+                            {tabs.map((tab) => (
                                 <Tab
                                     key={tab.label}
                                     label={tab.label}
@@ -85,16 +60,21 @@ function App() {
                                               icon: QRImage ? <QrCode2 /> : undefined,
                                               iconPosition: 'start',
                                           }
-                                        : { disabled: !serverConnected })}
+                                        : {
+                                              disabled:
+                                                  !serverConnected ||
+                                                  (tab.group && !groupOption) ||
+                                                  (tab.phone && !messageToPhone),
+                                          })}
                                 />
                             ))}
                         </Tabs>
                     </Box>
 
-                    {AppTabs.map((tab, index) => {
+                    {tabs.map((tab, index) => {
                         return (
                             <TabPanel key={index} value={currentTab} index={index}>
-                                <tab.Component messageToPhone={messageToPhone} setMessageToPhone={setMessageToPhone} />
+                                <tab.Component />
                             </TabPanel>
                         );
                     })}

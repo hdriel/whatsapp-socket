@@ -13,13 +13,12 @@ import {
 } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
 import DoNotTouchIcon from '@mui/icons-material/DoNotTouch';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
-import { MessageAction } from '../types';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { MessageAction } from '../../types';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const MessageActionsSection: React.FC<{
-    messageToPhone: string;
-    setMessageToPhone: (phone: string) => void;
-}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
+export const MessageActionsSection: React.FC = ({}) => {
+    const { messageToPhone: phoneTo } = useAppContext();
     const [message, setMessage] = useState('');
     const [subtitle, setSubtitle] = useState('');
     const [actions, setActions] = useState<MessageAction>({
@@ -87,16 +86,6 @@ export const MessageActionsSection: React.FC<{
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading}
-                    sx={{ mb: 2 }}
-                />
-
                 <TextField
                     fullWidth
                     label="Message"

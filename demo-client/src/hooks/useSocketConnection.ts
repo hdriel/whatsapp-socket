@@ -23,7 +23,7 @@ export const useSocketConnection = (): [boolean, 'open' | 'close' | 'connecting'
         };
 
         const handleConnectionStatusChange = (status: 'open' | 'close' | 'connecting') => {
-            console.error('Connection status:', status);
+            console.debug('Connection status:', status);
             setClientStatus(status);
         };
 

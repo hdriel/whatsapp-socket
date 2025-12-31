@@ -1,14 +1,5 @@
 import React from 'react';
 import { Box } from '@mui/material';
-import { GenerateQRSection } from './GenerateQRSection';
-import { FileUploadSection } from './FileUploadSection';
-import { ImageUploadSection } from './ImageUploadSection';
-import { StickerUploadSection } from './StickerUploadSection';
-import { AudioRecordSection } from './AudioRecordSection';
-import { VideoUploadSection } from './VideoUploadSection';
-import { MessageActionsSection } from './MessageActionsSection';
-import { MessageSection } from './MessageSection';
-import { MultipleInputsSection } from './MultipleInputsSection';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -32,14 +23,5 @@ export const TabPanel = (props: TabPanelProps) => {
     );
 };
 
-export default [
-    { label: 'QR Code', Component: GenerateQRSection, init: true },
-    { label: 'Message', Component: MessageSection },
-    { label: 'Message Actions', Component: MessageActionsSection },
-    { label: 'Reply Inputs', Component: MultipleInputsSection },
-    { label: 'Sticker Upload', Component: StickerUploadSection },
-    { label: 'Image Upload', Component: ImageUploadSection },
-    { label: 'Video Upload', Component: VideoUploadSection },
-    { label: 'Audio Record', Component: AudioRecordSection },
-    { label: 'File Upload', Component: FileUploadSection },
-];
+export { default as privateTabs } from './private-sections';
+export { default as groupTabs } from './group-sections';

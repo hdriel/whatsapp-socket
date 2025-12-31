@@ -3,67 +3,21 @@ import path from 'pathe';
 import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
-import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+import { WhatsappSocket } from '../../src';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
 const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 
-export const initRouters = (io: SocketIO) => {
+export const initRouterPrivate = (_io: SocketIO) => {
     const was = new WhatsappSocket({
         mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
         fileAuthStateDirectoryPath: fileAuthPath,
-        logger,
-        printQRInTerminal: true,
-        customPairingCode: 'a',
         appName: 'whatsapp-socket-demo',
-        debug: true,
-        onConnectionStatusChange: (status) => {
-            io.emit('connection-status', status);
-        },
-        onQR: async (qr: string, qrCode: string | null | undefined) => {
-            logger.info(null, 'generated new QR CODE/IMAGE', { qrImage: !!qr, qrCode: !!qrCode });
-            const qrImage = await WhatsappSocket.qrToImage(qr).catch(() => null);
-            io.emit('qr', { qrImage, qrCode });
-        },
-        onOpen: () => {
-            io.emit('qr-connected');
-        },
-        onClose: () => {
-            io.emit('qr-connected');
-        },
-        // onReceiveMessages: console.log,
-        onPreConnectionSendMessageFailed: console.error,
     });
-    was.startConnection()
-        .then(() => {
-            const connected = was.isConnected();
-            io.emit('connection-status', connected ? 'open' : 'close');
-        })
-        .catch(() => null);
 
     const router = express.Router();
 
-    router.post('/api/connect', async (_req: Request, res: Response) => {
-        logger.info(null, 'connecting to whatsapp-socket client');
-        await was.startConnection().catch(() => null);
-        res.status(200).json({ message: 'OK' });
-    });
-
-    router.post('/api/disconnect', async (_req: Request, res: Response) => {
-        logger.info(null, 'disconnect to whatsapp-socket client');
-        await was.closeConnection();
-        res.status(200).json({ message: 'OK' });
-    });
-
-    router.post('/api/generate-qr', async (req: Request, res: Response) => {
-        const { phone } = req.body;
-        logger.info(null, 'reset connection and create new QR image/code', { pairingPhone: phone });
-
-        await was.resetConnection({ pairingPhone: phone }).catch(() => null);
-
-        res.status(200).json({ message: 'OK' });
-    });
-
-    router.post('/api/send-message', async (req: Request, res: Response) => {
+    router.post('/send-message', async (req: Request, res: Response) => {
         const { phoneTo, message } = req.body;
         logger.info(null, 'Sending message...', req.body);
 
@@ -74,7 +28,7 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/send-message-actions', async (req: Request, res: Response) => {
+    router.post('/send-message-actions', async (req: Request, res: Response) => {
         // const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
         const { phoneTo: phone, message, subtitle, actions } = req.body;
         logger.info(null, 'Sending message...', { ...req.body });
@@ -107,17 +61,17 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/send-multiple-inputs', async (req: Request, res: Response) => {
-        const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
+    router.post('/send-multiple-inputs', async (req: Request, res: Response) => {
+        // const code = WhatsappSocket.randomPairingCode('[a-z0-9]');
         const { phoneTo, message: title, subtitle, inputs } = req.body;
-        logger.info(null, 'Sending message...', { ...req.body, code });
+        logger.info(null, 'Sending message...', { ...req.body });
 
         await was.sendReplyButtonsMessage(phoneTo, { title, subtitle, buttons: inputs });
 
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/upload-sticker', uploadSticker.single('sticker'), async (req: Request, res: Response) => {
+    router.post('/upload-sticker', uploadSticker.single('sticker'), async (req: Request, res: Response) => {
         const stickerFile = req.file;
         if (!stickerFile) {
             res.status(400).json({ message: 'No sticker file provided' });
@@ -132,7 +86,7 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/upload-image', uploadImage.single('image'), async (req: Request, res: Response) => {
+    router.post('/upload-image', uploadImage.single('image'), async (req: Request, res: Response) => {
         const imageFile = req.file;
         if (!imageFile) {
             res.status(400).json({ message: 'No image file provided' });
@@ -147,7 +101,7 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/upload-video', uploadVideo.single('video'), async (req: Request, res: Response) => {
+    router.post('/upload-video', uploadVideo.single('video'), async (req: Request, res: Response) => {
         const videoFile = req.file;
         if (!videoFile) {
             res.status(400).json({ message: 'No video file provided' });
@@ -162,7 +116,7 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/upload-audio', uploadAudio.single('audio'), async (req: Request, res: Response) => {
+    router.post('/upload-audio', uploadAudio.single('audio'), async (req: Request, res: Response) => {
         const audioFile = req.file;
         if (!audioFile) {
             res.status(400).json({ message: 'No audio file provided' });
@@ -180,7 +134,7 @@ export const initRouters = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    router.post('/api/upload-file', uploadFile.single('file'), async (req: Request, res: Response) => {
+    router.post('/upload-file', uploadFile.single('file'), async (req: Request, res: Response) => {
         const docFile = req.file;
         if (!docFile) {
             res.status(400).json({ message: 'No document file provided' });

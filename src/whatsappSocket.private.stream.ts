@@ -1,10 +1,10 @@
 import { type AnyMessageContent } from '@fadzzzslebew/baileys';
 import { Readable } from 'stream';
-import { WhatsappSocketMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.messages.ts';
+import { WhatsappSocketPrivateMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.private.messages.ts';
 import { MIME_TYPES } from './helpers.ts';
-export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.messages';
+export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.private.messages.ts';
 
-export class WhatsappSocketStream extends WhatsappSocketMessages {
+export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
     constructor(props: WhatsappSocketMessagesProps) {
         super(props);
     }
@@ -27,7 +27,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
     ): Promise<any> {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketStream.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateStream.formatPhoneNumberToWhatsappPattern(to);
 
         // Convert stream to buffer if needed
         const buffer = stream instanceof Buffer ? stream : await this.streamToBuffer(stream as Readable);
@@ -225,7 +225,7 @@ export class WhatsappSocketStream extends WhatsappSocketMessages {
     ): Promise<any> {
         await this.ensureSocketConnected();
 
-        const jid = WhatsappSocketStream.formatPhoneNumberToWhatsappPattern(to);
+        const jid = WhatsappSocketPrivateStream.formatPhoneNumberToWhatsappPattern(to);
         const buffer =
             stickerBuffer instanceof Buffer ? stickerBuffer : await this.streamToBuffer(stickerBuffer as Readable);
 

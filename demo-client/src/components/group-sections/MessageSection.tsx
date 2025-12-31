@@ -1,0 +1,87 @@
+import React, { useState } from 'react';
+import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
+import { Chat as MessageSquare } from '@mui/icons-material';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
+
+export const MessageSection: React.FC = ({}) => {
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
+
+    const [message, setMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleSubmit = async () => {
+        if (!groupId.trim()) {
+            setError('Please select a group');
+            return;
+        }
+
+        if (!message.trim()) {
+            setError('Please enter a message');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const payload = {
+                message: message.trim(),
+            };
+
+            await makeApiCall(API_ENDPOINTS.GROUP_SEND_MESSAGE.replace('{groupId}', groupId), payload);
+            setSuccess('Message with actions sent successfully!');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to send message');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Paper elevation={2} sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <MessageSquare fontSize="medium" />
+                Message with Actions
+            </Typography>
+
+            <Box sx={{ mt: 2 }}>
+                <TextField
+                    fullWidth
+                    label="Message"
+                    placeholder="Enter your message"
+                    multiline
+                    rows={3}
+                    value={message}
+                    onChange={(e) => {
+                        setMessage(e.target.value);
+                        setSuccess('');
+                        setError('');
+                    }}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <Button variant="contained" onClick={handleSubmit} disabled={loading} fullWidth>
+                    {loading ? <CircularProgress size={24} /> : 'Send Message'}
+                </Button>
+
+                {error && (
+                    <Alert severity="error" sx={{ mt: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+
+                {success && (
+                    <Alert severity="success" sx={{ mt: 2 }}>
+                        {success}
+                    </Alert>
+                )}
+            </Box>
+        </Paper>
+    );
+};

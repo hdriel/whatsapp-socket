@@ -1,12 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, ButtonGroup } from '@mui/material';
+import { Button, Paper, Typography, Box, CircularProgress, Alert, ButtonGroup } from '@mui/material';
 import { Mic, Square, PlayCircle as Play, Upload } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useAppContext } from '../../AppContext.tsx';
 
-export const AudioRecordSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
+export const AudioRecordSection: React.FC = ({}) => {
+    const { messageToPhone: phoneTo } = useAppContext();
     const [isRecording, setIsRecording] = useState(false);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [audioUrl, setAudioUrl] = useState<string>('');
@@ -114,16 +113,6 @@ export const AudioRecordSection: React.FC<{ messageToPhone: string; setMessageTo
             </Typography>
 
             <Box sx={{ mt: 2 }}>
-                <TextField
-                    fullWidth
-                    label="Phone To"
-                    placeholder="e.g., +1234567890"
-                    value={phoneTo}
-                    onChange={(e) => setPhoneTo(e.target.value)}
-                    disabled={loading || isRecording}
-                    sx={{ mb: 2 }}
-                />
-
                 <Typography variant="subtitle2" gutterBottom>
                     Record Audio:
                 </Typography>

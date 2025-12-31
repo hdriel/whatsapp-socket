@@ -50,7 +50,6 @@ export type WhatsappSocketBaseProps = (
 };
 
 export class WhatsappSocketBase {
-    protected socket: null | WASocket | undefined;
     protected readonly fileAuthStateDirectoryPath?: string;
     protected readonly mongoURL?: string;
     protected readonly mongoCollection: string = 'whatsapp-auth';
@@ -87,7 +86,7 @@ export class WhatsappSocketBase {
 
         let strNumber = WhatsappSocketBase.formatPhoneNumber(phone, countryCode);
         strNumber = `${strNumber}@s.whatsapp.net`; // formatted Number should look like: '972513334444@s.whatsapp.net'
-        return strNumber;
+        return strNumber.replace(/:\d+@/, '@'); // remove the sessionId
     }
 
     static getWhatsappPhoneLink({
@@ -179,16 +178,10 @@ export class WhatsappSocketBase {
         return upperCaseResult.padEnd(length, upperCaseResult);
     }
 
-    private static instances: Map<string, WhatsappSocketBase> = new Map();
+    private static instances: Map<string, WASocket | null> = new Map();
 
-    static getInstance(props: WhatsappSocketBaseProps): WhatsappSocketBase {
-        const instanceKey =
-            props.appName ||
-            props.pairingPhone ||
-            props.mongoCollection ||
-            props.fileAuthStateDirectoryPath ||
-            'default';
-
+    static getInstance(props: WhatsappSocketBaseProps): WASocket {
+        const instanceKey = WhatsappSocketBase.buildSocketKey(props);
         if (!WhatsappSocketBase.instances.has(instanceKey)) {
             new WhatsappSocketBase(props);
         }
@@ -204,29 +197,24 @@ export class WhatsappSocketBase {
         }
     }
 
-    constructor({
-        fileAuthStateDirectoryPath,
-        mongoURL,
-        mongoCollection = 'whatsapp-auth',
-        logger,
-        onOpen,
-        onClose,
-        onQR,
-        onReceiveMessages,
-        onConnectionStatusChange,
-        debug,
-        printQRInTerminal,
-        pairingPhone,
-        customPairingCode,
-        onPreConnectionSendMessageFailed,
-        appName,
-    }: WhatsappSocketBaseProps) {
-        const instanceKey = appName || pairingPhone || mongoCollection || fileAuthStateDirectoryPath || 'default';
-        if (WhatsappSocketBase.instances.has(instanceKey)) {
-            const instance = WhatsappSocketBase.instances.get(instanceKey)!;
-            // instance.logger?.debug('WHATSAPP', 'RETURN SINGLETON INSTANCE!');
-            return instance;
-        }
+    constructor(props: WhatsappSocketBaseProps) {
+        const {
+            fileAuthStateDirectoryPath,
+            mongoURL,
+            mongoCollection = 'whatsapp-auth',
+            logger,
+            onOpen,
+            onClose,
+            onQR,
+            onReceiveMessages,
+            onConnectionStatusChange,
+            debug,
+            printQRInTerminal,
+            pairingPhone,
+            customPairingCode,
+            onPreConnectionSendMessageFailed,
+            appName,
+        } = props;
 
         this.appName = appName;
         this.mongoURL = mongoURL;
@@ -237,7 +225,6 @@ export class WhatsappSocketBase {
         this.printQRInTerminal = printQRInTerminal;
         this.pairingPhone = pairingPhone;
         this.customPairingCode = customPairingCode;
-        this.socket = null;
         this.onPreConnectionSendMessageFailed = onPreConnectionSendMessageFailed;
         this.onConnectionStatusChange = onConnectionStatusChange;
         this.onReceiveMessages = onReceiveMessages;
@@ -245,7 +232,10 @@ export class WhatsappSocketBase {
         this.onClose = onClose;
         this.onQR = onQR;
 
-        WhatsappSocketBase.instances.set(instanceKey, this);
+        if (WhatsappSocketBase.instances.has(this.socketKey)) {
+            this.socket = WhatsappSocketBase.instances.get(this.socketKey)!;
+            // instance.logger?.debug('WHATSAPP', 'RETURN SINGLETON INSTANCE!');
+        }
     }
 
     private async getLatestWhatsAppVersion(): Promise<[number, number, number]> {
@@ -307,6 +297,30 @@ export class WhatsappSocketBase {
         return { auth, saveCreds };
     }
 
+    static buildSocketKey(props: Partial<WhatsappSocketBaseProps>) {
+        return (
+            props.appName ||
+            props.pairingPhone ||
+            props.mongoCollection ||
+            props.fileAuthStateDirectoryPath ||
+            'default'
+        );
+    }
+
+    get socketKey(): string {
+        return (
+            this.appName || this.pairingPhone || this.mongoCollection || this.fileAuthStateDirectoryPath || 'default'
+        );
+    }
+
+    get socket(): WASocket | null {
+        return WhatsappSocketBase.instances.get(this.socketKey) ?? null;
+    }
+
+    set socket(sock: WASocket | null) {
+        WhatsappSocketBase.instances.set(this.socketKey, sock);
+    }
+
     async startConnection({
         options,
         connectionAttempts = 3,
@@ -339,8 +353,8 @@ export class WhatsappSocketBase {
                     version: version,
                     logger: pinoLogger,
                     browser: [this.appName || 'baileys', '1.0.0', ''], // ['Ubuntu', 'Chrome', '20.0.04'],
-                    syncFullHistory: false, // Don't sync full history on first connect
-                    shouldSyncHistoryMessage: () => false,
+                    syncFullHistory: true, // Don't sync full history on first connect
+                    // shouldSyncHistoryMessage: () => false,
                     shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
                     ...options,
                     printQRInTerminal: false,

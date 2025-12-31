@@ -27,5 +27,12 @@ export const useQR = () => {
         };
     }, [socket]);
 
-    return { QRImage, QRCode };
+    return {
+        QRImage,
+        QRCode,
+        reset: () => {
+            setQRCode('');
+            setQRImage('');
+        },
+    };
 };

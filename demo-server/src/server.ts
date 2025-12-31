@@ -4,7 +4,9 @@ import logger from './logger';
 import cors from 'cors';
 import path from 'pathe';
 import http, { Server as HttpServer } from 'http';
-import { initRouters } from './routes';
+import { initRouterConnection } from './routes.connection';
+import { initRouterPrivate } from './routes.private';
+import { initRouterGroups } from './routes.groups';
 import { Server as SocketIO } from 'socket.io';
 
 const server: HttpServer = http.createServer(app);
@@ -22,7 +24,9 @@ app.use(cors());
 app.use(json());
 app.use(urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../../demo-client/dist')));
-app.use('/', initRouters(io));
+app.use('/api', initRouterConnection(io));
+app.use('/api/private', initRouterPrivate(io));
+app.use('/api/groups', initRouterGroups(io));
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: any) => {
     logger.error(null, 'request error', {
