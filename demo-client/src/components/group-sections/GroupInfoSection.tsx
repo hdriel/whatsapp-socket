@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
-import { QrCode } from '@mui/icons-material';
+import { Group } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
 
@@ -9,6 +9,9 @@ export const GroupInfoSection: React.FC = ({}) => {
     const groupId = groupOption?.value as string;
 
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [addParticipant, setAddParticipant] = useState('');
+    const [removeParticipant, setRemoveParticipant] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -38,11 +41,19 @@ export const GroupInfoSection: React.FC = ({}) => {
         }
     };
 
+    useEffect(() => {
+        setName(groupOption?.label ?? '');
+        if (!groupId) {
+            setAddParticipant('');
+            setRemoveParticipant('');
+        }
+    }, [groupOption]);
+
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <QrCode fontSize="medium" />
-                Generate QR Code
+                <Group fontSize="medium" />
+                Group Information
             </Typography>
 
             <Box sx={{ mt: 2 }}>
@@ -56,8 +67,43 @@ export const GroupInfoSection: React.FC = ({}) => {
                     sx={{ mb: 2 }}
                 />
 
-                <Button variant="contained" onClick={handleCreateGroup} disabled={loading} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Create Group'}
+                <TextField
+                    fullWidth
+                    label="Group Description"
+                    placeholder="e.g., hello world"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <TextField
+                    fullWidth
+                    label="Add Participant By Phone"
+                    placeholder="e.g., +1234567890"
+                    value={addParticipant}
+                    onChange={(e) => setAddParticipant(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <TextField
+                    fullWidth
+                    label="Remove Participant By Phone"
+                    placeholder="e.g., +1234567890"
+                    value={removeParticipant}
+                    onChange={(e) => setRemoveParticipant(e.target.value)}
+                    disabled={!groupId || loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <Button
+                    variant="contained"
+                    onClick={groupOption ? handleCreateGroup : handleUpdateGroup}
+                    disabled={loading}
+                    fullWidth
+                >
+                    {loading ? <CircularProgress size={24} /> : groupOption ? 'Update Group' : 'Create Group'}
                 </Button>
 
                 {error && (
