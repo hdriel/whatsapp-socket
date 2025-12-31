@@ -13,7 +13,7 @@ const theme = createTheme({
 });
 
 function App() {
-    const { actionType } = useAppContext();
+    const { actionType, messageToPhone, groupOption } = useAppContext();
     const [currentTab, setCurrentTab] = useState(0);
     const [serverConnected, wasClientConnectingStatus] = useSocketConnection();
     const { QRImage } = useQR();
@@ -27,6 +27,14 @@ function App() {
     }, [serverConnected]);
 
     const tabs = actionType === ActionType.GROUP ? groupTabs : privateTabs;
+    useEffect(() => {
+        const tab = tabs[currentTab];
+        const initTab = tabs.findIndex((tab) => tab.init);
+
+        if (!serverConnected || (tab.group && !groupOption) || (tab.phone && !messageToPhone)) {
+            setCurrentTab(initTab >= 0 ? initTab : 0);
+        }
+    }, [groupOption, messageToPhone]);
 
     return (
         <ThemeProvider theme={theme}>
@@ -52,7 +60,12 @@ function App() {
                                               icon: QRImage ? <QrCode2 /> : undefined,
                                               iconPosition: 'start',
                                           }
-                                        : { disabled: !serverConnected })}
+                                        : {
+                                              disabled:
+                                                  !serverConnected ||
+                                                  (tab.group && !groupOption) ||
+                                                  (tab.phone && !messageToPhone),
+                                          })}
                                 />
                             ))}
                         </Tabs>

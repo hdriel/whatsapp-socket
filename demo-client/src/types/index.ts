@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface ApiResponse {
     success: boolean;
     message?: string;
@@ -36,4 +38,12 @@ export interface Group {
         jid: string; // '972500000000@s.whatsapp.net';
         admin: string; // 'superadmin';
     }>;
+}
+
+export interface TabType {
+    label: string;
+    Component: React.FC;
+    init?: boolean;
+    group?: boolean;
+    phone?: boolean;
 }

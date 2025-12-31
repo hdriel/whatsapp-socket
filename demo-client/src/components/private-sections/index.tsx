@@ -7,15 +7,16 @@ import { VideoUploadSection } from './VideoUploadSection.tsx';
 import { MessageActionsSection } from './MessageActionsSection.tsx';
 import { MessageSection } from './MessageSection.tsx';
 import { MultipleInputsSection } from './MultipleInputsSection.tsx';
+import { TabType } from '../../types';
 
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },
-    { label: 'Message', Component: MessageSection },
-    { label: 'Message Actions', Component: MessageActionsSection },
-    { label: 'Reply Inputs', Component: MultipleInputsSection },
-    { label: 'Sticker Upload', Component: StickerUploadSection },
-    { label: 'Image Upload', Component: ImageUploadSection },
-    { label: 'Video Upload', Component: VideoUploadSection },
-    { label: 'Audio Record', Component: AudioRecordSection },
-    { label: 'File Upload', Component: FileUploadSection },
-];
+    { label: 'Message', Component: MessageSection, phone: true },
+    { label: 'Message Actions', Component: MessageActionsSection, phone: true },
+    { label: 'Reply Inputs', Component: MultipleInputsSection, phone: true },
+    { label: 'Sticker Upload', Component: StickerUploadSection, phone: true },
+    { label: 'Image Upload', Component: ImageUploadSection, phone: true },
+    { label: 'Video Upload', Component: VideoUploadSection, phone: true },
+    { label: 'Audio Record', Component: AudioRecordSection, phone: true },
+    { label: 'File Upload', Component: FileUploadSection, phone: true },
+] as TabType[];
