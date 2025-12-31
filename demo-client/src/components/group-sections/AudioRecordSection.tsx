@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert, ButtonGroup } from '@mui/material';
 import { Mic, Square, PlayCircle as Play, Upload } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
 export const AudioRecordSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
     messageToPhone: phoneTo,

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Image } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
-export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
+export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
     messageToPhone: phoneTo,
     setMessageToPhone: setPhoneTo,
 }) => {
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [message, setMessage] = useState('');
     const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -47,9 +48,10 @@ export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessage
         try {
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
-            formData.append('sticker', selectedImage);
+            formData.append('message', message.trim());
+            formData.append('image', selectedImage);
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_STICKER, formData);
+            await makeApiCall(API_ENDPOINTS.UPLOAD_IMAGE, formData);
             setSuccess('Image uploaded successfully!');
             setSelectedImage(null);
             setImagePreview('');
@@ -75,6 +77,22 @@ export const StickerUploadSection: React.FC<{ messageToPhone: string; setMessage
                     placeholder="e.g., +1234567890"
                     value={phoneTo}
                     onChange={(e) => setPhoneTo(e.target.value)}
+                    disabled={loading}
+                    sx={{ mb: 2 }}
+                />
+
+                <TextField
+                    fullWidth
+                    label="Message"
+                    placeholder="Enter your message"
+                    multiline
+                    rows={3}
+                    value={message}
+                    onChange={(e) => {
+                        setMessage(e.target.value);
+                        setSuccess('');
+                        setError('');
+                    }}
                     disabled={loading}
                     sx={{ mb: 2 }}
                 />

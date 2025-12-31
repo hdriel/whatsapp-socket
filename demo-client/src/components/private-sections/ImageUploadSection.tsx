@@ -1,27 +1,32 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
-import { SmartDisplay as Video } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { Image } from '@mui/icons-material';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
-export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
+export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
     messageToPhone: phoneTo,
     setMessageToPhone: setPhoneTo,
 }) => {
-    const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [message, setMessage] = useState('');
-    const [videoPreview, setVideoPreview] = useState<string>('');
+    const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const handleVideoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file && file.type.startsWith('video/')) {
-            setSelectedVideo(file);
+        if (file && file.type.startsWith('image/')) {
+            setSelectedImage(file);
             setError('');
-            setVideoPreview(URL.createObjectURL(file));
+
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
         } else {
-            setError('Please select a valid video file');
+            setError('Please select a valid image file');
         }
     };
 
@@ -31,8 +36,8 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
             return;
         }
 
-        if (!selectedVideo) {
-            setError('Please select a video');
+        if (!selectedImage) {
+            setError('Please select an image');
             return;
         }
 
@@ -44,15 +49,15 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
             formData.append('message', message.trim());
-            formData.append('video', selectedVideo);
+            formData.append('image', selectedImage);
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_VIDEO, formData);
-            setSuccess('Video uploaded successfully!');
-            setSelectedVideo(null);
-            setVideoPreview('');
-            (document.getElementById('video-upload-input') as HTMLInputElement).value = '';
+            await makeApiCall(API_ENDPOINTS.UPLOAD_IMAGE, formData);
+            setSuccess('Image uploaded successfully!');
+            setSelectedImage(null);
+            setImagePreview('');
+            (document.getElementById('image-upload-input') as HTMLInputElement).value = '';
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to upload video');
+            setError(err instanceof Error ? err.message : 'Failed to upload image');
         } finally {
             setLoading(false);
         }
@@ -61,8 +66,8 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Video fontSize="medium" />
-                Video Upload
+                <Image fontSize="medium" />
+                Image Upload
             </Typography>
 
             <Box sx={{ mt: 2 }}>
@@ -93,22 +98,22 @@ export const VideoUploadSection: React.FC<{ messageToPhone: string; setMessageTo
                 />
 
                 <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={loading}>
-                    {selectedVideo ? selectedVideo.name : 'Choose Video'}
-                    <input id="video-upload-input" type="file" accept="video/*" hidden onChange={handleVideoChange} />
+                    {selectedImage ? selectedImage.name : 'Choose Image'}
+                    <input id="image-upload-input" type="file" accept="image/*" hidden onChange={handleImageChange} />
                 </Button>
 
-                {videoPreview && (
-                    <Box sx={{ mb: 2 }}>
-                        <video
-                            src={videoPreview}
-                            controls
-                            style={{ width: '100%', maxHeight: '300px', borderRadius: '8px' }}
+                {imagePreview && (
+                    <Box sx={{ mb: 2, textAlign: 'center' }}>
+                        <img
+                            src={imagePreview}
+                            alt="Preview"
+                            style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }}
                         />
                     </Box>
                 )}
 
-                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedVideo} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload Video'}
+                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedImage} fullWidth>
+                    {loading ? <CircularProgress size={24} /> : 'Upload Image'}
                 </Button>
 
                 {error && (

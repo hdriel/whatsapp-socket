@@ -20,9 +20,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send text message to group
      */
-    async sendGroupTextMessage(groupId: string, text: string, options?: GroupMessageOptions): Promise<any> {
+    async sendTextMessage(groupId: string, text: string, options?: GroupMessageOptions): Promise<any> {
         if (!groupId || !text) {
-            throw new Error('sendGroupTextMessage: Group ID and text are required.');
+            throw new Error('sendTextMessage: Group ID and text are required.');
         }
         await this.ensureSocketConnected();
 
@@ -56,7 +56,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send buttons message to group
      */
-    async sendGroupButtonsMessage(
+    async sendButtonsMessage(
         groupId: string,
         {
             title,
@@ -69,7 +69,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         }
     ): Promise<any> {
         if (!groupId || !title || !buttons?.length) {
-            throw new Error('sendGroupButtonsMessage: Group ID, title, and buttons are required.');
+            throw new Error('sendButtonsMessage: Group ID, title, and buttons are required.');
         }
 
         await this.ensureSocketConnected();
@@ -137,7 +137,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send reply buttons message to group
      */
-    async sendGroupReplyButtonsMessage(
+    async sendReplyButtonsMessage(
         groupId: string,
         {
             title,
@@ -152,7 +152,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         }
     ): Promise<any> {
         if (!groupId || !title || !buttons?.length) {
-            throw new Error('sendGroupReplyButtonsMessage: Group ID, title, and buttons are required.');
+            throw new Error('sendReplyButtonsMessage: Group ID, title, and buttons are required.');
         }
 
         await this.ensureSocketConnected();
@@ -193,14 +193,13 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send image to group
      */
-    async sendGroupImage(
+    async sendImageMessage(
         groupId: string,
         imageBuffer: Buffer, // todo: handle also stream and string url
-        caption?: string,
-        options?: GroupMessageOptions
+        { caption, mentions }: GroupMessageOptions & { caption?: string } = {}
     ): Promise<any> {
         if (!groupId || !imageBuffer) {
-            throw new Error('sendGroupImage: Group ID and image buffer are required.');
+            throw new Error('sendImage: Group ID and image buffer are required.');
         }
 
         await this.ensureSocketConnected();
@@ -208,8 +207,8 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
         const messageOptions: any = { image: imageBuffer, ...(caption && { caption }) };
 
-        if (options?.mentions?.length) {
-            messageOptions.mentions = options.mentions.map((phone) =>
+        if (mentions?.length) {
+            messageOptions.mentions = mentions.map((phone) =>
                 WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)
             );
         }
@@ -227,14 +226,14 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send video to group
      */
-    async sendGroupVideo(
+    async sendVideoMessage(
         groupId: string,
         videoBuffer: Buffer, // todo: handle also stream and string url
         caption?: string,
         options?: GroupMessageOptions
     ): Promise<any> {
         if (!groupId || !videoBuffer) {
-            throw new Error('sendGroupVideo: Group ID and video buffer are required.');
+            throw new Error('sendVideo: Group ID and video buffer are required.');
         }
 
         await this.ensureSocketConnected();
@@ -261,13 +260,13 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send audio to group
      */
-    async sendGroupAudio(
+    async sendAudioMessage(
         groupId: string,
         audioBuffer: Buffer, // todo: handle also stream and string url
         options?: { ptt?: boolean; mentions?: string[] }
     ): Promise<any> {
         if (!groupId || !audioBuffer) {
-            throw new Error('sendGroupAudio: Group ID and audio buffer are required.');
+            throw new Error('sendAudio: Group ID and audio buffer are required.');
         }
 
         await this.ensureSocketConnected();
@@ -297,7 +296,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send document to group
      */
-    async sendGroupDocument(
+    async sendDocumentMessage(
         groupId: string,
         documentBuffer: Buffer, // todo: handle also stream and string url
         fileName: string,
@@ -305,7 +304,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         options?: GroupMessageOptions
     ): Promise<any> {
         if (!groupId || !documentBuffer || !fileName) {
-            throw new Error('sendGroupDocument: Group ID, document buffer, and fileName are required.');
+            throw new Error('sendDocument: Group ID, document buffer, and fileName are required.');
         }
 
         await this.ensureSocketConnected();
@@ -336,7 +335,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send location to group
      */
-    async sendGroupLocation(
+    async sendLocationMessage(
         groupId: string,
         latitude: number,
         longitude: number,
@@ -344,7 +343,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         address?: string
     ): Promise<any> {
         if (!groupId || latitude === undefined || longitude === undefined) {
-            throw new Error('sendGroupLocation: Group ID, latitude, and longitude are required.');
+            throw new Error('sendLocation: Group ID, latitude, and longitude are required.');
         }
 
         await this.ensureSocketConnected();
@@ -372,9 +371,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send message mentioning all group participants
      */
-    async sendGroupMentionAll(groupId: string, text: string): Promise<any> {
+    async sendMentionAll(groupId: string, text: string): Promise<any> {
         if (!groupId || !text) {
-            throw new Error('sendGroupMentionAll: Group ID and text are required.');
+            throw new Error('sendMentionAll: Group ID and text are required.');
         }
 
         await this.ensureSocketConnected();
@@ -405,9 +404,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send reaction to a message in group
      */
-    async sendGroupReaction(groupId: string, messageId: string, emoji: string): Promise<any> {
+    async sendReactionMessage(groupId: string, messageId: string, emoji: string): Promise<any> {
         if (!groupId || !messageId || !emoji) {
-            throw new Error('sendGroupReaction: Group ID, message ID, and emoji are required.');
+            throw new Error('sendReaction: Group ID, message ID, and emoji are required.');
         }
 
         await this.ensureSocketConnected();

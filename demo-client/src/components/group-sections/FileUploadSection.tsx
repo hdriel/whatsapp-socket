@@ -1,32 +1,23 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
-import { Image } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { Upload } from '@mui/icons-material';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
-export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
+export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
     messageToPhone: phoneTo,
     setMessageToPhone: setPhoneTo,
 }) => {
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [message, setMessage] = useState('');
-    const [imagePreview, setImagePreview] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            setSelectedImage(file);
+        if (file) {
+            setSelectedFile(file);
             setError('');
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setError('Please select a valid image file');
         }
     };
 
@@ -36,8 +27,8 @@ export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageTo
             return;
         }
 
-        if (!selectedImage) {
-            setError('Please select an image');
+        if (!selectedFile) {
+            setError('Please select a file');
             return;
         }
 
@@ -49,15 +40,14 @@ export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageTo
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
             formData.append('message', message.trim());
-            formData.append('image', selectedImage);
+            formData.append('file', selectedFile);
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_IMAGE, formData);
-            setSuccess('Image uploaded successfully!');
-            setSelectedImage(null);
-            setImagePreview('');
-            (document.getElementById('image-upload-input') as HTMLInputElement).value = '';
+            await makeApiCall(API_ENDPOINTS.UPLOAD_FILE, formData);
+            setSuccess('File uploaded successfully!');
+            setSelectedFile(null);
+            (document.getElementById('file-upload-input') as HTMLInputElement).value = '';
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to upload image');
+            setError(err instanceof Error ? err.message : 'Failed to upload file');
         } finally {
             setLoading(false);
         }
@@ -66,8 +56,8 @@ export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageTo
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Image fontSize="medium" />
-                Image Upload
+                <Upload fontSize="medium" />
+                Any File Upload
             </Typography>
 
             <Box sx={{ mt: 2 }}>
@@ -86,7 +76,7 @@ export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageTo
                     label="Message"
                     placeholder="Enter your message"
                     multiline
-                    rows={3}
+                    rows={1}
                     value={message}
                     onChange={(e) => {
                         setMessage(e.target.value);
@@ -98,22 +88,12 @@ export const ImageUploadSection: React.FC<{ messageToPhone: string; setMessageTo
                 />
 
                 <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={loading}>
-                    {selectedImage ? selectedImage.name : 'Choose Image'}
-                    <input id="image-upload-input" type="file" accept="image/*" hidden onChange={handleImageChange} />
+                    {selectedFile ? selectedFile.name : 'Choose File'}
+                    <input id="file-upload-input" type="file" hidden onChange={handleFileChange} />
                 </Button>
 
-                {imagePreview && (
-                    <Box sx={{ mb: 2, textAlign: 'center' }}>
-                        <img
-                            src={imagePreview}
-                            alt="Preview"
-                            style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px' }}
-                        />
-                    </Box>
-                )}
-
-                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedImage} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload Image'}
+                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedFile} fullWidth>
+                    {loading ? <CircularProgress size={24} /> : 'Upload File'}
                 </Button>
 
                 {error && (

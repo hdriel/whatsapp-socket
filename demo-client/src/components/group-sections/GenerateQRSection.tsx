@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { QrCode } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
-import { useQR } from '../hooks/useQR.ts';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { useQR } from '../../hooks/useQR.ts';
 
 export const GenerateQRSection = () => {
     const [phoneTo, setPhoneTo] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const { QRImage, QRCode } = useQR();
+    const { QRImage, QRCode, reset } = useQR();
 
     const handleGenerateQR = async () => {
         setLoading(true);
         setError('');
 
         try {
-            await makeApiCall(API_ENDPOINTS.GENERATE_QR, { phone: phoneTo.trim() });
+            await makeApiCall(API_ENDPOINTS.GENERATE_QR, { phone: phoneTo.trim() }).finally(() => reset());
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate QR code');
         } finally {

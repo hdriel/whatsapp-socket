@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
 export const MessageSection: React.FC<{
     messageToPhone: string;

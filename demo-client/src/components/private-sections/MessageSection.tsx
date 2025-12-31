@@ -1,34 +1,25 @@
 import React, { useState } from 'react';
 import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/material';
-import { Upload } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { Chat as MessageSquare } from '@mui/icons-material';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
-export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToPhone: (phone: string) => void }> = ({
-    messageToPhone: phoneTo,
-    setMessageToPhone: setPhoneTo,
-}) => {
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+export const MessageSection: React.FC<{
+    messageToPhone: string;
+    setMessageToPhone: (phone: string) => void;
+}> = ({ messageToPhone: phoneTo, setMessageToPhone: setPhoneTo }) => {
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            setError('');
-        }
-    };
-
-    const handleUpload = async () => {
+    const handleSubmit = async () => {
         if (!phoneTo.trim()) {
             setError('Please enter a phone number');
             return;
         }
 
-        if (!selectedFile) {
-            setError('Please select a file');
+        if (!message.trim()) {
+            setError('Please enter a message');
             return;
         }
 
@@ -37,17 +28,15 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
         setSuccess('');
 
         try {
-            const formData = new FormData();
-            formData.append('phoneTo', phoneTo.trim());
-            formData.append('message', message.trim());
-            formData.append('file', selectedFile);
+            const payload = {
+                phoneTo: phoneTo.trim(),
+                message: message.trim(),
+            };
 
-            await makeApiCall(API_ENDPOINTS.UPLOAD_FILE, formData);
-            setSuccess('File uploaded successfully!');
-            setSelectedFile(null);
-            (document.getElementById('file-upload-input') as HTMLInputElement).value = '';
+            await makeApiCall(API_ENDPOINTS.SEND_MESSAGE, payload);
+            setSuccess('Message with actions sent successfully!');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to upload file');
+            setError(err instanceof Error ? err.message : 'Failed to send message');
         } finally {
             setLoading(false);
         }
@@ -56,8 +45,8 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Upload fontSize="medium" />
-                Any File Upload
+                <MessageSquare fontSize="medium" />
+                Message with Actions
             </Typography>
 
             <Box sx={{ mt: 2 }}>
@@ -76,7 +65,7 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
                     label="Message"
                     placeholder="Enter your message"
                     multiline
-                    rows={1}
+                    rows={3}
                     value={message}
                     onChange={(e) => {
                         setMessage(e.target.value);
@@ -87,13 +76,8 @@ export const FileUploadSection: React.FC<{ messageToPhone: string; setMessageToP
                     sx={{ mb: 2 }}
                 />
 
-                <Button variant="outlined" component="label" fullWidth sx={{ mb: 2 }} disabled={loading}>
-                    {selectedFile ? selectedFile.name : 'Choose File'}
-                    <input id="file-upload-input" type="file" hidden onChange={handleFileChange} />
-                </Button>
-
-                <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedFile} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload File'}
+                <Button variant="contained" onClick={handleSubmit} disabled={loading} fullWidth>
+                    {loading ? <CircularProgress size={24} /> : 'Send Message'}
                 </Button>
 
                 {error && (

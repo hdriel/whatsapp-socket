@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 import { Chat as MessageSquare } from '@mui/icons-material';
 import DoNotTouchIcon from '@mui/icons-material/DoNotTouch';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
-import { MessageAction } from '../types';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
+import { MessageAction } from '../../types';
 
 export const MessageActionsSection: React.FC<{
     messageToPhone: string;

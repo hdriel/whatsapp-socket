@@ -13,7 +13,7 @@ import {
     ListItemText,
 } from '@mui/material';
 import { List as ListIcon, ControlPoint as Plus, Delete as Trash2 } from '@mui/icons-material';
-import { API_ENDPOINTS, makeApiCall } from '../utils/api';
+import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 
 export const MultipleInputsSection: React.FC<{
     messageToPhone: string;
