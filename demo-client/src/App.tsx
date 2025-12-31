@@ -31,7 +31,7 @@ function App() {
         const tab = tabs[currentTab];
         const initTab = tabs.findIndex((tab) => tab.init);
 
-        if (!serverConnected || (tab.group && !groupOption)) {
+        if (!serverConnected || (tab.group && !groupOption) || (tab.phone && !messageToPhone)) {
             setCurrentTab(initTab >= 0 ? initTab : 0);
         }
     }, [groupOption, messageToPhone]);
@@ -61,7 +61,10 @@ function App() {
                                               iconPosition: 'start',
                                           }
                                         : {
-                                              disabled: !serverConnected || (tab.group && !groupOption),
+                                              disabled:
+                                                  !serverConnected ||
+                                                  (tab.group && !groupOption) ||
+                                                  (tab.phone && !messageToPhone),
                                           })}
                                 />
                             ))}
