@@ -2,17 +2,16 @@ import React, { useEffect } from 'react';
 import { FiberManualRecord } from '@mui/icons-material';
 import {
     AppBar as MuiAppBar,
-    Toolbar,
-    Typography,
-    Tooltip,
-    Box,
-    ToggleButton,
-    ToggleButtonGroup,
     Autocomplete,
     AutocompleteRenderInputParams,
-    TextField,
+    Box,
     type SxProps,
+    TextField,
+    Toolbar,
+    Tooltip,
+    Typography,
 } from '@mui/material';
+import { ToggleButtonGroup } from 'mui-simple';
 import { useGroups } from '../hooks/useGroups.ts';
 import { getSocket } from '../socket.ts';
 import { API_ENDPOINTS, makeApiCall } from '../utils/api.ts';
@@ -71,7 +70,27 @@ export const AppBar: React.FC<AppBarProps> = ({ wasClientConnectingStatus, serve
                 >
                     Whatsapp Socket Demo
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+                <ToggleButtonGroup
+                    exclusive
+                    value={actionType}
+                    onChange={(_event, value) => {
+                        if (value !== null) setActionType(value);
+                    }}
+                    color={'secondary'}
+                    data={[
+                        { component: 'Person', value: ActionType.PRIVATE },
+                        { component: 'Groups', value: ActionType.GROUP },
+                    ]}
+                />
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%',
+                        marginRight: '20%',
+                    }}
+                >
                     {actionType === ActionType.GROUP && (
                         <Autocomplete
                             value={groupOption}
@@ -100,21 +119,6 @@ export const AppBar: React.FC<AppBarProps> = ({ wasClientConnectingStatus, serve
                             sx={textFieldStyles}
                         />
                     )}
-                </Box>
-                <Box marginInlineStart="auto">
-                    <ToggleButtonGroup
-                        color="secondary"
-                        exclusive
-                        value={actionType}
-                        onChange={(_event, value) => setActionType(value)}
-                    >
-                        <ToggleButton value={ActionType.PRIVATE} sx={{ padding: '0.3em 1em' }}>
-                            PRIVATE
-                        </ToggleButton>
-                        <ToggleButton value={ActionType.GROUP} sx={{ padding: '0.3em 1em' }}>
-                            GROUP
-                        </ToggleButton>
-                    </ToggleButtonGroup>
                 </Box>
             </Toolbar>
         </MuiAppBar>

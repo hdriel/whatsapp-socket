@@ -6,7 +6,8 @@
     "scripts": {
         "start": "npm run build && tsx src/server.ts",
         "build": "cd ../demo-client && npm run build",
-        "dev": "tsx src/server.ts",
+        "dev:client": "cd ../demo-client && npm run dev",
+        "dev:server": "tsx src/server.ts",
         "yalc:add": "yalc add @hdriel/whatsapp-socket",
         "yalc:remove": "tsx remove @hdriel/whatsapp-socket"
     },
