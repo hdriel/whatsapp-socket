@@ -1,4 +1,4 @@
-import type { GroupMetadata } from '@fadzzzslebew/baileys';
+import type { GroupMetadata, ParticipantAction } from '@fadzzzslebew/baileys';
 import { WhatsappSocketBase, type WhatsappSocketBaseProps } from './whatsappSocket.base';
 import type { CreateGroupOptions, GroupSettingsType } from './decs';
 export type { WhatsappSocketBaseProps as WhatsappSocketGroupsProps } from './whatsappSocket.base';
@@ -134,11 +134,13 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
         return this.socket?.groupSettingUpdate(formattedGroupId, setting);
     }
 
-    /**
-     * Add participants to group
-     */
-    async addParticipants(groupId: string, participants: string[]): Promise<any> {
+    private async updateGroupParticipants(
+        groupId: string,
+        participant: string | string[],
+        action: ParticipantAction
+    ): Promise<any> {
         if (!groupId) throw new Error('addParticipants: Group ID is required.');
+        const participants = ([] as string[]).concat(participant).filter((v) => v);
         if (participants?.length) return;
         await this.ensureSocketConnected();
 
@@ -148,83 +150,42 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
         );
 
         if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Adding participants to group', {
+            this.logger?.debug('WHATSAPP', `${action} participants to group`, {
                 groupId: formattedGroupId,
                 participantsCount: formattedParticipants.length,
             });
         }
 
-        return this.socket?.groupParticipantsUpdate(formattedGroupId, formattedParticipants, 'add');
+        return this.socket?.groupParticipantsUpdate(formattedGroupId, formattedParticipants, action);
+    }
+
+    /**
+     * Add participants to group
+     */
+    async addParticipants(groupId: string, participant: string | string[]): Promise<any> {
+        return this.updateGroupParticipants(groupId, participant, 'add');
     }
 
     /**
      * Remove participants from group
      */
-    async removeParticipants(groupId: string, participants: string[]): Promise<any> {
-        if (!groupId) throw new Error('removeParticipants: Group ID is required.');
-        if (!participants?.length) return;
-        await this.ensureSocketConnected();
-
-        const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
-        const formattedParticipants = participants.map((phone) =>
-            WhatsappSocketGroups.formatPhoneNumberToWhatsappPattern(phone)
-        );
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Removing participants from group', {
-                groupId: formattedGroupId,
-                participantsCount: formattedParticipants.length,
-            });
-        }
-
-        return this.socket?.groupParticipantsUpdate(formattedGroupId, formattedParticipants, 'remove');
+    async removeParticipants(groupId: string, participant: string | string[]): Promise<any> {
+        return this.updateGroupParticipants(groupId, participant, 'remove');
     }
 
     /**
      * Promote participant to admin
      */
-    async promoteToAdmin(groupId: string, participants: string[]): Promise<any> {
-        if (!groupId) throw new Error('promoteToAdmin: Group ID is required.');
-        if (!participants?.length) return;
-        await this.ensureSocketConnected();
-
-        const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
-        const formattedParticipants = participants.map((phone) =>
-            WhatsappSocketGroups.formatPhoneNumberToWhatsappPattern(phone)
-        );
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Promoting participants to admin', {
-                groupId: formattedGroupId,
-                participantsCount: formattedParticipants.length,
-            });
-        }
-
-        return this.socket?.groupParticipantsUpdate(formattedGroupId, formattedParticipants, 'promote');
+    async promoteToAdmin(groupId: string, participant: string | string[]): Promise<any> {
+        return this.updateGroupParticipants(groupId, participant, 'promote');
     }
 
     /**
      * הורדת משתתף ממנהל
      * Demote participant from admin
      */
-    async demoteFromAdmin(groupId: string, participants: string[]): Promise<any> {
-        if (!groupId) throw new Error('demoteFromAdmin: Group ID is required.');
-        if (!participants?.length) return;
-        await this.ensureSocketConnected();
-
-        const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
-        const formattedParticipants = participants.map((phone) =>
-            WhatsappSocketGroups.formatPhoneNumberToWhatsappPattern(phone)
-        );
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Demoting participants from admin', {
-                groupId: formattedGroupId,
-                participantsCount: formattedParticipants.length,
-            });
-        }
-
-        return this.socket?.groupParticipantsUpdate(formattedGroupId, formattedParticipants, 'demote');
+    async demoteFromAdmin(groupId: string, participant: string | string[]): Promise<any> {
+        return this.updateGroupParticipants(groupId, participant, 'demote');
     }
 
     /**

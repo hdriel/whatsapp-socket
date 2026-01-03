@@ -13,6 +13,8 @@ export const initRouterGroups = (io: SocketIO) => {
         mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
         fileAuthStateDirectoryPath: fileAuthPath,
         appName: 'whatsapp-socket-demo',
+        debug: true,
+        logger,
     });
 
     const router = express.Router();
@@ -62,19 +64,35 @@ export const initRouterGroups = (io: SocketIO) => {
         });
     });
 
-    router.post('/', async (req: Request, res: Response) => {
-        const { name, description, participants } = req.body;
+    router.post(['/', '/:groupId'], async (req: Request, res: Response) => {
+        const groupId = req.params.groupId !== 'undefined' ? req.params.groupId : '';
+        const { name, description, addParticipants, removeParticipants } = req.body;
         logger.info(null, 'Creating group...', req.body);
 
-        await was
-            .createGroup({ name, description, participants })
-            .then(() => {
+        if (groupId) {
+            try {
+                name && (await was.updateGroupName(groupId, name));
+                // description && (await was.updateGroupDescription(groupId, description));
+                addParticipants?.length && (await was.addParticipants(groupId, addParticipants));
+                removeParticipants?.length && (await was.removeParticipants(groupId, removeParticipants));
                 res.status(200).json({ message: 'OK' });
-            })
-            .catch((error) => {
-                logger.error(null, 'failed to create group', { error: error?.message ?? error });
-                res.status(403).json({ message: error });
-            });
+            } catch (error: any) {
+                const errMsg = error?.message ?? error;
+                logger.error(null, 'failed to update group', { error: errMsg });
+                res.status(403).json({ message: errMsg });
+            }
+        } else {
+            await was
+                .createGroup({ name, description, participants: addParticipants.length ? addParticipants : [] })
+                .then(() => {
+                    res.status(200).json({ message: 'OK' });
+                })
+                .catch((error) => {
+                    const errMsg = error?.message ?? error;
+                    logger.error(null, 'failed to create group', { error: errMsg });
+                    res.status(403).json({ message: errMsg });
+                });
+        }
     });
 
     router.post('/:groupId/send-message', async (req: Request, res: Response) => {

@@ -20,7 +20,11 @@ export const GroupInfoSection: React.FC = ({}) => {
         setError('');
 
         try {
-            await makeApiCall(API_ENDPOINTS.GROUP_CREATE, { name: name.trim() });
+            await makeApiCall(API_ENDPOINTS.GROUP_CREATE, {
+                name: name.trim(),
+                description: description.trim(),
+                addParticipants: addParticipant ? [addParticipant.trim()] : [],
+            });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate QR code');
         } finally {
@@ -33,7 +37,12 @@ export const GroupInfoSection: React.FC = ({}) => {
         setError('');
 
         try {
-            await makeApiCall(API_ENDPOINTS.GROUP_CREATE.replace('{groupId}', groupId), { name: name.trim() });
+            await makeApiCall(API_ENDPOINTS.GROUP_INFO.replace('{groupId}', groupId), {
+                name: name.trim(),
+                description: description.trim(),
+                addParticipants: addParticipant ? [addParticipant.trim()] : [],
+                removeParticipants: removeParticipant ? [removeParticipant.trim()] : [],
+            });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to generate QR code');
         } finally {
@@ -99,7 +108,7 @@ export const GroupInfoSection: React.FC = ({}) => {
 
                 <Button
                     variant="contained"
-                    onClick={groupOption ? handleCreateGroup : handleUpdateGroup}
+                    onClick={groupOption ? handleUpdateGroup : handleCreateGroup}
                     disabled={loading}
                     fullWidth
                 >
