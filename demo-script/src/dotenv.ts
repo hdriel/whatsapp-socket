@@ -13,7 +13,7 @@ export default myEnv.parsed;
 
 export const MONGODB_URI = myEnv.parsed?.MONGODB_URI as string;
 export const USE_MONGODB_STORAGE = +((myEnv.parsed?.USE_MONGODB_STORAGE as string) ?? '0');
-export const MY_PHONE = (myEnv.parsed?.MY_PHONE as string) ?? '';
-export const TARGET_PHONE = (myEnv.parsed?.TARGET_PHONE as string) ?? '';
+export const MY_PHONE = (myEnv.parsed?.MY_PHONE as string) || '';
+export const TARGET_PHONE = (myEnv.parsed?.TARGET_PHONE as string) || MY_PHONE;
 
 logger.info(null, 'env', myEnv.parsed);

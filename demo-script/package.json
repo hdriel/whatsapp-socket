@@ -4,14 +4,16 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "private:test": "tsx src/private.script.ts"
+        "private:test": "tsx src/private.script.ts",
+        "yalc:add": "yalc add @hdriel/whatsapp-socket",
+        "yalc:remove": "tsx remove @hdriel/whatsapp-socket"
     },
     "keywords": [],
     "author": "",
     "license": "ISC",
     "type": "commonjs",
     "dependencies": {
-        "@hdriel/whatsapp-socket": "^1.2.0",
+        "@hdriel/whatsapp-socket": "file:.yalc/@hdriel/whatsapp-socket",
         "dotenv": "^17.2.3",
         "dotenv-expand": "^12.0.3",
         "pathe": "^2.0.3",
