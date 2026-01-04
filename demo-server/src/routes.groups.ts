@@ -67,7 +67,7 @@ export const initRouterGroups = (io: SocketIO) => {
     router.post(['/', '/:groupId'], async (req: Request, res: Response) => {
         const groupId = req.params.groupId !== 'undefined' ? req.params.groupId : '';
         const { name, description, addParticipants, removeParticipants } = req.body;
-        logger.info(null, 'Creating group...', req.body);
+        logger.info(null, `${groupId ? 'Updating' : 'Creating'} group...`, req.body);
 
         if (groupId) {
             try {
