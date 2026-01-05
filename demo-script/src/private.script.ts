@@ -61,7 +61,7 @@ async function runWhatsAppTests() {
                 logger.info(null, `📊 Connection status: ${status}`);
             },
             onReceiveMessages: async (messages, type) => {
-                logger.info(null, `📨 Received ${messages.length} messages (${type})`);
+                logger.info(null, `📨 Received ${messages?.length} messages (${type})`);
             },
         });
 

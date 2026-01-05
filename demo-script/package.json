@@ -5,6 +5,7 @@
     "main": "index.js",
     "scripts": {
         "private:test": "tsx src/private.script.ts",
+        "test": "jest",
         "yalc:add": "yalc add @hdriel/whatsapp-socket",
         "yalc:remove": "tsx remove @hdriel/whatsapp-socket"
     },
@@ -20,6 +21,9 @@
         "stack-trace-logger": "^1.1.2"
     },
     "devDependencies": {
+        "@types/jest": "^30.0.0",
+        "jest": "^30.2.0",
+        "ts-jest": "^29.4.6",
         "tsx": "^4.21.0"
     }
 }
