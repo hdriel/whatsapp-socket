@@ -2,7 +2,7 @@ import { basename } from 'node:path';
 import { ReadStream } from 'node:fs';
 import ms, { type StringValue } from 'ms';
 // NOTE: Dynamic Import for ESM-only Packages
-// import { parseBuffer, parseStream } from 'music-metadata';
+import { parseBuffer, parseStream } from 'music-metadata';
 
 export const getTotalSeconds = (msValue: StringValue) => {
     const value = ms(msValue);
@@ -18,7 +18,7 @@ export async function getUrlBuffer(url: string) {
 
 async function getDurationFromStream(stream: ReadStream, mimeType?: string): Promise<number> {
     try {
-        const { parseStream } = await import('music-metadata');
+        // const { parseStream } = await import('music-metadata');
         const metadata = await parseStream(stream, { mimeType: mimeType || 'audio/mpeg' });
         return Math.floor(metadata.format.duration || 0);
     } catch (error) {
@@ -32,7 +32,7 @@ async function getDurationFromStream(stream: ReadStream, mimeType?: string): Pro
 }
 async function getDurationFromBuffer(buffer: Buffer, mimeType?: string): Promise<number> {
     try {
-        const { parseBuffer } = await import('music-metadata');
+        // const { parseBuffer } = await import('music-metadata');
         const metadata = await parseBuffer(buffer, mimeType || 'audio/mpeg').catch(() => null);
         return metadata ? Math.floor(metadata.format.duration || 0) : 0;
     } catch (error) {
