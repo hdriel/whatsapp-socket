@@ -1,7 +1,7 @@
 import { basename } from 'node:path';
 import { ReadStream } from 'node:fs';
 import ms, { type StringValue } from 'ms';
-// NOTE: Dynamic Import for ESM-only Packages
+// NOTE: Hidden for Dynamic Import for ESM-only Packages
 import { parseBuffer, parseStream } from 'music-metadata';
 
 export const getTotalSeconds = (msValue: StringValue) => {
