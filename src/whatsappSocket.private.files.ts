@@ -153,6 +153,6 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid, replyToMessageId });
-        await this.sendSticker(jid, stickerBuffer, { replyToMessageId });
+        return await this.sendSticker(jid, stickerBuffer, { replyToMessageId });
     }
 }
