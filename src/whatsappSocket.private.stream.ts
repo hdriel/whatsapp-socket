@@ -1,8 +1,8 @@
 import { type AnyMessageContent } from '@fadzzzslebew/baileys';
 import { Readable } from 'stream';
-import { WhatsappSocketPrivateMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.private.messages.ts';
-import { MIME_TYPES } from './helpers.ts';
-export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.private.messages.ts';
+import { WhatsappSocketPrivateMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.private.messages';
+export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.private.messages';
+import { MIME_TYPES } from './helpers';
 
 export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
     constructor(props: WhatsappSocketMessagesProps) {

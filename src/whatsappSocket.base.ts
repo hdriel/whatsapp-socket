@@ -25,8 +25,8 @@ import QRCode from 'qrcode';
 import { type Collection, type Document as MongoDocument, MongoClient } from 'mongodb';
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
-import useMongoDBAuthState from './mongoAuthState.ts';
-import { sleep } from './helpers.ts';
+import useMongoDBAuthState from './mongoAuthState';
+import { sleep } from './helpers';
 
 const pinoLogger: any = P({ level: 'silent' });
 
@@ -250,7 +250,7 @@ export class WhatsappSocketBase {
                 try {
                     const response = await fetch(url);
                     if (response.ok) {
-                        const data = await response.json();
+                        const data = (await response.json()) as { version: [number, number, number] };
                         return data.version as [number, number, number];
                     }
                 } catch (err) {
@@ -514,5 +514,124 @@ export class WhatsappSocketBase {
 
     isConnected() {
         return !!this.socket?.user;
+    }
+
+    /**
+     * Delete a message for everyone (if within time limit) or just for yourself
+     * @param messageId - The message ID to delete
+     * @param chatJid - The chat JID (phone number in WhatsApp format)
+     * @param deleteForEveryone - If true, deletes for everyone (only works if you sent the message and within ~48h)
+     * @returns Promise with the result
+     */
+    async deleteMessage(messageId: string, chatJid: string, deleteForEveryone: true = true): Promise<any> {
+        await this.ensureSocketConnected();
+
+        if (!this.socket) {
+            throw new Error('Socket not connected');
+        }
+
+        const jid = WhatsappSocketBase.formatPhoneNumberToWhatsappPattern(chatJid);
+
+        try {
+            if (deleteForEveryone) {
+                // Delete for everyone (revoke message)
+                const result = await this.socket.sendMessage(jid, {
+                    delete: {
+                        remoteJid: jid,
+                        fromMe: true,
+                        id: messageId,
+                        participant: undefined,
+                    },
+                });
+
+                if (this.debug) {
+                    this.logger?.info('WHATSAPP', 'Message deleted for everyone', {
+                        messageId,
+                        chatJid: jid,
+                    });
+                }
+
+                return result;
+            } else {
+                // Delete for me only (clear message locally)
+                // Note: This doesn't work via API - WhatsApp doesn't support "delete for me" via Baileys
+                // We can only revoke messages (delete for everyone)
+                if (this.debug) {
+                    this.logger?.warn('WHATSAPP', 'Delete for me is not supported via API', {
+                        messageId,
+                        chatJid: jid,
+                        reason: [
+                            'Delete for me only (clear message locally)',
+                            `Note: This doesn't work via API - WhatsApp doesn't support "delete for me" via Baileys`,
+                            'We can only revoke messages (delete for everyone)',
+                        ].join('\n'),
+                    });
+                }
+
+                throw new Error(
+                    'Delete for me is not supported via WhatsApp API. Use deleteForEveryone=true to revoke the message.'
+                );
+            }
+        } catch (error) {
+            if (this.debug) {
+                this.logger?.error('WHATSAPP', 'Failed to delete message', {
+                    messageId,
+                    chatJid: jid,
+                    error: (error as Error).message,
+                });
+            }
+            throw error;
+        }
+    }
+
+    /**
+     * Delete multiple messages at once
+     * @param messages - Array of {messageId, chatJid} objects
+     * @param deleteForEveryone - If true, deletes for everyone
+     * @returns Promise with array of results
+     */
+    async deleteMessages(
+        messages: Array<{ messageId: string; chatJid: string }>,
+        deleteForEveryone: true = true
+    ): Promise<any[]> {
+        await this.ensureSocketConnected();
+
+        const results: Array<{ success: boolean; messageId: string; result?: any; error?: null | string }> = [];
+
+        for (const { messageId, chatJid } of messages) {
+            try {
+                const result = await this.deleteMessage(messageId, chatJid, deleteForEveryone);
+                results.push({ success: true, messageId, result });
+
+                // Small delay between deletions to avoid rate limiting
+                await sleep('500ms');
+            } catch (error) {
+                results.push({
+                    success: false,
+                    messageId,
+                    error: (error as Error).message,
+                });
+            }
+        }
+
+        return results;
+    }
+
+    async loadRecentMessages(chatJid: string, messageId: string): Promise<WAMessage | null> {
+        await this.ensureSocketConnected();
+        const jid = WhatsappSocketBase.formatPhoneNumberToWhatsappPattern(chatJid);
+
+        try {
+            const message: WAMessage = await this.socket?.waitForMessage(messageId, 3000);
+            return message || null;
+        } catch (error) {
+            if (this.debug) {
+                this.logger?.error('WHATSAPP', 'Failed to load message history', {
+                    chatJid: jid,
+                    error: (error as Error).message,
+                });
+            }
+            return null;
+        }
     }
 }

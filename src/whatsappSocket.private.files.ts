@@ -1,8 +1,7 @@
 import { ReadStream } from 'node:fs';
 
-import { WhatsappSocketPrivateStream, type WhatsappSocketStreamProps } from './whatsappSocket.private.stream.ts';
-export { type WhatsappSocketStreamProps as WhatsappSocketFilesProps } from './whatsappSocket.private.stream.ts';
-import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, streamToBuffer } from './helpers.ts';
+import { WhatsappSocketPrivateStream, type WhatsappSocketStreamProps } from './whatsappSocket.private.stream';
+import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, streamToBuffer } from './helpers';
 import { basename } from 'node:path';
 
 export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {

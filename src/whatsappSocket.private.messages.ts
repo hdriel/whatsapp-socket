@@ -1,4 +1,4 @@
-import { type MiscMessageGenerationOptions, generateWAMessageFromContent } from '@fadzzzslebew/baileys';
+import { generateWAMessageFromContent } from '@fadzzzslebew/baileys';
 import { WAProto as proto } from '@fadzzzslebew/baileys';
 import { WhatsappSocketBase, type WhatsappSocketBaseProps } from './whatsappSocket.base';
 export type { WhatsappSocketBaseProps as WhatsappSocketMessagesProps } from './whatsappSocket.base';
@@ -19,15 +19,34 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         super(props);
     }
 
-    async sendTextMessage(to: string, text: string, replyToMessageId?: string): Promise<any> {
+    /**
+     * Delete a sent message
+     * @param messageId - The message ID to delete
+     * @param chatJid - The recipient's phone number
+     * @returns Promise with the result
+     */
+    async deleteMessageById(messageId: string, chatJid: string): Promise<any> {
+        return this.deleteMessage(messageId, chatJid, true);
+    }
+
+    async sendTextMessage(to: string, text: string): Promise<any> {
         await this.ensureSocketConnected();
 
         const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
-        const options: MiscMessageGenerationOptions = {
-            ...(replyToMessageId && { quoted: { key: { id: replyToMessageId } } }),
-        };
+        // let options: MiscMessageGenerationOptions = {};
+        // if (replyToMessageId) {
+        //     // @ts-ignore
+        //     const message = await this.loadRecentMessages(jid, replyToMessageId);
+        //     // We need the full message object to quote it properly
+        //     // Option 1: If you have the message stored, use it directly
+        //     // Option 2: Create a minimal quoted message structure
+        //     options.quoted = {
+        //         key: { remoteJid: jid, id: replyToMessageId },
+        //         message: { conversation: "" }, // Placeholder - ideally you'd have the actual message
+        //     } as any;
+        // }
 
-        return this.socket?.sendMessage(jid, { text }, options);
+        return this.socket?.sendMessage(jid, { text });
     }
 
     async sendButtonsMessage(

@@ -14,4 +14,5 @@ export default defineConfig({
     target: 'node18',
     // Handle external dependencies
     // external: ['@whiskeysockets/baileys', 'qrcode', 'mongodb', 'pino', '@hapi/boom'], // Don't bundle these dependencies
+    external: ['music-metadata'], // Don't bundle these dependencies
 });

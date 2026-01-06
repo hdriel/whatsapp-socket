@@ -6,9 +6,7 @@ module.exports = {
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     testEnvironment: 'node',
     modulePaths: ['node_modules', '<rootDir>/src'],
-    setupFilesAfterEnv: [
-        /*'<rootDir>/src/test-utils/setup.ts'*/
-    ],
+    setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
     maxWorkers: 1,
     forceExit: true,
     preset: 'ts-jest',

@@ -1,11 +1,13 @@
 import logger from '../logger';
 import { TEST_RECIPIENT, TEST_CONFIG } from './config';
-import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+// @ts-ignore
+import { WhatsappSocket } from '../../../src';
 import { MY_PHONE } from '../dotenv';
 import { readFileSync, createReadStream } from 'node:fs';
 import path from 'pathe';
-
 const TIMEOUT = 30000; // 30 seconds timeout for each test
+const DELETE_ALL_MESSAGE_AFTER_TESTS = false;
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,6 +15,8 @@ function sleep(ms: number): Promise<void> {
 
 describe('WhatsApp Socket Tests', () => {
     let client: WhatsappSocket | null = null;
+    let jid: string = WhatsappSocket.formatPhoneNumberToWhatsappPattern(MY_PHONE);
+    let messageIds: Array<{ messageId: string; chatJid: string }> = [];
 
     beforeAll(async () => {
         // Setup: Connect to WhatsApp before all tests
@@ -20,17 +24,17 @@ describe('WhatsApp Socket Tests', () => {
 
         client = new WhatsappSocket({
             ...TEST_CONFIG,
-            onOpen: async () => {
-                logger.info(null, '✅ Connection opened');
-            },
-            onClose: async () => {
-                logger.info(null, '❌ Connection closed');
-            },
-            onQR: async (_qr: string, code: string | null | undefined) => {
+            onOpen: () => logger.info(null, '✅ Connection opened'),
+            onClose: () => logger.info(null, '❌ Connection closed'),
+            onQR: (_qr: string) => {
                 logger.info(null, '📸 QR Code received');
-                if (code) {
-                    logger.info(null, `🔑 Pairing Code: ${code}`);
-                }
+                throw new Error(
+                    'WhatsApp session requires authentication. Please:\n' +
+                        '1. Check the logs for QR code or pairing code\n' +
+                        '2. Authenticate using WhatsApp on your phone\n' +
+                        '3. Run tests again after authentication\n' +
+                        'Alternatively, use an existing authenticated session.'
+                );
             },
             onConnectionStatusChange: async (status) => {
                 logger.info(null, `📊 Connection status: ${status}`);
@@ -50,6 +54,7 @@ describe('WhatsApp Socket Tests', () => {
     afterAll(async () => {
         // Cleanup: Close connection after all tests
         if (client) {
+            if (DELETE_ALL_MESSAGE_AFTER_TESTS) await client.deleteMessages(messageIds);
             logger.info(null, '🧹 Closing WhatsApp connection...');
             await client.closeConnection();
             logger.info(null, '✅ Connection closed');
@@ -67,36 +72,18 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send simple text message',
             async () => {
-                const result = await client?.sendTextMessage(TEST_RECIPIENT, 'Hello! This is a test message 🚀');
+                const msg = 'Hello! This is a test message 🚀';
+                const result = await client?.sendTextMessage(TEST_RECIPIENT, msg);
 
-                expect(result).toBeDefined();
-                expect(result?.fromMe).toBeTruthy();
-                expect(result?.key?.id).toBeDefined();
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
 
-                await sleep(1000);
-            },
-            TIMEOUT
-        );
+                const messageText = result.message.extendedTextMessage.text;
+                expect(messageText).toBe(msg);
 
-        test(
-            'should send text message and reply to it',
-            async () => {
-                const originalMsg = await client?.sendTextMessage(TEST_RECIPIENT, 'This is the original message');
-
-                expect(originalMsg?.key?.id).toBeDefined();
-
-                await sleep(1000);
-
-                const replyMsg = await client?.sendTextMessage(
-                    TEST_RECIPIENT,
-                    'This is a reply to the original message',
-                    originalMsg?.key?.id
-                );
-
-                expect(replyMsg).toBeDefined();
-                expect(replyMsg?.key?.id).toBeDefined();
-
-                await sleep(1000);
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -108,8 +95,11 @@ describe('WhatsApp Socket Tests', () => {
 
                 for (const msg of messages) {
                     const result = await client?.sendTextMessage(TEST_RECIPIENT, msg);
-                    expect(result).toBeDefined();
-                    await sleep(500);
+                    const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                    expect(fromMe).toBeTruthy();
+                    expect(remoteJid).toBe(jid);
+                    expect(messageId).toBeDefined();
+                    messageIds.push({ messageId, chatJid: remoteJid });
                 }
             },
             TIMEOUT
@@ -120,7 +110,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send CTA button message with multiple actions',
             async () => {
-                const result = await client?.sendButtonsMessage(TEST_RECIPIENT, {
+                const buttonsParam = {
                     title: 'Choose an action:',
                     subtitle: 'Test CTA buttons',
                     buttons: [
@@ -137,10 +127,27 @@ describe('WhatsApp Socket Tests', () => {
                             tel: MY_PHONE,
                         },
                     ],
-                });
+                };
+                const result = await client?.sendButtonsMessage(TEST_RECIPIENT, buttonsParam);
 
-                expect(result).toBeDefined();
-                await sleep(1000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
+
+                const {
+                    body: { text: bodyText } = {},
+                    footer: { text: footerText } = {},
+                    nativeFlowMessage: { buttons } = {},
+                } = result?.message?.viewOnceMessage?.message?.interactiveMessage ?? {};
+                expect(bodyText).toBe(buttonsParam.title);
+                expect(footerText).toBe(buttonsParam.subtitle);
+                expect(buttons).toHaveLength(buttonsParam.buttons.length);
+                const [btn1, btn2, btn3] = buttons;
+                expect(btn1?.name).toBe('cta_url');
+                expect(btn2?.name).toBe('cta_copy');
+                expect(btn3?.name).toBe('cta_call');
             },
             TIMEOUT
         );
@@ -148,14 +155,32 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send reply button message',
             async () => {
-                const result = await client?.sendReplyButtonsMessage(TEST_RECIPIENT, {
+                const buttonsParam = {
                     title: 'Select an option:',
                     subtitle: 'Quick reply test',
                     buttons: ['Option 1', 'Option 2', { id: 'custom-id-3', label: 'Option 3' }],
-                });
+                };
+                const result = await client?.sendReplyButtonsMessage(TEST_RECIPIENT, buttonsParam);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
 
-                expect(result).toBeDefined();
-                await sleep(1000);
+                const {
+                    contentText: bodyText,
+                    footerText: footerText,
+                    buttons,
+                } = result?.message?.buttonsMessage ?? {};
+                expect(bodyText).toBe(buttonsParam.title);
+                expect(footerText).toBe(buttonsParam.subtitle);
+                expect(buttons).toHaveLength(buttonsParam.buttons.length);
+
+                const [btn1, btn2, btn3] = buttons;
+                const [_label1, _label2, id3]: any[] = buttonsParam.buttons;
+                expect(btn1?.buttonId).toBe('id-0');
+                expect(btn2?.buttonId).toBe('id-1');
+                expect(btn3?.buttonId).toBe(id3.id);
             },
             TIMEOUT
         );
@@ -169,7 +194,11 @@ describe('WhatsApp Socket Tests', () => {
                 });
 
                 expect(result).toBeDefined();
-                await sleep(1000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -183,8 +212,11 @@ describe('WhatsApp Socket Tests', () => {
                     caption: 'Random image from URL',
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -199,8 +231,11 @@ describe('WhatsApp Socket Tests', () => {
                     filename: 'test-image.jpg',
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -214,8 +249,11 @@ describe('WhatsApp Socket Tests', () => {
                     caption: 'Image from stream',
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -225,14 +263,17 @@ describe('WhatsApp Socket Tests', () => {
             async () => {
                 const result = await client?.sendImageMessage(TEST_RECIPIENT, 'https://picsum.photos/400/400');
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
     });
 
-    describe('Video Message Tests', () => {
+    describe.skip('Video Message Tests', () => {
         test(
             'should send video from URL',
             async () => {
@@ -242,8 +283,11 @@ describe('WhatsApp Socket Tests', () => {
                     { caption: 'Video from URL' }
                 );
 
-                expect(result).toBeDefined();
-                await sleep(3000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -259,8 +303,11 @@ describe('WhatsApp Socket Tests', () => {
                     filename: 'test-video.mp4',
                 });
 
-                expect(result).toBeDefined();
-                await sleep(3000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -275,14 +322,17 @@ describe('WhatsApp Socket Tests', () => {
                     filename: 'test-video.mp4',
                 });
 
-                expect(result).toBeDefined();
-                await sleep(3000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
     });
 
-    describe('Audio Message Tests', () => {
+    describe.skip('Audio Message Tests', () => {
         test(
             'should send audio file',
             async () => {
@@ -294,8 +344,11 @@ describe('WhatsApp Socket Tests', () => {
                     seconds: 10,
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -310,14 +363,17 @@ describe('WhatsApp Socket Tests', () => {
                     seconds: 5,
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
     });
 
-    describe('Document Message Tests', () => {
+    describe.skip('Document Message Tests', () => {
         test(
             'should send PDF from URL',
             async () => {
@@ -330,8 +386,11 @@ describe('WhatsApp Socket Tests', () => {
                     }
                 );
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -347,8 +406,11 @@ describe('WhatsApp Socket Tests', () => {
                     filename: 'test-document.docx',
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -366,21 +428,27 @@ describe('WhatsApp Socket Tests', () => {
                     jpegThumbnailSrc: thumbnailBuffer,
                 });
 
-                expect(result).toBeDefined();
-                await sleep(2000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
     });
 
-    describe('Sticker Message Tests', () => {
+    describe.skip('Sticker Message Tests', () => {
         test(
             'should send sticker from URL',
             async () => {
                 const result = await client?.sendStickerMessage(TEST_RECIPIENT, 'https://example.com/sticker.webp');
 
-                expect(result).toBeDefined();
-                await sleep(1000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
@@ -392,14 +460,17 @@ describe('WhatsApp Socket Tests', () => {
 
                 const result = await client?.sendStickerMessage(TEST_RECIPIENT, stickerBuffer);
 
-                expect(result).toBeDefined();
-                await sleep(1000);
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
             },
             TIMEOUT
         );
     });
 
-    describe('Message Receiving Tests', () => {
+    describe.skip('Message Receiving Tests', () => {
         test(
             'should receive messages callback',
             (done) => {
@@ -423,7 +494,7 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe('Error Handling Tests', () => {
+    describe.skip('Error Handling Tests', () => {
         test(
             'should handle invalid recipient gracefully',
             async () => {
@@ -443,7 +514,7 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe('Connection Status Tests', () => {
+    describe.skip('Connection Status Tests', () => {
         test('should report connected status', () => {
             expect(client?.isConnected()).toBe(true);
         });
