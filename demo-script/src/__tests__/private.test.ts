@@ -8,6 +8,7 @@ import { readFileSync, createReadStream } from 'node:fs';
 import path from 'pathe';
 const TIMEOUT = 30000; // 30 seconds timeout for each test
 const DELETE_ALL_MESSAGE_AFTER_TESTS = false;
+const getTestAssetsFilePath = (filename: string) => path.join(__dirname, '..', 'test-assets', filename);
 
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -224,7 +225,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send image from buffer',
             async () => {
-                const imageBuffer = readFileSync(path.join(__dirname, 'test-assets/test-image.jpg'));
+                const imageBuffer = readFileSync(getTestAssetsFilePath('test-image.jpg'));
 
                 const result = await client?.sendImageMessage(TEST_RECIPIENT, imageBuffer, {
                     caption: 'Image from buffer',
@@ -243,7 +244,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send image from stream',
             async () => {
-                const imageStream = createReadStream(path.join(__dirname, 'test-assets/test-image.jpg'));
+                const imageStream = createReadStream(getTestAssetsFilePath('test-image.jpg'));
 
                 const result = await client?.sendImageMessage(TEST_RECIPIENT, imageStream, {
                     caption: 'Image from stream',
@@ -295,7 +296,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send video as GIF from buffer',
             async () => {
-                const videoBuffer = readFileSync(path.join(__dirname, 'test-assets/test-video.mp4'));
+                const videoBuffer = readFileSync(getTestAssetsFilePath('test-video.mp4'));
 
                 const result = await client?.sendVideoMessage(TEST_RECIPIENT, videoBuffer, {
                     caption: 'Video as GIF playback',
@@ -315,7 +316,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send regular video from buffer',
             async () => {
-                const videoBuffer = readFileSync(path.join(__dirname, 'test-assets/test-video.mp4'));
+                const videoBuffer = readFileSync(getTestAssetsFilePath('test-video.mp4'));
 
                 const result = await client?.sendVideoMessage(TEST_RECIPIENT, videoBuffer, {
                     caption: 'Regular video playback',
@@ -332,11 +333,11 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe.skip('Audio Message Tests', () => {
+    describe('Audio Message Tests', () => {
         test(
             'should send audio file',
             async () => {
-                const audioBuffer = readFileSync(path.join(__dirname, 'test-assets/test-audio.mp3'));
+                const audioBuffer = readFileSync(getTestAssetsFilePath('test-audio.mp3'));
 
                 const result = await client?.sendAudioMessage(TEST_RECIPIENT, audioBuffer, {
                     filename: 'test-audio.mp3',
@@ -356,7 +357,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send voice note (PTT)',
             async () => {
-                const voiceBuffer = readFileSync(path.join(__dirname, 'test-assets/test-voice.ogg'));
+                const voiceBuffer = readFileSync(getTestAssetsFilePath('test-voice.ogg'));
 
                 const result = await client?.sendAudioMessage(TEST_RECIPIENT, voiceBuffer, {
                     mimetype: 'audio/ogg; codecs=opus',
@@ -398,7 +399,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send DOCX from buffer',
             async () => {
-                const docBuffer = readFileSync(path.join(__dirname, 'test-assets/test-document.docx'));
+                const docBuffer = readFileSync(getTestAssetsFilePath('test-document.docx'));
 
                 const result = await client?.sendFileMessage(TEST_RECIPIENT, docBuffer, {
                     caption: 'Word Document',
@@ -418,8 +419,8 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send Excel with thumbnail',
             async () => {
-                const excelBuffer = readFileSync(path.join(__dirname, 'test-assets/test-spreadsheet.xlsx'));
-                const thumbnailBuffer = readFileSync(path.join(__dirname, 'test-assets/excel-thumbnail.jpg'));
+                const excelBuffer = readFileSync(getTestAssetsFilePath('test-spreadsheet.xlsx'));
+                const thumbnailBuffer = readFileSync(getTestAssetsFilePath('excel-thumbnail.jpg'));
 
                 const result = await client?.sendFileMessage(TEST_RECIPIENT, excelBuffer, {
                     caption: 'Excel Spreadsheet with Thumbnail',
@@ -459,7 +460,7 @@ describe('WhatsApp Socket Tests', () => {
         test(
             'should send sticker from buffer',
             async () => {
-                const stickerBuffer = readFileSync(path.join(__dirname, 'test-assets/test-sticker.webp'));
+                const stickerBuffer = readFileSync(getTestAssetsFilePath('test-sticker.webp'));
 
                 const result = await client?.sendStickerMessage(TEST_RECIPIENT, stickerBuffer);
 

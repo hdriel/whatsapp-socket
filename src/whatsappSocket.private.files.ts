@@ -1,5 +1,4 @@
 import { ReadStream } from 'node:fs';
-
 import { WhatsappSocketPrivateStream, type WhatsappSocketStreamProps } from './whatsappSocket.private.stream';
 import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, streamToBuffer } from './helpers';
 import { basename } from 'node:path';
