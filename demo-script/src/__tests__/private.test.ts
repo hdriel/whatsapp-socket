@@ -279,7 +279,7 @@ describe('WhatsApp Socket Tests', () => {
             async () => {
                 const result = await client?.sendVideoMessage(
                     TEST_RECIPIENT,
-                    'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+                    'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
                     { caption: 'Video from URL' }
                 );
 
@@ -438,11 +438,14 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe.skip('Sticker Message Tests', () => {
+    describe('Sticker Message Tests', () => {
         test(
             'should send sticker from URL',
             async () => {
-                const result = await client?.sendStickerMessage(TEST_RECIPIENT, 'https://example.com/sticker.webp');
+                const result = await client?.sendStickerMessage(
+                    TEST_RECIPIENT,
+                    'https://www.gstatic.com/webp/gallery/4.sm.webp'
+                );
 
                 const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
                 expect(fromMe).toBeTruthy();

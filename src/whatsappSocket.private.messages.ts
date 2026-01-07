@@ -178,4 +178,54 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
             buttons: buttonsValue /* type: UNKNOWN = 0, RESPONSE = 1, NATIVE_FLOW = 2 */,
         });
     }
+
+    async sendLocation(
+        to: string,
+        {
+            latitude,
+            longitude,
+            name,
+            address,
+        }: {
+            latitude: number;
+            longitude: number;
+            name?: string;
+            address?: string;
+        }
+    ): Promise<any> {
+        if (latitude === undefined || longitude === undefined) {
+            throw new Error('sendLocation: latitude and longitude are required fields.');
+        }
+
+        // Validate coordinate ranges
+        if (latitude < -90 || latitude > 90) {
+            throw new Error('sendLocation: latitude must be between -90 and 90.');
+        }
+        if (longitude < -180 || longitude > 180) {
+            throw new Error('sendLocation: longitude must be between -180 and 180.');
+        }
+
+        await this.ensureSocketConnected();
+
+        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send location message', {
+                jid,
+                latitude,
+                longitude,
+                name,
+                address,
+            });
+        }
+
+        return this.socket?.sendMessage(jid, {
+            location: {
+                degreesLatitude: latitude,
+                degreesLongitude: longitude,
+                ...(name && { name }),
+                ...(address && { address }),
+            },
+        });
+    }
 }
