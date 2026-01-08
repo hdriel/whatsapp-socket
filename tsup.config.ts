@@ -1,7 +1,12 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: ['src/index.ts'], // Entry point(s) for your build
+    entry: {
+        // Entry point(s) for your build
+        index: 'src/index.ts',
+        private: 'src/private.ts',
+        group: 'src/group.ts',
+    },
     format: ['esm', 'cjs'], // Output formats (ESM and CommonJS)
     dts: true, // Generate TypeScript declaration files
     outDir: 'dist',
@@ -10,8 +15,7 @@ export default defineConfig({
     sourcemap: true, // Generate source maps for debugging
     clean: true, // Clean output directory before build
     treeshake: true, // Remove unused code
-    // minify: true,
-    minify: false,
+    minify: true,
     target: 'node18',
     // Handle external dependencies
     // external: ['@whiskeysockets/baileys', 'qrcode', 'mongodb', 'pino', '@hapi/boom'], // Don't bundle these dependencies

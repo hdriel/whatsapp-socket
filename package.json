@@ -4,8 +4,6 @@
     "description": "",
     "author": "Hadriel Benjo (https://github.com/hdriel)",
     "type": "module",
-    "types": "dist/index.d.ts",
-    "main": "./dist/index.js",
     "scripts": {
         "build": "tsup",
         "build:watch": "tsc --watch",
@@ -29,7 +27,26 @@
         "type": "git",
         "url": "git+https://github.com/hdriel/whatsapp-socket.git"
     },
-    "exports": "./dist/index.js",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./private": {
+            "types": "./dist/private.d.ts",
+            "import": "./dist/private.js",
+            "require": "./dist/private.cjs"
+        },
+        "./group": {
+            "types": "./dist/group.d.ts",
+            "import": "./dist/group.js",
+            "require": "./dist/group.cjs"
+        }
+    },
     "publishConfig": {
         "access": "public"
     },
