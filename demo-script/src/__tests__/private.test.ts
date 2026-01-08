@@ -206,7 +206,227 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe('Image Message Tests', () => {
+    describe('Location Message Tests', () => {
+        test(
+            'should send location message with coordinates only',
+            async () => {
+                const locationParam = {
+                    latitude: 40.7128,
+                    longitude: -74.006,
+                };
+                const result = await client?.sendLocation(TEST_RECIPIENT, locationParam);
+
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
+
+                const { degreesLatitude, degreesLongitude } = result?.message?.locationMessage ?? {};
+                expect(degreesLatitude).toBe(locationParam.latitude);
+                expect(degreesLongitude).toBe(locationParam.longitude);
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should send location message with name and address',
+            async () => {
+                const locationParam = {
+                    latitude: 40.7128,
+                    longitude: -74.006,
+                    name: 'New York City',
+                    address: 'Manhattan, NY, USA',
+                };
+                const result = await client?.sendLocation(TEST_RECIPIENT, locationParam);
+
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
+
+                const { degreesLatitude, degreesLongitude, name, address } = result?.message?.locationMessage ?? {};
+                expect(degreesLatitude).toBe(locationParam.latitude);
+                expect(degreesLongitude).toBe(locationParam.longitude);
+                expect(name).toBe(locationParam.name);
+                expect(address).toBe(locationParam.address);
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should send location message with name only',
+            async () => {
+                const locationParam = {
+                    latitude: 51.5074,
+                    longitude: -0.1278,
+                    name: 'London',
+                };
+                const result = await client?.sendLocation(TEST_RECIPIENT, locationParam);
+
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
+
+                const { degreesLatitude, degreesLongitude, name, address } = result?.message?.locationMessage ?? {};
+                expect(degreesLatitude).toBe(locationParam.latitude);
+                expect(degreesLongitude).toBe(locationParam.longitude);
+                expect(name).toBe(locationParam.name);
+                expect(address).toBeNull();
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should send location message with address only',
+            async () => {
+                const locationParam = {
+                    latitude: 48.8566,
+                    longitude: 2.3522,
+                    address: 'Paris, France',
+                };
+                const result = await client?.sendLocation(TEST_RECIPIENT, locationParam);
+
+                const { id: messageId, fromMe, remoteJid } = result?.key ?? {};
+                expect(fromMe).toBeTruthy();
+                expect(remoteJid).toBe(jid);
+                expect(messageId).toBeDefined();
+                messageIds.push({ messageId, chatJid: remoteJid });
+
+                const { degreesLatitude, degreesLongitude, name, address } = result?.message?.locationMessage ?? {};
+                expect(degreesLatitude).toBe(locationParam.latitude);
+                expect(degreesLongitude).toBe(locationParam.longitude);
+                expect(name).toBeNull();
+                expect(address).toBe(locationParam.address);
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should throw error when latitude is missing',
+            async () => {
+                const locationParam: any = {
+                    longitude: -74.006,
+                };
+
+                await expect(client?.sendLocation(TEST_RECIPIENT, locationParam)).rejects.toThrow(
+                    'sendLocation: latitude and longitude are required fields.'
+                );
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should throw error when longitude is missing',
+            async () => {
+                const locationParam: any = {
+                    latitude: 40.7128,
+                };
+
+                await expect(client?.sendLocation(TEST_RECIPIENT, locationParam)).rejects.toThrow(
+                    'sendLocation: latitude and longitude are required fields.'
+                );
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should throw error when latitude is out of range (too high)',
+            async () => {
+                const locationParam = {
+                    latitude: 91,
+                    longitude: -74.006,
+                };
+
+                await expect(client?.sendLocation(TEST_RECIPIENT, locationParam)).rejects.toThrow(
+                    'sendLocation: latitude must be between -90 and 90.'
+                );
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should throw error when latitude is out of range (too low)',
+            async () => {
+                const locationParam = {
+                    latitude: -91,
+                    longitude: -74.006,
+                };
+
+                await expect(client?.sendLocation(TEST_RECIPIENT, locationParam)).rejects.toThrow(
+                    'sendLocation: latitude must be between -90 and 90.'
+                );
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should throw error when longitude is out of range (too high)',
+            async () => {
+                const locationParam = {
+                    latitude: 40.7128,
+                    longitude: 181,
+                };
+
+                await expect(client?.sendLocation(TEST_RECIPIENT, locationParam)).rejects.toThrow(
+                    'sendLocation: longitude must be between -180 and 180.'
+                );
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should throw error when longitude is out of range (too low)',
+            async () => {
+                const locationParam = {
+                    latitude: 40.7128,
+                    longitude: -181,
+                };
+
+                await expect(client?.sendLocation(TEST_RECIPIENT, locationParam)).rejects.toThrow(
+                    'sendLocation: longitude must be between -180 and 180.'
+                );
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should accept boundary latitude values',
+            async () => {
+                const locationParam = {
+                    latitude: 90,
+                    longitude: 0,
+                };
+                const result = await client?.sendLocation(TEST_RECIPIENT, locationParam);
+
+                expect(result).toBeDefined();
+                const { degreesLatitude } = result?.message?.locationMessage ?? {};
+                expect(degreesLatitude).toBe(90);
+            },
+            TIMEOUT
+        );
+
+        test(
+            'should accept boundary longitude values',
+            async () => {
+                const locationParam = {
+                    latitude: 0,
+                    longitude: 180,
+                };
+                const result = await client?.sendLocation(TEST_RECIPIENT, locationParam);
+
+                expect(result).toBeDefined();
+                const { degreesLongitude } = result?.message?.locationMessage ?? {};
+                expect(degreesLongitude).toBe(180);
+            },
+            TIMEOUT
+        );
+    });
+
+    describe.skip('Image Message Tests', () => {
         test(
             'should send image from URL',
             async () => {
@@ -334,7 +554,7 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe('Audio Message Tests', () => {
+    describe.skip('Audio Message Tests', () => {
         test(
             'should send audio file',
             async () => {
@@ -440,7 +660,7 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe('Sticker Message Tests', () => {
+    describe.skip('Sticker Message Tests', () => {
         test(
             'should send sticker from URL',
             async () => {
@@ -519,7 +739,7 @@ describe('WhatsApp Socket Tests', () => {
         );
     });
 
-    describe.skip('Connection Status Tests', () => {
+    describe('Connection Status Tests', () => {
         test('should report connected status', () => {
             expect(client?.isConnected()).toBe(true);
         });

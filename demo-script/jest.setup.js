@@ -12,9 +12,9 @@ if (typeof global.IMessage === 'undefined') {
     };
 }
 
-// Add other protobuf classes that might be needed
-global.IMessageKey.prototype = {};
-global.IMessage.prototype = {};
+// // Add other protobuf classes that might be needed
+// global.IMessageKey.prototype = {};
+// global.IMessage.prototype = {};
 
 // Suppress console warnings during tests
 global.console = {
