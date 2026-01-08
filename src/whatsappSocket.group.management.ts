@@ -62,7 +62,8 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'Creating group', {
                 name,
-                participantsCount: formattedParticipants.length,
+                description,
+                participants: formattedParticipants,
             });
         }
 
