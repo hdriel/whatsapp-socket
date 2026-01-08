@@ -1,13 +1,14 @@
 import logger from '../logger';
-import { TEST_RECIPIENT, TEST_CONFIG } from './config';
-// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+import { TEST_RECIPIENT, TEST_CONFIG } from '../config';
+import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 // @ts-ignore
-import { WhatsappSocket } from '../../../src';
+// import { WhatsappSocket } from '../../../src';
 import { MY_PHONE } from '../dotenv';
 import { readFileSync, createReadStream } from 'node:fs';
 import path from 'pathe';
 const TIMEOUT = 30000; // 30 seconds timeout for each test
 const DELETE_ALL_MESSAGE_AFTER_TESTS = false;
+
 const getTestAssetsFilePath = (filename: string) => path.join(__dirname, '..', 'test-assets', filename);
 
 function sleep(ms: number): Promise<void> {

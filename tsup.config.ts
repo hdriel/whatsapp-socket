@@ -10,9 +10,10 @@ export default defineConfig({
     sourcemap: true, // Generate source maps for debugging
     clean: true, // Clean output directory before build
     treeshake: true, // Remove unused code
-    minify: true,
+    // minify: true,
+    minify: false,
     target: 'node18',
     // Handle external dependencies
     // external: ['@whiskeysockets/baileys', 'qrcode', 'mongodb', 'pino', '@hapi/boom'], // Don't bundle these dependencies
-    external: ['music-metadata'], // Don't bundle these dependencies
+    // external: ['music-metadata'], // Don't bundle these dependencies
 });

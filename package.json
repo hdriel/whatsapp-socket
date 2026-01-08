@@ -1,6 +1,6 @@
 {
     "name": "@hdriel/whatsapp-socket",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "",
     "author": "Hadriel Benjo (https://github.com/hdriel)",
     "type": "module",
@@ -12,7 +12,7 @@
         "format": "prettier --write .",
         "clean": "rimraf ./dist",
         "yalc:publish": "pnpm run build && yalc publish --private --push && npm run yalc:attach",
-        "yalc:attach": "cd demo && yalc add @hdriel/whatsapp-socket"
+        "yalc:attach": "cd demo-script && yalc add @hdriel/whatsapp-socket"
     },
     "keywords": [
         "baileys",
@@ -29,12 +29,7 @@
         "type": "git",
         "url": "git+https://github.com/hdriel/whatsapp-socket.git"
     },
-    "exports": {
-        ".": {
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
-        }
-    },
+    "exports": "./dist/index.js",
     "publishConfig": {
         "access": "public"
     },
@@ -49,7 +44,7 @@
     "dependencies": {
         "@fadzzzslebew/baileys": "^0.1.1",
         "ms": "^2.1.3",
-        "music-metadata": "^7.14.0",
+        "music-metadata": "7.14.0",
         "pino": "^10.1.0",
         "qrcode": "^1.5.3"
     },

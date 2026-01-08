@@ -1,9 +1,8 @@
 import dotenv from 'dotenv';
-import path from 'pathe';
 import { expand } from 'dotenv-expand';
 import logger from './logger';
+import { ENV_FILE_PATH } from './paths';
 
-const ENV_FILE_PATH = path.resolve(__dirname, '..', '.env.local');
 logger.info(null, `Starting dotenv: ${ENV_FILE_PATH}`);
 
 const myEnv = dotenv.config({ path: ENV_FILE_PATH });

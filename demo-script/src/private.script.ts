@@ -2,13 +2,22 @@ import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dote
 import logger from './logger';
 import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { readFileSync, createReadStream } from 'node:fs';
-import path from 'pathe';
+import {
+    DOCUMENT_ASSET_PATH,
+    FILE_AUTH_PATH,
+    IMAGE_ASSET_PATH,
+    MP3_ASSET_PATH,
+    OGG_ASSET_PATH,
+    STICKER_ASSET_PATH,
+    THUMBNAIL_ASSET_PATH,
+    VIDEO_ASSET_PATH,
+    XLSX_ASSET_PATH,
+} from './paths';
 
-const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 const TEST_RECIPIENT = TARGET_PHONE;
 const TEST_CONFIG = {
     mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
-    fileAuthStateDirectoryPath: fileAuthPath,
+    fileAuthStateDirectoryPath: FILE_AUTH_PATH,
     mongoCollection: 'whatsapp-test-auth',
     appName: 'WhatsApp Test Bot',
     debug: true,
@@ -92,7 +101,7 @@ async function runWhatsAppTests() {
             await sleep(1000);
 
             if (sentMsg?.key?.id) {
-                await client.sendTextMessage(TEST_RECIPIENT, 'This is a reply!', sentMsg.key.id);
+                await client.sendTextMessage(TEST_RECIPIENT, 'This is a reply!');
                 logger.info(null, '✅ Reply message sent');
             }
 
@@ -167,7 +176,7 @@ async function runWhatsAppTests() {
             await sleep(1000);
 
             // From Buffer
-            const imageBuffer = readFileSync(path.join(__dirname, 'test-assets/test-image.jpg'));
+            const imageBuffer = readFileSync(IMAGE_ASSET_PATH);
             await client.sendImageMessage(TEST_RECIPIENT, imageBuffer, {
                 caption: 'Image from buffer',
                 filename: 'test-image.jpg',
@@ -177,7 +186,7 @@ async function runWhatsAppTests() {
             await sleep(1000);
 
             // From Stream
-            const imageStream = createReadStream(path.join(__dirname, 'test-assets/test-image.jpg'));
+            const imageStream = createReadStream(IMAGE_ASSET_PATH);
             await client.sendImageMessage(TEST_RECIPIENT, imageStream, { caption: 'Image from stream' });
             logger.info(null, '✅ Image from stream sent');
 
@@ -193,7 +202,7 @@ async function runWhatsAppTests() {
             // From URL
             await client.sendVideoMessage(
                 TEST_RECIPIENT,
-                'https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4',
+                'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
                 { caption: 'Video from URL' }
             );
             logger.info(null, '✅ Video from URL sent');
@@ -201,7 +210,7 @@ async function runWhatsAppTests() {
             await sleep(1000);
 
             // From Buffer as GIF
-            const videoBuffer = readFileSync(path.join(__dirname, 'test-assets/test-video.mp4'));
+            const videoBuffer = readFileSync(VIDEO_ASSET_PATH);
             await client.sendVideoMessage(TEST_RECIPIENT, videoBuffer, {
                 caption: 'Video as GIF playback',
                 sendAsGifPlayback: true,
@@ -217,7 +226,7 @@ async function runWhatsAppTests() {
             logger.info(null, '🎵 TEST 6: Testing audio messages...');
 
             // Audio file
-            const audioBuffer = readFileSync(path.join(__dirname, 'test-assets/test-audio.mp3'));
+            const audioBuffer = readFileSync(MP3_ASSET_PATH);
             await client.sendAudioMessage(TEST_RECIPIENT, audioBuffer, {
                 filename: 'test-audio.mp3',
                 mimetype: 'audio/mpeg',
@@ -230,7 +239,7 @@ async function runWhatsAppTests() {
 
         if (runTests.sendAudio) {
             // Voice note (PTT - Push to Talk)
-            const voiceBuffer = readFileSync(path.join(__dirname, 'test-assets/test-voice.ogg'));
+            const voiceBuffer = readFileSync(OGG_ASSET_PATH);
             await client.sendAudioMessage(TEST_RECIPIENT, voiceBuffer, {
                 mimetype: 'audio/ogg; codecs=opus',
                 seconds: 5,
@@ -260,7 +269,7 @@ async function runWhatsAppTests() {
             await sleep(1000);
 
             // DOCX from Buffer
-            const docBuffer = readFileSync(path.join(__dirname, 'test-assets/test-document.docx'));
+            const docBuffer = readFileSync(DOCUMENT_ASSET_PATH);
             await client.sendFileMessage(TEST_RECIPIENT, docBuffer, {
                 caption: 'Word Document',
                 mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -271,8 +280,8 @@ async function runWhatsAppTests() {
             await sleep(1000);
 
             // Excel with thumbnail
-            const excelBuffer = readFileSync(path.join(__dirname, 'test-assets/test-spreadsheet.xlsx'));
-            const thumbnailBuffer = readFileSync(path.join(__dirname, 'test-assets/excel-thumbnail.jpg'));
+            const excelBuffer = readFileSync(XLSX_ASSET_PATH);
+            const thumbnailBuffer = readFileSync(THUMBNAIL_ASSET_PATH);
             await client.sendFileMessage(TEST_RECIPIENT, excelBuffer, {
                 caption: 'Excel Spreadsheet',
                 mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -291,13 +300,13 @@ async function runWhatsAppTests() {
             logger.info(null, '😄 TEST 8: Testing sticker messages...');
 
             // Sticker from URL (must be .webp, 512x512, <100kb)
-            await client.sendStickerMessage(TEST_RECIPIENT, 'https://example.com/sticker.webp');
+            await client.sendStickerMessage(TEST_RECIPIENT, 'https://www.gstatic.com/webp/gallery/4.sm.webp');
             logger.info(null, '✅ Sticker from URL sent');
 
             await sleep(1000);
 
             // Sticker from buffer
-            const stickerBuffer = readFileSync(path.join(__dirname, 'test-assets/test-sticker.webp'));
+            const stickerBuffer = readFileSync(STICKER_ASSET_PATH);
             await client.sendStickerMessage(TEST_RECIPIENT, stickerBuffer);
             logger.info(null, '✅ Sticker from buffer sent');
 

@@ -1,12 +1,11 @@
-import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from '../dotenv';
-import logger from '../logger';
-import path from 'pathe';
+import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
+import logger from './logger';
+import { FILE_AUTH_PATH } from './paths';
 
-export const fileAuthPath = path.resolve(__dirname, '../../..', 'authState/my-profile');
 export const TEST_RECIPIENT = MY_PHONE;
 export const TEST_CONFIG = {
     mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
-    fileAuthStateDirectoryPath: fileAuthPath,
+    fileAuthStateDirectoryPath: FILE_AUTH_PATH,
     mongoCollection: 'whatsapp-test-auth',
     appName: 'WhatsApp Test Bot',
     debug: true,
