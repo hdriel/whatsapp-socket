@@ -1,12 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: {
-        // Entry point(s) for your build
-        index: 'src/index.ts',
-        private: 'src/private.ts',
-        group: 'src/group.ts',
-    },
+    entry: ['src/index.ts'], // Entry point(s) for your build
     format: ['esm', 'cjs'], // Output formats (ESM and CommonJS)
     dts: true, // Generate TypeScript declaration files
     outDir: 'dist',

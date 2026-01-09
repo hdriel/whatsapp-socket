@@ -13,6 +13,7 @@ import {
     STICKER_ASSET_PATH,
     THUMBNAIL_ASSET_PATH,
 } from '../paths';
+import { Logger } from 'stack-trace-logger';
 // @ts-ignore
 // import { WhatsappSocket } from '../../../src';
 
@@ -45,6 +46,7 @@ describe('WhatsApp Socket Tests', () => {
             onConnectionStatusChange: async (status) => {
                 logger.info(null, `📊 Connection status: ${status}`);
             },
+            logger: logger as Logger,
         });
 
         await client.startConnection({ connectionAttempts: 3 });

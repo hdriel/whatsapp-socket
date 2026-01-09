@@ -11,11 +11,11 @@ import {
     default as makeWASocket,
     DisconnectReason,
     makeCacheableSignalKeyStore,
+    useMultiFileAuthState,
     type MessageUpsertType,
     type UserFacingSocketConfig,
     type WAMessage,
     type WASocket,
-    useMultiFileAuthState,
     type AuthenticationState,
 } from '@fadzzzslebew/baileys';
 import { type StringValue } from 'ms';

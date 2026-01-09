@@ -18,7 +18,6 @@
         "@hdriel/whatsapp-socket": "file:.yalc/@hdriel/whatsapp-socket",
         "dotenv": "^17.2.3",
         "dotenv-expand": "^12.0.3",
-        "music-metadata": "^11.10.4",
         "pathe": "^2.0.3",
         "stack-trace-logger": "^1.1.2"
     },

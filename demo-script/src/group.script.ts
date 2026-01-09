@@ -1,6 +1,6 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import logger from './logger';
-import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket/group';
+import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 import { readFileSync } from 'node:fs';
 import {
     DOCUMENT_ASSET_PATH,
@@ -29,14 +29,14 @@ function sleep(ms: number): Promise<void> {
 
 const runTests: Record<string, boolean> = {
     createGroup: true,
-    updateGroupInfo: true,
-    manageParticipants: true,
-    sendMessages: true,
-    sendMedia: true,
-    groupSettings: true,
-    inviteManagement: true,
-    profilePicture: true,
-    cleanup: true,
+    updateGroupInfo: false,
+    manageParticipants: false,
+    sendMessages: false,
+    sendMedia: false,
+    groupSettings: false,
+    inviteManagement: false,
+    profilePicture: false,
+    cleanup: false,
 };
 
 async function runWhatsAppGroupTests() {
@@ -52,9 +52,9 @@ async function runWhatsAppGroupTests() {
         // ============================================
         logger.info(null, '📱 TEST 1: Connecting to WhatsApp...');
 
-        // @ts-ignore
         client = new WhatsappSocketGroup({
             ...TEST_CONFIG,
+            logger: logger as any,
             onOpen: async () => {
                 logger.info(null, '✅ Connection opened successfully!');
             },
