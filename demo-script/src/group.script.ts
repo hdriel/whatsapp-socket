@@ -29,14 +29,14 @@ function sleep(ms: number): Promise<void> {
 
 const runTests: Record<string, boolean> = {
     createGroup: true,
-    updateGroupInfo: false,
-    manageParticipants: false,
-    sendMessages: false,
-    sendMedia: false,
-    groupSettings: false,
-    inviteManagement: false,
-    profilePicture: false,
-    cleanup: false,
+    updateGroupInfo: true,
+    manageParticipants: true,
+    sendMessages: true,
+    sendMedia: true,
+    groupSettings: true,
+    inviteManagement: true,
+    profilePicture: true,
+    cleanup: true,
 };
 
 async function runWhatsAppGroupTests() {
