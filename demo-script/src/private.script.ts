@@ -1,6 +1,6 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
-import { WhatsappSocket } from '@hdriel/whatsapp-socket/private';
+import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { readFileSync, createReadStream } from 'node:fs';
 import {
     DOCUMENT_ASSET_PATH,
@@ -55,6 +55,7 @@ async function runWhatsAppTests() {
         // @ts-ignore
         client = new WhatsappSocket({
             ...TEST_CONFIG,
+            logger: logger as any,
             onOpen: async () => {
                 logger.info(null, '✅ Connection opened successfully!');
             },

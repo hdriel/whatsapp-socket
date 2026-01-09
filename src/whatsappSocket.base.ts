@@ -11,11 +11,11 @@ import {
     default as makeWASocket,
     DisconnectReason,
     makeCacheableSignalKeyStore,
+    useMultiFileAuthState,
     type MessageUpsertType,
     type UserFacingSocketConfig,
     type WAMessage,
     type WASocket,
-    useMultiFileAuthState,
     type AuthenticationState,
 } from '@fadzzzslebew/baileys';
 import { type StringValue } from 'ms';
@@ -82,11 +82,14 @@ export class WhatsappSocketBase {
         phone: string,
         countryCode: string = WhatsappSocketBase.DEFAULT_COUNTRY_CODE
     ): string {
-        if (phone.endsWith('@s.whatsapp.net')) return phone;
+        if (phone.endsWith('@s.whatsapp.net')) {
+            return phone.replace(/:\d+@/, '@');
+        }
 
         let strNumber = WhatsappSocketBase.formatPhoneNumber(phone, countryCode);
         strNumber = `${strNumber}@s.whatsapp.net`; // formatted Number should look like: '972513334444@s.whatsapp.net'
-        return strNumber.replace(/:\d+@/, '@'); // remove the sessionId
+        strNumber = strNumber.replace(/:\d+@/, '@'); // remove the sessionId
+        return strNumber;
     }
 
     static getWhatsappPhoneLink({

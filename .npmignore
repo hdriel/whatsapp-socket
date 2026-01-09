@@ -8,6 +8,7 @@ logs/
 .eslintignore
 demo-server/
 demo-client/
+demo-script/
 authState/
 .idea
 nodemon.json

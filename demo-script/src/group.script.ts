@@ -1,6 +1,6 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import logger from './logger';
-import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket/group';
+import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 import { readFileSync } from 'node:fs';
 import {
     DOCUMENT_ASSET_PATH,
@@ -35,7 +35,8 @@ const runTests: Record<string, boolean> = {
     sendMedia: true,
     groupSettings: true,
     inviteManagement: true,
-    profilePicture: true,
+    profilePicture: false, // ❌ TEST FAILED: Error: No image processing library available
+    // at getImageProcessingLibrary (D:\dev-JustLikeThat\whatsapp-socket\demo-script\node_modules\@fadzzzslebew\baileys\lib\Utils\messages-media.js:61:11)
     cleanup: true,
 };
 
@@ -52,9 +53,9 @@ async function runWhatsAppGroupTests() {
         // ============================================
         logger.info(null, '📱 TEST 1: Connecting to WhatsApp...');
 
-        // @ts-ignore
         client = new WhatsappSocketGroup({
             ...TEST_CONFIG,
+            logger: logger as any,
             onOpen: async () => {
                 logger.info(null, '✅ Connection opened successfully!');
             },
