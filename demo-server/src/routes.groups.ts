@@ -17,16 +17,24 @@ export const initRouterGroups = (io: SocketIO) => {
         logger,
     });
 
+    async function updateClientGroups(io: SocketIO) {
+        if (!was.isConnected()) return;
+        const groups = await was.getAllGroups().catch((reason) => {
+            logger.warn(null, 'failed to get groups', { reason });
+            return [];
+        });
+
+        io.emit('groups', groups);
+    }
+
     const router = express.Router();
 
     io.on('connection', (socket) => {
         logger.info(socket.id, 'Socket connection connected!');
+
         socket.on('groups', async () => {
             if (!was.isConnected()) return;
-            const groups = await was.getAllGroups().catch((reason) => {
-                logger.warn(socket.id, 'failed to get groups', { reason });
-                return [];
-            });
+            return updateClientGroups(io);
 
             /*
             const groups = [
@@ -59,8 +67,6 @@ export const initRouterGroups = (io: SocketIO) => {
                 }
             ]
             */
-
-            socket.emit('groups', groups);
         });
     });
 
@@ -86,6 +92,9 @@ export const initRouterGroups = (io: SocketIO) => {
                 .createGroup({ name, description, participants: addParticipants.length ? addParticipants : [] })
                 .then(() => {
                     res.status(200).json({ message: 'OK' });
+                })
+                .then(() => {
+                    return updateClientGroups(io);
                 })
                 .catch((error) => {
                     const errMsg = error?.message ?? error;
