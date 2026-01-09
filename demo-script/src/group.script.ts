@@ -35,7 +35,8 @@ const runTests: Record<string, boolean> = {
     sendMedia: true,
     groupSettings: true,
     inviteManagement: true,
-    profilePicture: true,
+    profilePicture: false, // ❌ TEST FAILED: Error: No image processing library available
+    // at getImageProcessingLibrary (D:\dev-JustLikeThat\whatsapp-socket\demo-script\node_modules\@fadzzzslebew\baileys\lib\Utils\messages-media.js:61:11)
     cleanup: true,
 };
 
