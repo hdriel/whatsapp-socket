@@ -142,7 +142,7 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
     ): Promise<any> {
         if (!groupId) throw new Error('addParticipants: Group ID is required.');
         const participants = ([] as string[]).concat(participant).filter((v) => v);
-        if (participants?.length) return;
+        if (!participants?.length) return;
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
