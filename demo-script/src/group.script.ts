@@ -1,8 +1,8 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
-// import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
+import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 // @ts-ignore
-import { WhatsappSocketGroup } from '../../src';
+// import { WhatsappSocketGroup } from '../../src';
 import { readFileSync } from 'node:fs';
 import { DOCUMENT_ASSET_PATH, FILE_AUTH_PATH, IMAGE_ASSET_PATH, MP3_ASSET_PATH, VIDEO_ASSET_PATH } from './paths';
 
