@@ -78,12 +78,13 @@ export const initRouterGroups = (io: SocketIO) => {
 
         if (groupId) {
             try {
-                if (name) {
-                    await was.updateGroupName(groupId, name);
+                if (description) {
+                    // always throw conflict error
+                    await was.updateGroupDescription(groupId, description).catch(() => null);
                     await sleep(1000);
                 }
-                if (description) {
-                    await was.updateGroupDescription(groupId, description);
+                if (name) {
+                    await was.updateGroupName(groupId, name);
                     await sleep(1000);
                 }
                 if (addParticipants?.length) {
