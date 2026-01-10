@@ -35,16 +35,6 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
-        },
-        "./private": {
-            "types": "./dist/private.d.ts",
-            "import": "./dist/private.js",
-            "require": "./dist/private.cjs"
-        },
-        "./group": {
-            "types": "./dist/group.d.ts",
-            "import": "./dist/group.js",
-            "require": "./dist/group.cjs"
         }
     },
     "publishConfig": {
@@ -63,7 +53,8 @@
         "ms": "^2.1.3",
         "music-metadata": "7.14.0",
         "pino": "^10.1.0",
-        "qrcode": "^1.5.3"
+        "qrcode": "^1.5.3",
+        "sharp": "^0.32.6"
     },
     "devDependencies": {
         "@hapi/boom": "^10.0.1",

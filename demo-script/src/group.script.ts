@@ -24,17 +24,15 @@ function sleep(ms: number): Promise<void> {
 const runTests: Record<string, boolean> = {
     createGroup: true,
     updateGroupInfo: true,
+    groupSettings: true, // הועבר לפני participants כדי לבדוק נעילות
     manageParticipants: true,
     participantPermissions: true, // טסט חדש - ניהול הרשאות
+    profilePicture: true, // הופעל - ניהול תמונת פרופיל
     sendMessages: true,
     sendMedia: true,
-    groupSettings: true,
     inviteManagement: true,
-    profilePicture: false,
     cleanup: true,
 };
-
-const targetPhoneJID = TARGET_PHONE && WhatsappSocketGroup.formatPhoneNumberToWhatsappPattern(TARGET_PHONE);
 
 async function runWhatsAppGroupTests() {
     logger.info(null, '🚀 Starting WhatsApp Group Tests...\n');
@@ -130,16 +128,116 @@ async function runWhatsAppGroupTests() {
             logger.info(null, '✅ TEST 3 PASSED: Group information updated successfully\n');
         }
 
+        if (runTests.groupSettings && testGroupId) {
+            // ============================================
+            // TEST 4: Group Settings - Lock/Unlock
+            // ============================================
+            logger.info(null, '⚙️ TEST 4: Testing group settings (Lock/Unlock)...');
+
+            // Lock group - only admins can send messages
+            logger.info(null, '🔒 Locking group (announcement mode - only admins can send)...');
+            await client.updateGroupSettings(testGroupId, 'announcement');
+            logger.info(null, '✅ Group locked - only admins can send messages');
+
+            await sleep(1500);
+
+            // Unlock group - everyone can send messages
+            logger.info(null, '🔓 Unlocking group (normal mode - everyone can send)...');
+            await client.updateGroupSettings(testGroupId, 'not_announcement');
+            logger.info(null, '✅ Group unlocked - everyone can send messages');
+
+            await sleep(1500);
+
+            // Lock group info - only admins can edit group info
+            logger.info(null, '🔒 Locking group info (only admins can edit)...');
+            await client.updateGroupSettings(testGroupId, 'locked');
+            logger.info(null, '✅ Group info locked - only admins can edit');
+
+            await sleep(1500);
+
+            // Unlock group info - everyone can edit group info
+            logger.info(null, '🔓 Unlocking group info (everyone can edit)...');
+            await client.updateGroupSettings(testGroupId, 'unlocked');
+            logger.info(null, '✅ Group info unlocked - everyone can edit');
+
+            logger.info(null, '✅ TEST 4 PASSED: Group lock/unlock settings updated successfully\n');
+        }
+
+        if (runTests.profilePicture && testGroupId) {
+            // ============================================
+            // TEST 5: Group Profile Picture Management
+            // ============================================
+            logger.info(null, '🖼️ TEST 5: Managing group profile picture...');
+
+            // Get current profile picture (before setting)
+            logger.info(null, '📸 Getting current profile picture...');
+            const currentPicUrl = await client.getGroupProfilePicture(testGroupId, false);
+            logger.info(null, `✅ Current profile picture: ${currentPicUrl || 'No picture set'}`);
+
+            await sleep(1500);
+
+            // Set/Update group profile picture
+            logger.info(null, '📤 Setting group profile picture...');
+            const profileImageBuffer = readFileSync(IMAGE_ASSET_PATH);
+            await client.updateGroupProfilePicture(testGroupId, profileImageBuffer);
+            logger.info(null, '✅ Group profile picture updated successfully');
+
+            await sleep(2000);
+
+            // Get profile picture URL (low resolution)
+            logger.info(null, '📥 Getting profile picture URL (preview)...');
+            const previewPicUrl = await client.getGroupProfilePicture(testGroupId, false);
+            logger.info(null, `✅ Preview URL retrieved: ${previewPicUrl ? 'Available' : 'Not available'}`);
+
+            await sleep(1500);
+
+            // Get profile picture URL (high resolution)
+            logger.info(null, '📥 Getting profile picture URL (high-res)...');
+            const highResPicUrl = await client.getGroupProfilePicture(testGroupId, true);
+            logger.info(null, `✅ High-res URL retrieved: ${highResPicUrl ? 'Available' : 'Not available'}`);
+
+            await sleep(1500);
+
+            // Remove profile picture
+            logger.info(null, '🗑️ Removing group profile picture...');
+            await client.removeGroupProfilePicture(testGroupId);
+            logger.info(null, '✅ Group profile picture removed successfully');
+
+            await sleep(1500);
+
+            // Verify removal
+            const removedPicUrl = await client.getGroupProfilePicture(testGroupId, false);
+            logger.info(null, `✅ Verified removal: ${removedPicUrl ? 'Still has picture' : 'Picture removed'}`);
+
+            logger.info(null, '✅ TEST 5 PASSED: Profile picture management completed successfully\n');
+        }
+
         if (runTests.manageParticipants && testGroupId && shouldTestTargetPhone) {
             // ============================================
-            // TEST 4: Manage Participants - Add TARGET_PHONE
+            // TEST 6: Manage Participants - Add TARGET_PHONE
             // ============================================
-            logger.info(null, '👤 TEST 4: Managing group participants...');
+            logger.info(null, '👤 TEST 6: Managing group participants...');
+
+            // Get and send invite link first
+            logger.info(null, '🔗 Getting group invite link...');
+            const initialInviteCode = await client.getGroupInviteCode(testGroupId);
+            const inviteLink = `https://chat.whatsapp.com/${initialInviteCode}`;
+            logger.info(null, `✅ Invite link: ${inviteLink}`);
+
+            // Send invite link as first message
+            await client.sendTextMessage(
+                testGroupId,
+                `🎉 Welcome to the test group!\n\n🔗 Invite link: ${inviteLink}\n\n📋 This is an automated test of WhatsApp Socket library.`
+            );
+            logger.info(null, '✅ Invite link sent to group');
+
+            await sleep(2000);
+
             logger.info(null, `📞 Adding participant: ${TARGET_PHONE}`);
 
             // Add TARGET_PHONE to group
-            const res = await client.addParticipants(testGroupId, TARGET_PHONE);
-            logger.info(null, '✅ Participant added to group', res);
+            await client.addParticipants(testGroupId, TARGET_PHONE);
+            logger.info(null, '✅ Participant added to group');
 
             await sleep(2000);
 
@@ -148,7 +246,9 @@ async function runWhatsAppGroupTests() {
             const participantCount = metadata?.participants?.length || 0;
             logger.info(null, `✅ Current participants count: ${participantCount}`);
 
-            const targetParticipant = metadata?.participants?.find((p: any) => p.jid === targetPhoneJID);
+            const targetParticipant = metadata?.participants?.find((p) =>
+                p.id.includes(TARGET_PHONE.replace(/[^0-9]/g, ''))
+            );
 
             if (targetParticipant) {
                 logger.info(null, `✅ Verified - ${TARGET_PHONE} is in the group`);
@@ -157,22 +257,38 @@ async function runWhatsAppGroupTests() {
                 logger.info(null, `⚠️  Could not verify ${TARGET_PHONE} in group`);
             }
 
-            logger.info(null, '✅ TEST 4 PASSED: Participant added successfully\n');
+            logger.info(null, '✅ TEST 6 PASSED: Participant added successfully\n');
         } else if (runTests.manageParticipants && testGroupId) {
-            logger.info(null, '👤 TEST 4: Managing group participants...');
+            logger.info(null, '👤 TEST 6: Managing group participants...');
+
+            // Get and send invite link even if no target phone
+            logger.info(null, '🔗 Getting group invite link...');
+            const initialInviteCode = await client.getGroupInviteCode(testGroupId);
+            const inviteLink = `https://chat.whatsapp.com/${initialInviteCode}`;
+            logger.info(null, `✅ Invite link: ${inviteLink}`);
+
+            // Send invite link as first message
+            await client.sendTextMessage(
+                testGroupId,
+                `🎉 Welcome to the test group!\n\n🔗 Invite link: ${inviteLink}\n\n📋 This is an automated test of WhatsApp Socket library.`
+            );
+            logger.info(null, '✅ Invite link sent to group');
+
+            await sleep(2000);
+
             logger.info(null, '📝 Note: TARGET_PHONE is not set or equals MY_PHONE - skipping participant tests');
 
             const metadata = await client.getGroupMetadata(testGroupId);
             logger.info(null, `✅ Current participants count: ${metadata?.participants?.length || 0}`);
 
-            logger.info(null, '✅ TEST 4 PASSED: Participant management APIs verified\n');
+            logger.info(null, '✅ TEST 6 PASSED: Participant management APIs verified\n');
         }
 
         if (runTests.participantPermissions && testGroupId && shouldTestTargetPhone) {
             // ============================================
-            // TEST 4.5: Participant Permissions Management
+            // TEST 7: Participant Permissions Management
             // ============================================
-            logger.info(null, '🔐 TEST 4.5: Managing participant permissions...');
+            logger.info(null, '🔐 TEST 7: Managing participant permissions...');
 
             // Promote to admin
             logger.info(null, `⬆️  Promoting ${TARGET_PHONE} to admin...`);
@@ -183,9 +299,11 @@ async function runWhatsAppGroupTests() {
 
             // Verify promotion
             let metadata = await client.getGroupMetadata(testGroupId);
-            const targetParticipant1 = metadata?.participants?.find((p: any) => p.jid === targetPhoneJID);
+            let targetParticipant = metadata?.participants?.find((p) =>
+                p.id.includes(TARGET_PHONE.replace(/[^0-9]/g, ''))
+            );
 
-            if (targetParticipant1?.admin) {
+            if (targetParticipant?.admin) {
                 logger.info(null, `✅ Verified - ${TARGET_PHONE} is now an admin`);
             } else {
                 logger.info(null, `⚠️  Could not verify admin status for ${TARGET_PHONE}`);
@@ -202,9 +320,9 @@ async function runWhatsAppGroupTests() {
 
             // Verify demotion
             metadata = await client.getGroupMetadata(testGroupId);
-            const targetParticipant2 = metadata?.participants?.find((p: any) => p.jid === targetPhoneJID);
+            targetParticipant = metadata?.participants?.find((p) => p.id.includes(TARGET_PHONE.replace(/[^0-9]/g, '')));
 
-            if (!targetParticipant2?.admin) {
+            if (!targetParticipant?.admin) {
                 logger.info(null, `✅ Verified - ${TARGET_PHONE} is no longer an admin`);
             } else {
                 logger.info(null, `⚠️  Could not verify demotion for ${TARGET_PHONE}`);
@@ -221,9 +339,9 @@ async function runWhatsAppGroupTests() {
 
             // Verify removal
             metadata = await client.getGroupMetadata(testGroupId);
-            const targetParticipant3 = metadata?.participants?.find((p: any) => p.jid === targetPhoneJID);
+            targetParticipant = metadata?.participants?.find((p) => p.id.includes(TARGET_PHONE.replace(/[^0-9]/g, '')));
 
-            if (!targetParticipant3) {
+            if (!targetParticipant) {
                 logger.info(null, `✅ Verified - ${TARGET_PHONE} is no longer in the group`);
             } else {
                 logger.info(null, `⚠️  ${TARGET_PHONE} still appears in group`);
@@ -240,31 +358,22 @@ async function runWhatsAppGroupTests() {
 
             // Verify re-addition
             metadata = await client.getGroupMetadata(testGroupId);
-            const targetParticipant4 = metadata?.participants?.find((p: any) => p.jid === targetPhoneJID);
+            targetParticipant = metadata?.participants?.find((p) => p.id.includes(TARGET_PHONE.replace(/[^0-9]/g, '')));
 
-            if (targetParticipant4) {
+            if (targetParticipant) {
                 logger.info(null, `✅ Verified - ${TARGET_PHONE} is back in the group`);
             }
 
-            logger.info(null, '✅ TEST 4.5 PASSED: Permissions managed successfully\n');
+            logger.info(null, '✅ TEST 7 PASSED: Permissions managed successfully\n');
         }
 
         if (runTests.sendMessages && testGroupId) {
             // ============================================
-            // TEST 5: Send Messages to Group
+            // TEST 8: Send Messages to Group
             // ============================================
-            logger.info(null, '💬 TEST 5: Sending messages to group...');
+            logger.info(null, '💬 TEST 8: Sending messages to group...');
 
-            logger.info(null, `➕ Adding ${TARGET_PHONE} back to group...`);
-            const invite = await client.revokeGroupInviteCode(testGroupId);
-            const inviteInfo = await client.getGroupInfoFromInvite(invite as string);
-
-            await client.sendTextMessage(
-                testGroupId,
-                ['Hello! This is a test message in the group 👋', 'here link to this group:', invite, inviteInfo].join(
-                    '\n'
-                )
-            );
+            await client.sendTextMessage(testGroupId, 'Hello! This is a test message in the group 👋');
             logger.info(null, '✅ Text message sent');
 
             await sleep(1000);
@@ -299,14 +408,14 @@ async function runWhatsAppGroupTests() {
             });
             logger.info(null, '✅ Reply buttons message sent');
 
-            logger.info(null, '✅ TEST 5 PASSED: Messages sent successfully\n');
+            logger.info(null, '✅ TEST 8 PASSED: Messages sent successfully\n');
         }
 
         if (runTests.sendMedia && testGroupId) {
             // ============================================
-            // TEST 6: Send Media to Group
+            // TEST 9: Send Media to Group
             // ============================================
-            logger.info(null, '🖼️ TEST 6: Sending media to group...');
+            logger.info(null, '🖼️ TEST 9: Sending media to group...');
 
             const imageBuffer = readFileSync(IMAGE_ASSET_PATH);
             await client.sendImageMessage(testGroupId, imageBuffer, {
@@ -342,41 +451,14 @@ async function runWhatsAppGroupTests() {
             await client.sendLocationMessage(testGroupId, 32.0853, 34.7818, 'Test Location', 'Tel Aviv, Israel');
             logger.info(null, '✅ Location sent');
 
-            logger.info(null, '✅ TEST 6 PASSED: Media sent successfully\n');
-        }
-
-        if (runTests.groupSettings && testGroupId) {
-            // ============================================
-            // TEST 7: Group Settings
-            // ============================================
-            logger.info(null, '⚙️ TEST 7: Testing group settings...');
-
-            await client.updateGroupSettings(testGroupId, 'announcement');
-            logger.info(null, '✅ Group set to announcement mode (only admins can send)');
-
-            await sleep(1000);
-
-            await client.updateGroupSettings(testGroupId, 'not_announcement');
-            logger.info(null, '✅ Group set to normal mode (everyone can send)');
-
-            await sleep(1000);
-
-            await client.updateGroupSettings(testGroupId, 'locked');
-            logger.info(null, '✅ Group info locked (only admins can edit)');
-
-            await sleep(1000);
-
-            await client.updateGroupSettings(testGroupId, 'unlocked');
-            logger.info(null, '✅ Group info unlocked (everyone can edit)');
-
-            logger.info(null, '✅ TEST 7 PASSED: Group settings updated successfully\n');
+            logger.info(null, '✅ TEST 9 PASSED: Media sent successfully\n');
         }
 
         if (runTests.inviteManagement && testGroupId) {
             // ============================================
-            // TEST 8: Invite Code Management
+            // TEST 10: Invite Code Management
             // ============================================
-            logger.info(null, '🔗 TEST 8: Managing group invite codes...');
+            logger.info(null, '🔗 TEST 10: Managing group invite codes...');
 
             inviteCode = await client.getGroupInviteCode(testGroupId);
             logger.info(null, `✅ Current invite code: ${inviteCode}`);
@@ -393,37 +475,14 @@ async function runWhatsAppGroupTests() {
             logger.info(null, `✅ New invite code generated: ${newInviteCode}`);
             logger.info(null, `✅ Old invite code (${inviteCode}) is now invalid`);
 
-            logger.info(null, '✅ TEST 8 PASSED: Invite management working successfully\n');
-        }
-
-        if (runTests.profilePicture && testGroupId) {
-            // ============================================
-            // TEST 9: Group Profile Picture
-            // ============================================
-            logger.info(null, '🖼️ TEST 9: Managing group profile picture...');
-
-            const profileImageBuffer = readFileSync(IMAGE_ASSET_PATH);
-            await client.updateGroupProfilePicture(testGroupId, profileImageBuffer);
-            logger.info(null, '✅ Group profile picture updated');
-
-            await sleep(2000);
-
-            const profilePicUrl = await client.getGroupProfilePicture(testGroupId, true);
-            logger.info(null, `✅ Profile picture URL retrieved: ${profilePicUrl ? 'Available' : 'Not available'}`);
-
-            await sleep(1000);
-
-            await client.removeGroupProfilePicture(testGroupId);
-            logger.info(null, '✅ Group profile picture removed');
-
-            logger.info(null, '✅ TEST 9 PASSED: Profile picture management working successfully\n');
+            logger.info(null, '✅ TEST 10 PASSED: Invite management working successfully\n');
         }
 
         if (runTests.cleanup && testGroupId) {
             // ============================================
-            // TEST 10: Cleanup - Remove participant and Leave Group
+            // TEST 11: Cleanup - Remove participant and Leave Group
             // ============================================
-            logger.info(null, '🧹 TEST 10: Cleanup - Final participant management and leaving group...');
+            logger.info(null, '🧹 TEST 11: Cleanup - Final participant management and leaving group...');
 
             // Remove TARGET_PHONE if it was added
             if (shouldTestTargetPhone) {
@@ -448,7 +507,7 @@ async function runWhatsAppGroupTests() {
             await client.leaveGroup(testGroupId);
             logger.info(null, '✅ Successfully left the test group');
 
-            logger.info(null, '✅ TEST 10 PASSED: Cleanup completed successfully\n');
+            logger.info(null, '✅ TEST 11 PASSED: Cleanup completed successfully\n');
         }
 
         // ============================================
@@ -461,15 +520,16 @@ async function runWhatsAppGroupTests() {
         logger.info(null, '✅ Connection & Authentication');
         runTests.createGroup && logger.info(null, '✅ Group Creation');
         runTests.updateGroupInfo && logger.info(null, '✅ Group Information Update (Name + Description)');
-        runTests.manageParticipants && logger.info(null, '✅ Participant Management (Add)');
+        runTests.groupSettings && logger.info(null, '✅ Group Settings (Lock/Unlock Messages & Info)');
+        runTests.profilePicture &&
+            logger.info(null, '✅ Profile Picture Management (Set + Get Preview + Get High-Res + Remove)');
+        runTests.manageParticipants && logger.info(null, '✅ Participant Management (Add + Invite Link)');
         runTests.participantPermissions &&
             shouldTestTargetPhone &&
             logger.info(null, '✅ Participant Permissions (Promote/Demote/Remove/Re-add)');
         runTests.sendMessages && logger.info(null, '✅ Group Messages (Text + Mentions + Buttons)');
         runTests.sendMedia && logger.info(null, '✅ Group Media (Image + Video + Audio + Document + Location)');
-        runTests.groupSettings && logger.info(null, '✅ Group Settings (Announcement + Info Lock)');
         runTests.inviteManagement && logger.info(null, '✅ Invite Code Management (Get + Revoke + Info)');
-        runTests.profilePicture && logger.info(null, '✅ Profile Picture Management (Update + Get + Remove)');
         runTests.cleanup && logger.info(null, '✅ Cleanup (Remove Participants + Leave Group)');
 
         if (shouldTestTargetPhone) {
