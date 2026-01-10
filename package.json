@@ -35,16 +35,6 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
-        },
-        "./private": {
-            "types": "./dist/private.d.ts",
-            "import": "./dist/private.js",
-            "require": "./dist/private.cjs"
-        },
-        "./group": {
-            "types": "./dist/group.d.ts",
-            "import": "./dist/group.js",
-            "require": "./dist/group.cjs"
         }
     },
     "publishConfig": {
@@ -79,6 +69,7 @@
         "typescript": "^5.9.2"
     },
     "peerDependencies": {
-        "mongodb": "^5.8.1"
+        "mongodb": "^5.8.1",
+        "sharp": "^0.32.6"
     }
 }

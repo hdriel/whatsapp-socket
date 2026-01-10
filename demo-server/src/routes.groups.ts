@@ -6,6 +6,7 @@ import logger from './logger';
 // import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 import { WhatsappSocketGroup } from '../../src';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile } from './upload';
+import { sleep } from './helpers';
 const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 
 export const initRouterGroups = (io: SocketIO) => {
@@ -77,10 +78,22 @@ export const initRouterGroups = (io: SocketIO) => {
 
         if (groupId) {
             try {
-                name && (await was.updateGroupName(groupId, name));
-                // description && (await was.updateGroupDescription(groupId, description));
-                addParticipants?.length && (await was.addParticipants(groupId, addParticipants));
-                removeParticipants?.length && (await was.removeParticipants(groupId, removeParticipants));
+                if (name) {
+                    await was.updateGroupName(groupId, name);
+                    await sleep(1000);
+                }
+                if (description) {
+                    await was.updateGroupDescription(groupId, description);
+                    await sleep(1000);
+                }
+                if (addParticipants?.length) {
+                    await was.addParticipants(groupId, addParticipants);
+                    await sleep(1000);
+                }
+                if (removeParticipants?.length) {
+                    await was.removeParticipants(groupId, removeParticipants);
+                    await sleep(1000);
+                }
                 res.status(200).json({ message: 'OK' });
             } catch (error: any) {
                 const errMsg = error?.message ?? error;

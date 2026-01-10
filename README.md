@@ -418,6 +418,349 @@ app.post('/api/upload-image', uploadImage.single('image'), async (req, res) => {
 });
 ```
 
+# Group Management
+
+The library provides comprehensive group management capabilities through the `WhatsappSocketGroup` class.
+
+## Quick Start with Groups
+
+```typescript
+import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
+
+const client = new WhatsappSocketGroup({
+  fileAuthStateDirectoryPath: './authState/my-profile',
+  printQRInTerminal: true,
+  debug: true
+});
+
+await client.startConnection();
+```
+
+## Group Operations
+
+### Creating Groups
+
+```typescript
+// Create a new group
+const group = await client.createGroup({
+  name: 'My Test Group',
+  description: 'This is a test group', // optional
+  participants: ['972501234567', '972507654321'] // optional, can be empty
+});
+
+console.log('Group ID:', group.id);
+```
+
+### Group Information
+
+```typescript
+// Update group name
+await client.updateGroupName(groupId, 'New Group Name');
+
+// Update group description
+await client.updateGroupDescription(groupId, 'New description text');
+
+// Get group metadata
+const metadata = await client.getGroupMetadata(groupId);
+console.log('Group Name:', metadata.subject);
+console.log('Participants:', metadata.participants.length);
+
+// Get all groups
+const allGroups = await client.getAllGroups();
+console.log('Total groups:', allGroups.length);
+```
+
+### Group Settings
+
+```typescript
+// Lock group (only admins can send messages)
+await client.updateGroupSettings(groupId, 'announcement');
+
+// Unlock group (everyone can send messages)
+await client.updateGroupSettings(groupId, 'not_announcement');
+
+// Lock group info (only admins can edit)
+await client.updateGroupSettings(groupId, 'locked');
+
+// Unlock group info (everyone can edit)
+await client.updateGroupSettings(groupId, 'unlocked');
+```
+
+### Participant Management
+
+```typescript
+// Add participants
+await client.addParticipants(groupId, '972501234567');
+// Or add multiple
+await client.addParticipants(groupId, ['972501234567', '972507654321']);
+
+// Remove participants
+await client.removeParticipants(groupId, '972501234567');
+
+// Promote to admin
+await client.promoteToAdmin(groupId, '972501234567');
+
+// Demote from admin
+await client.demoteFromAdmin(groupId, '972501234567');
+
+// Leave group
+await client.leaveGroup(groupId);
+```
+
+### Invite Management
+
+```typescript
+// Get group invite code
+const inviteCode = await client.getGroupInviteCode(groupId);
+const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
+console.log('Invite link:', inviteLink);
+
+// Get group info from invite code
+const groupInfo = await client.getGroupInfoFromInvite(inviteCode);
+console.log('Group name:', groupInfo.subject);
+
+// Revoke invite code (generates new one)
+const newInviteCode = await client.revokeGroupInviteCode(groupId);
+console.log('New invite code:', newInviteCode);
+
+// Join group via invite code
+const joinedGroupId = await client.joinGroupViaInvite(inviteCode);
+```
+
+### Profile Picture Management
+
+**Note:** Requires `sharp` library to be installed:
+```bash
+npm install sharp
+```
+
+```typescript
+import fs from 'fs';
+
+// Update group profile picture
+const imageBuffer = fs.readFileSync('./group-photo.jpg');
+await client.updateGroupProfilePicture(groupId, imageBuffer);
+
+// Get profile picture URL (preview/low-res)
+const previewUrl = await client.getGroupProfilePicture(groupId, false);
+
+// Get profile picture URL (high-res)
+const highResUrl = await client.getGroupProfilePicture(groupId, true);
+
+// Remove profile picture
+await client.removeGroupProfilePicture(groupId);
+```
+
+### Sending Messages to Groups
+
+All messaging methods work the same for groups and individual chats:
+
+```typescript
+// Send text message to group
+await client.sendTextMessage(groupId, 'Hello everyone!');
+
+// Send message with mention all
+await client.sendMentionAll(groupId, '📢 Important announcement!');
+
+// Send buttons message
+await client.sendButtonsMessage(groupId, {
+  title: 'Group Poll',
+  subtitle: 'Vote for next event',
+  buttons: [
+    { label: 'Visit Website', url: 'https://example.com' },
+    { label: 'Copy Code', copy: 'EVENT2024' }
+  ]
+});
+
+// Send reply buttons
+await client.sendReplyButtonsMessage(groupId, {
+  title: 'Quick poll',
+  subtitle: 'Choose your answer',
+  buttons: ['Option 1', 'Option 2', 'Option 3']
+});
+
+// Send media
+const imageBuffer = fs.readFileSync('./photo.jpg');
+await client.sendImageMessage(groupId, imageBuffer, {
+  caption: 'Group photo!'
+});
+```
+
+## Complete Group Example
+
+```typescript
+import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
+import fs from 'fs';
+
+async function groupExample() {
+  const client = new WhatsappSocketGroup({
+    fileAuthStateDirectoryPath: './authState',
+    printQRInTerminal: true,
+    debug: true
+  });
+
+  await client.startConnection();
+
+  // Create group
+  const group = await client.createGroup({
+    name: '🎉 My Awesome Group',
+    description: 'Welcome to our group!',
+    participants: ['0501234567']
+  });
+
+  const groupId = group.id;
+
+  // Get invite link
+  const inviteCode = await client.getGroupInviteCode(groupId);
+  const inviteLink = await client.getGroupInviteCode(groupId, true);
+  // https://chat.whatsapp.com/${inviteCode}
+
+  // Send welcome message with invite link
+  await client.sendTextMessage(
+    groupId,
+    `Welcome! 🎉\n\nInvite link: ${inviteLink}`
+  );
+
+  // Set group profile picture
+  const imageBuffer = fs.readFileSync('./group-icon.jpg');
+  await client.updateGroupProfilePicture(groupId, imageBuffer);
+
+  // Lock group (only admins can send)
+  await client.updateGroupSettings(groupId, 'announcement');
+
+  // Add more participants
+  await client.addParticipants(groupId, ['0507654321', '972509876543']);
+
+  // Promote someone to admin
+  await client.promoteToAdmin(groupId, '0507654321');
+
+  // Send announcement
+  await client.sendMentionAll(
+    groupId,
+    '📢 Group is now set up! Only admins can send messages.'
+  );
+  
+  // And all the function of the private message also here, sendButtons and so on..
+
+  // Get group info
+  const metadata = await client.getGroupMetadata(groupId);
+  console.log(`Group "${metadata.subject}" has ${metadata.participants.length} members`);
+}
+
+groupExample().catch(console.error);
+```
+
+## Group ID Format
+
+- Individual chats: `{phone}@s.whatsapp.net`
+- **Group chats: `{group_id}@g.us`**
+
+The library automatically formats group IDs, so you can use either:
+```typescript
+await client.updateGroupName('123456789@g.us', 'New Name');
+// or
+await client.updateGroupName('123456789', 'New Name'); // automatically adds @g.us
+```
+
+## Helper Methods
+
+```typescript
+// Check if a JID is a group
+const isGroup = WhatsappSocketGroup.isGroupId(jid);
+
+// Format phone number to WhatsApp pattern
+const formattedPhone = WhatsappSocketGroup.formatPhoneNumberToWhatsappPattern('050-123-4567');
+// Returns: '972501234567@s.whatsapp.net'
+
+// Format group ID
+const formattedGroupId = WhatsappSocketGroup.formatGroupId('123456789');
+// Returns: '123456789@g.us'
+```
+
+## Error Handling
+
+Always wrap group operations in try-catch blocks:
+
+```typescript
+try {
+  await client.addParticipants(groupId, phoneNumber);
+} catch (error) {
+  console.error('Failed to add participant:', error);
+  
+  if (error.message.includes('item-not-found')) {
+    console.log('Group or participant not found');
+  } else if (error.message.includes('not-authorized')) {
+    console.log('Bot is not an admin');
+  }
+}
+```
+
+## Common Use Cases
+
+### Auto-Welcome New Members
+
+```typescript
+client.onReceiveMessages = async (messages) => {
+  for (const msg of messages) {
+    if (msg.messageType === 'groupParticipantsUpdate') {
+      const groupId = msg.key.remoteJid;
+      await client.sendTextMessage(
+        groupId,
+        'Welcome to the group! 👋'
+      );
+    }
+  }
+};
+```
+
+### Daily Announcements
+
+```typescript
+import cron from 'node-cron';
+
+// Send daily message at 9 AM
+cron.schedule('0 9 * * *', async () => {
+  await client.sendMentionAll(
+    groupId,
+    '☀️ Good morning everyone! Have a great day!'
+  );
+});
+```
+
+### Group Polling System
+
+```typescript
+await client.sendReplyButtonsMessage(groupId, {
+  title: '📊 Daily Poll',
+  subtitle: 'What should we have for lunch?',
+  buttons: ['🍕 Pizza', '🍔 Burgers', '🍜 Ramen', '🥗 Salad']
+});
+```
+
+## Best Practices
+
+1. **Admin Rights**: Many operations require admin rights. Ensure your bot is an admin before performing administrative tasks.
+
+2. **Rate Limiting**: Don't add/remove participants too quickly. Add delays between operations:
+   ```typescript
+   await client.addParticipants(groupId, participant1);
+   await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+   await client.addParticipants(groupId, participant2);
+   ```
+
+3. **Profile Pictures**: Install `sharp` for better performance:
+   ```bash
+   npm install sharp
+   ```
+
+4. **Group Size**: WhatsApp has limits on group sizes (typically 1024 members). Check before adding participants.
+
+5. **Permissions**: Always check if the bot has necessary permissions before performing admin actions.
+
+---
+
+**See also**: [Complete Demo Script](https://github.com/hdriel/whatsapp-socket/blob/main/demo-script/src/group.script.ts)
+
 ## Session Storage
 
 ### File-Based Storage (Recommended for Development)

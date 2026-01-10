@@ -142,7 +142,7 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
     ): Promise<any> {
         if (!groupId) throw new Error('addParticipants: Group ID is required.');
         const participants = ([] as string[]).concat(participant).filter((v) => v);
-        if (participants?.length) return;
+        if (!participants?.length) return;
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
@@ -238,7 +238,7 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
     /**
      * Get group invite code
      */
-    async getGroupInviteCode(groupId: string): Promise<string | undefined> {
+    async getGroupInviteCode(groupId: string, urlLink?: boolean): Promise<string | undefined> {
         if (!groupId) throw new Error('getGroupInviteCode: Group ID is required.');
         await this.ensureSocketConnected();
 
@@ -248,7 +248,9 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
             this.logger?.debug('WHATSAPP', 'Fetching group invite code', { groupId: formattedGroupId });
         }
 
-        return this.socket?.groupInviteCode(formattedGroupId);
+        const inviteCode = await this.socket?.groupInviteCode(formattedGroupId);
+
+        return urlLink && inviteCode ? `https://chat.whatsapp.com/${inviteCode}` : inviteCode;
     }
 
     /**
@@ -332,7 +334,7 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
     /**
      * Get group profile picture URL
      */
-    async getGroupProfilePicture(groupId: string, highRes: boolean = false): Promise<string | undefined> {
+    async getGroupProfilePicture(groupId: string, highRes: boolean = false): Promise<string | undefined | null> {
         if (!groupId) throw new Error('getGroupProfilePicture: Group ID is required.');
         await this.ensureSocketConnected();
 
@@ -342,6 +344,13 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
             this.logger?.debug('WHATSAPP', 'Fetching group profile picture', { groupId: formattedGroupId, highRes });
         }
 
-        return this.socket?.profilePictureUrl(formattedGroupId, highRes ? 'image' : 'preview');
+        return this.socket
+            ?.profilePictureUrl(formattedGroupId, highRes ? 'image' : 'preview')
+            .catch((reason: Error) => {
+                if (reason.message === 'item-not-found') return null;
+                throw reason;
+                // if (reason === 'No image processing library available')
+                //     throw 'No image processing library available (try to install sharp/jimp)';
+            });
     }
 }
