@@ -1,4 +1,4 @@
-import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
+import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
 import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 import { readFileSync } from 'node:fs';
