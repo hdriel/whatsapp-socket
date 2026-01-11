@@ -3,8 +3,7 @@ import path from 'pathe';
 import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
-// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
-import { WhatsappSocket } from '../../src';
+import { WhatsappSocket } from './whatsapp-socket';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
 const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 

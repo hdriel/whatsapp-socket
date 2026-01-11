@@ -104,10 +104,22 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
         if (!groupId) {
             throw new Error('updateGroupDescription: Group ID is required.');
         }
-
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
+
+        await this.socket
+            ?.groupMetadata(formattedGroupId)
+            .then((data) => {
+                if (this.debug) {
+                    this.logger?.debug('WHATSAPP', 'Fetch group description metadata', data);
+                }
+            })
+            .catch((e) => {
+                if (this.debug) {
+                    this.logger?.warn('WHATSAPP', 'Failed to update group description metadata', { error: e });
+                }
+            });
 
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'Updating group description', { groupId: formattedGroupId });
