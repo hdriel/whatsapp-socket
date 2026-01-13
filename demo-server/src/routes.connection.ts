@@ -3,19 +3,16 @@ import path from 'pathe';
 import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
-// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
-// @ts-ignore
-import { WhatsappSocket } from '../../src';
+import { WhatsappSocket } from './whatsapp-socket';
 const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 
 export const initRouterConnection = (io: SocketIO) => {
     const was = new WhatsappSocket({
         mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
         fileAuthStateDirectoryPath: fileAuthPath,
+        appName: 'whatsapp-socket-demo',
         logger,
         printQRInTerminal: true,
-        customPairingCode: 'a',
-        appName: 'whatsapp-socket-demo',
         debug: true,
         onConnectionStatusChange: (status) => {
             io.emit('connection-status', status);

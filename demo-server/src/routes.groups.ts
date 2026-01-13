@@ -3,8 +3,7 @@ import path from 'pathe';
 import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
-// import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
-import { WhatsappSocketGroup } from '../../src';
+import { WhatsappSocketGroup } from './whatsapp-socket';
 import { uploadImage, uploadVideo, uploadAudio, uploadFile } from './upload';
 import { sleep } from './helpers';
 const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
@@ -74,16 +73,19 @@ export const initRouterGroups = (io: SocketIO) => {
     router.post(['/', '/:groupId'], async (req: Request, res: Response) => {
         const groupId = req.params.groupId !== 'undefined' ? req.params.groupId : '';
         const { name, description, addParticipants, removeParticipants } = req.body;
-        logger.info(null, `${groupId ? 'Updating' : 'Creating'} group...`, req.body);
+        logger.info(null, `${groupId ? 'Updating' : 'Creating'} group...`, { ...req.body, groupId });
 
         if (groupId) {
             try {
-                if (name) {
-                    await was.updateGroupName(groupId, name);
+                if (description) {
+                    // always throw conflict error
+                    await was.updateGroupDescription(groupId, description).catch((error) => {
+                        logger.warn(null, 'Failed to update group description', error);
+                    });
                     await sleep(1000);
                 }
-                if (description) {
-                    await was.updateGroupDescription(groupId, description);
+                if (name) {
+                    await was.updateGroupName(groupId, name);
                     await sleep(1000);
                 }
                 if (addParticipants?.length) {
