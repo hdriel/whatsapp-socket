@@ -512,8 +512,8 @@ await client.leaveGroup(groupId);
 ```typescript
 // Get group invite code
 const inviteCode = await client.getGroupInviteCode(groupId);
-const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
-console.log('Invite link:', inviteLink);
+const inviteLink = await client.getGroupInviteCode(groupId, true);  
+console.log('Invite link:', inviteLink); // `https://chat.whatsapp.com/${inviteCode}`;
 
 // Get group info from invite code
 const groupInfo = await client.getGroupInfoFromInvite(inviteCode);
