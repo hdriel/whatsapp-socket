@@ -100,7 +100,7 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
     /**
      * Update group description
      */
-    async updateGroupDescription(groupId: string, description: string): Promise<any> {
+    async updateGroupDescription(groupId: string, description: string, fetchMetaData = false): Promise<any> {
         if (!groupId) {
             throw new Error('updateGroupDescription: Group ID is required.');
         }
@@ -108,18 +108,20 @@ export class WhatsappSocketGroups extends WhatsappSocketBase {
 
         const formattedGroupId = WhatsappSocketGroups.formatGroupId(groupId);
 
-        await this.socket
-            ?.groupMetadata(formattedGroupId)
-            .then((data) => {
-                if (this.debug) {
-                    this.logger?.debug('WHATSAPP', 'Fetch group description metadata', data);
-                }
-            })
-            .catch((e) => {
-                if (this.debug) {
-                    this.logger?.warn('WHATSAPP', 'Failed to update group description metadata', { error: e });
-                }
-            });
+        if (fetchMetaData) {
+            await this.socket
+                ?.groupMetadata(formattedGroupId)
+                .then((data) => {
+                    if (this.debug) {
+                        this.logger?.debug('WHATSAPP', 'Fetch group description metadata', data);
+                    }
+                })
+                .catch((e) => {
+                    if (this.debug) {
+                        this.logger?.warn('WHATSAPP', 'Failed to update group description metadata', { error: e });
+                    }
+                });
+        }
 
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'Updating group description', { groupId: formattedGroupId });
