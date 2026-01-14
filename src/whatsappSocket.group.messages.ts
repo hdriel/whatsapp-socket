@@ -456,4 +456,41 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             },
         });
     }
+
+    async sendSurveyMessage(
+        groupId: string,
+        question: string,
+        options: string[],
+        allowMultipleAnswers = false
+    ): Promise<any> {
+        if (!groupId || !question || !options || options.length < 2) {
+            throw new Error('sendSurveyMessage: question and at least 2 options are required.');
+        }
+
+        if (options.length > 12) {
+            throw new Error('sendSurveyMessage: maximum 12 options allowed.');
+        }
+
+        await this.ensureSocketConnected();
+
+        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const pollOptions = options;
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send survey message', {
+                groupId: formattedGroupId,
+                question,
+                options: pollOptions,
+                allowMultipleAnswers,
+            });
+        }
+
+        return this.socket?.sendMessage(formattedGroupId, {
+            poll: {
+                name: question,
+                values: pollOptions,
+                selectableCount: allowMultipleAnswers ? options.length : 1,
+            },
+        });
+    }
 }

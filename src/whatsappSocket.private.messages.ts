@@ -256,4 +256,41 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
             },
         });
     }
+
+    async sendSurveyMessage(
+        to: string,
+        question: string,
+        options: string[],
+        allowMultipleAnswers = false
+    ): Promise<any> {
+        if (!question || !options || options.length < 2) {
+            throw new Error('sendSurveyMessage: question and at least 2 options are required.');
+        }
+
+        if (options.length > 12) {
+            throw new Error('sendSurveyMessage: maximum 12 options allowed.');
+        }
+
+        await this.ensureSocketConnected();
+
+        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const pollOptions = options;
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send survey message', {
+                jid,
+                question,
+                options: pollOptions,
+                allowMultipleAnswers,
+            });
+        }
+
+        return this.socket?.sendMessage(jid, {
+            poll: {
+                name: question,
+                values: pollOptions,
+                selectableCount: allowMultipleAnswers ? options.length : 1,
+            },
+        });
+    }
 }
