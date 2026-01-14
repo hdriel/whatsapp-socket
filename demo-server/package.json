@@ -4,7 +4,7 @@
     "description": "",
     "main": "server.ts",
     "scripts": {
-        "start": "npm run build && tsx src/server.ts",
+        "start": "npm run build && npm run server",
         "server": "tsx src/server.ts",
         "build": "cd ../demo-client && npm run build",
         "dev:client": "cd ../demo-client && npm run dev",

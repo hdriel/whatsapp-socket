@@ -17,6 +17,7 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
 
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const imageData = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
+        filename = filename && decodeURIComponent(filename);
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send image message', { jid, caption, filename });
         return await this.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
@@ -35,6 +36,7 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
 
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
+        filename = filename && decodeURIComponent(filename);
 
         if (this.debug) this.logger?.debug('WHATSAPP', 'send video message', { jid, caption, filename, gifPlayback });
         return await this.sendVideo(jid, videoBuffer, { caption, gifPlayback, ...(filename && { filename }) });
@@ -48,14 +50,14 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
             mimetype = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             replyToMessageId,
             jpegThumbnailSrc,
-            filename: _filename,
+            filename,
         }: {
             caption?: string;
             mimetype?: string;
-            filename?: string;
+            filename: string;
             replyToMessageId?: string;
             jpegThumbnailSrc?: string | Buffer<any> | ReadStream;
-        } = {}
+        }
     ) {
         await this.ensureSocketConnected();
 
@@ -71,15 +73,15 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
             jpegThumbnailBuffer = jpegThumbnailSrc;
         }
 
-        let filename = 'mu-document';
         if (fileSrc instanceof ReadStream) {
             const fname = getFilenameFromStream(fileSrc);
             if (fname) filename = fname;
         } else if (typeof fileSrc === 'string') {
             filename = basename(fileSrc);
         }
+        filename = filename && decodeURIComponent(filename);
 
-        if (this.debug)
+        if (this.debug) {
             this.logger?.debug('WHATSAPP', 'send file message', {
                 jid,
                 caption,
@@ -88,6 +90,8 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
                 replyToMessageId,
                 includeJpegThumbnail: !!jpegThumbnailBuffer,
             });
+        }
+
         return await this.sendDocument(jid, fileBuffer, {
             caption,
             mimetype,
@@ -112,6 +116,7 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const audioBuffer = typeof audioSrc === 'string' ? await getUrlBuffer(audioSrc) : audioSrc;
         let durationInSeconds = seconds || (await getAudioFileDuration(audioBuffer, mimetype).catch(() => 0));
+        filename = filename && decodeURIComponent(filename);
 
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'send audio message', {
@@ -139,19 +144,41 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
      * * transparent background
      * @param to
      * @param imageSrc
-     * @param replyToMessageId
      */
-    async sendStickerMessage(
-        to: string,
-        imageSrc: string | Buffer<any> | ReadStream,
-        { replyToMessageId }: { replyToMessageId?: string } = {}
-    ) {
+    async sendStickerMessage(to: string, imageSrc: string | Buffer<any> | ReadStream) {
         await this.ensureSocketConnected();
 
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
         const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
 
-        if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid, replyToMessageId });
-        return await this.sendSticker(jid, stickerBuffer, { replyToMessageId });
+        if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid });
+        return await this.sendSticker(jid, stickerBuffer);
+    }
+
+    async sendLocationMessage(
+        to: string,
+        position: { latitude: number; longitude: number },
+        name?: string,
+        address?: string
+    ): Promise<any> {
+        if (!to || position.latitude === undefined || position.longitude === undefined) {
+            throw new Error('sendLocation: phoneTo, latitude, and longitude are required.');
+        }
+
+        await this.ensureSocketConnected();
+        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Sending location', { jid, ...position });
+        }
+
+        return this.socket?.sendMessage(jid, {
+            location: {
+                degreesLatitude: position.latitude,
+                degreesLongitude: position.longitude,
+                ...(name && { name }),
+                ...(address && { address }),
+            },
+        });
     }
 }

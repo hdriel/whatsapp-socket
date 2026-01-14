@@ -3,6 +3,7 @@ import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } fr
 import { Upload } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
+import { encodeFile } from '../../utils/helper.ts';
 
 export const FileUploadSection: React.FC = ({}) => {
     const { messageToPhone: phoneTo } = useAppContext();
@@ -39,7 +40,7 @@ export const FileUploadSection: React.FC = ({}) => {
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
             formData.append('message', message.trim());
-            formData.append('file', selectedFile);
+            formData.append('file', encodeFile(selectedFile));
 
             await makeApiCall(API_ENDPOINTS.UPLOAD_FILE, formData);
             setSuccess('File uploaded successfully!');

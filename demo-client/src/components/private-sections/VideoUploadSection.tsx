@@ -3,6 +3,7 @@ import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } fr
 import { SmartDisplay as Video } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
+import { encodeFile } from '../../utils/helper.ts';
 
 export const VideoUploadSection: React.FC = ({}) => {
     const { messageToPhone: phoneTo } = useAppContext();
@@ -43,7 +44,7 @@ export const VideoUploadSection: React.FC = ({}) => {
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
             formData.append('message', message.trim());
-            formData.append('video', selectedVideo);
+            formData.append('video', encodeFile(selectedVideo));
 
             await makeApiCall(API_ENDPOINTS.UPLOAD_VIDEO, formData);
             setSuccess('Video uploaded successfully!');

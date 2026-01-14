@@ -3,6 +3,7 @@ import { Button, Paper, Typography, Box, CircularProgress, Alert, ButtonGroup } 
 import { Mic, Square, PlayCircle as Play, Upload } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
+import { encodeFile } from '../../utils/helper.ts';
 
 export const AudioRecordSection: React.FC = ({}) => {
     const { messageToPhone: phoneTo } = useAppContext();
@@ -90,7 +91,7 @@ export const AudioRecordSection: React.FC = ({}) => {
         try {
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
-            formData.append('audio', fileToUpload);
+            formData.append('audio', encodeFile(fileToUpload));
 
             await makeApiCall(API_ENDPOINTS.UPLOAD_AUDIO, formData);
             setSuccess('Audio uploaded successfully!');

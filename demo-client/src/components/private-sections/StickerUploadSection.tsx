@@ -3,6 +3,7 @@ import { Button, Paper, Typography, Box, CircularProgress, Alert } from '@mui/ma
 import { Image } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
+import { encodeFile } from '../../utils/helper.ts';
 
 export const StickerUploadSection: React.FC = ({}) => {
     const { messageToPhone: phoneTo } = useAppContext();
@@ -46,7 +47,7 @@ export const StickerUploadSection: React.FC = ({}) => {
         try {
             const formData = new FormData();
             formData.append('phoneTo', phoneTo.trim());
-            formData.append('sticker', selectedImage);
+            formData.append('sticker', encodeFile(selectedImage));
 
             await makeApiCall(API_ENDPOINTS.UPLOAD_STICKER, formData);
             setSuccess('Image uploaded successfully!');

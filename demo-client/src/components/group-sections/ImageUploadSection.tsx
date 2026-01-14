@@ -3,6 +3,7 @@ import { TextField, Button, Paper, Typography, Box, CircularProgress, Alert } fr
 import { Image } from '@mui/icons-material';
 import { API_ENDPOINTS, makeApiCall } from '../../utils/api.ts';
 import { useAppContext } from '../../AppContext.tsx';
+import { encodeFile } from '../../utils/helper.ts';
 
 export const ImageUploadSection: React.FC = ({}) => {
     const { groupOption } = useAppContext();
@@ -49,7 +50,7 @@ export const ImageUploadSection: React.FC = ({}) => {
         try {
             const formData = new FormData();
             formData.append('message', message.trim());
-            formData.append('image', selectedImage);
+            formData.append('image', encodeFile(selectedImage));
 
             await makeApiCall(API_ENDPOINTS.GROUP_UPLOAD_IMAGE.replace('{groupId}', groupId), formData);
             setSuccess('Image uploaded successfully!');
