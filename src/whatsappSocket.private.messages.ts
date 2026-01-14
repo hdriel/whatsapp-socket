@@ -228,4 +228,32 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
             },
         });
     }
+
+    async sendLocationMessage(
+        to: string,
+        position: { latitude: number; longitude: number },
+        name?: string,
+        address?: string
+    ): Promise<any> {
+        const { longitude, latitude } = position;
+        if (!to || latitude === undefined || longitude === undefined) {
+            throw new Error('sendLocation: phoneTo, latitude, and longitude are required.');
+        }
+
+        await this.ensureSocketConnected();
+        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Sending location', { jid, ...position });
+        }
+
+        return this.socket?.sendMessage(jid, {
+            location: {
+                degreesLatitude: latitude,
+                degreesLongitude: longitude,
+                ...(name && { name }),
+                ...(address && { address }),
+            },
+        });
+    }
 }

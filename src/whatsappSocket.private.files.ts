@@ -154,31 +154,4 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid });
         return await this.sendSticker(jid, stickerBuffer);
     }
-
-    async sendLocationMessage(
-        to: string,
-        position: { latitude: number; longitude: number },
-        name?: string,
-        address?: string
-    ): Promise<any> {
-        if (!to || position.latitude === undefined || position.longitude === undefined) {
-            throw new Error('sendLocation: phoneTo, latitude, and longitude are required.');
-        }
-
-        await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending location', { jid, ...position });
-        }
-
-        return this.socket?.sendMessage(jid, {
-            location: {
-                degreesLatitude: position.latitude,
-                degreesLongitude: position.longitude,
-                ...(name && { name }),
-                ...(address && { address }),
-            },
-        });
-    }
 }

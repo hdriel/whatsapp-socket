@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
     UPLOAD_FILE: '/api/private/upload-file',
     UPLOAD_IMAGE: '/api/private/upload-image',
     UPLOAD_STICKER: '/api/private/upload-sticker',
+    SEND_LOCATION: '/api/private/send-location',
     UPLOAD_AUDIO: '/api/private/upload-audio',
     UPLOAD_VIDEO: '/api/private/upload-video',
     SEND_MESSAGE: '/api/private/send-message',

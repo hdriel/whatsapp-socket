@@ -8,6 +8,7 @@ import { MessageActionsSection } from './MessageActionsSection.tsx';
 import { MessageSection } from './MessageSection.tsx';
 import { MultipleInputsSection } from './MultipleInputsSection.tsx';
 import { TabType } from '../../types';
+import { LocationSection } from './LocationSection.tsx';
 
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },
@@ -19,4 +20,5 @@ export default [
     { label: 'Video Upload', Component: VideoUploadSection, phone: true },
     { label: 'Audio Record', Component: AudioRecordSection, phone: true },
     { label: 'File Upload', Component: FileUploadSection, phone: true },
+    { label: 'Location', Component: LocationSection, phone: true },
 ] as TabType[];

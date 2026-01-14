@@ -153,5 +153,14 @@ export const initRouterPrivate = (_io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
+    router.post('/send-location', async (req: Request, res: Response) => {
+        const { phoneTo, position, name = 'name', address = 'address' } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendLocationMessage(phoneTo, position, name, address);
+
+        res.status(200).json({ message: 'OK' });
+    });
+
     return router;
 };

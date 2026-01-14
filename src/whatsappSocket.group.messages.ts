@@ -337,11 +337,11 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      */
     async sendLocationMessage(
         groupId: string,
-        latitude: number,
-        longitude: number,
+        position: { latitude: number; longitude: number },
         name?: string,
         address?: string
     ): Promise<any> {
+        const { longitude, latitude } = position;
         if (!groupId || latitude === undefined || longitude === undefined) {
             throw new Error('sendLocation: Group ID, latitude, and longitude are required.');
         }
