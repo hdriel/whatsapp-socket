@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
     GROUP_UPLOAD_AUDIO: '/api/groups/{groupId}/upload-audio',
     GROUP_UPLOAD_VIDEO: '/api/groups/{groupId}/upload-video',
     GROUP_SEND_MESSAGE: '/api/groups/{groupId}/send-message',
+    GROUP_SEND_LOCATION: '/api/groups/{groupId}/send-location',
     GROUP_SEND_MESSAGE_ACTIONS: '/api/groups/{groupId}/send-message-actions',
     GROUP_SEND_MULTIPLE_INPUTS: '/api/groups/{groupId}/send-multiple-inputs',
 };

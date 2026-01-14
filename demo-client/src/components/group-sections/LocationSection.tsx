@@ -6,7 +6,8 @@ import { useAppContext } from '../../AppContext';
 import { getCurrentLocation } from '../../utils/helper';
 
 export const LocationSection: React.FC = ({}) => {
-    const { messageToPhone: phoneTo } = useAppContext();
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');
@@ -14,8 +15,8 @@ export const LocationSection: React.FC = ({}) => {
     const [success, setSuccess] = useState('');
 
     const handleSubmit = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
+        if (!groupId.trim()) {
+            setError('Please select a group');
             return;
         }
 
@@ -25,8 +26,7 @@ export const LocationSection: React.FC = ({}) => {
 
         try {
             const position = await getCurrentLocation();
-            await makeApiCall(API_ENDPOINTS.SEND_LOCATION, {
-                phoneTo,
+            await makeApiCall(API_ENDPOINTS.GROUP_SEND_LOCATION.replace('{groupId}', groupId), {
                 position,
                 name: name.trim(),
                 address: address.trim(),

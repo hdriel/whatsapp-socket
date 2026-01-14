@@ -1,14 +1,14 @@
-import { GenerateQRSection } from './GenerateQRSection.tsx';
-import { FileUploadSection } from './FileUploadSection.tsx';
-import { ImageUploadSection } from './ImageUploadSection.tsx';
-import { StickerUploadSection } from './StickerUploadSection.tsx';
-import { AudioRecordSection } from './AudioRecordSection.tsx';
-import { VideoUploadSection } from './VideoUploadSection.tsx';
-import { MessageActionsSection } from './MessageActionsSection.tsx';
-import { MessageSection } from './MessageSection.tsx';
-import { MultipleInputsSection } from './MultipleInputsSection.tsx';
+import { GenerateQRSection } from './GenerateQRSection';
+import { FileUploadSection } from './FileUploadSection';
+import { ImageUploadSection } from './ImageUploadSection';
+import { StickerUploadSection } from './StickerUploadSection';
+import { AudioRecordSection } from './AudioRecordSection';
+import { VideoUploadSection } from './VideoUploadSection';
+import { MessageActionsSection } from './MessageActionsSection';
+import { MessageSection } from './MessageSection';
+import { MultipleInputsSection } from './MultipleInputsSection';
+import { LocationSection } from './LocationSection';
 import { TabType } from '../../types';
-import { LocationSection } from './LocationSection.tsx';
 
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },

@@ -269,5 +269,15 @@ export const initRouterGroups = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
+    router.post('/:groupId/send-location', async (req: Request, res: Response) => {
+        const groupId = req.params.groupId;
+        const { position, name = 'name', address = 'address' } = req.body;
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendLocationMessage(groupId, position, name, address);
+
+        res.status(200).json({ message: 'OK' });
+    });
+
     return router;
 };
