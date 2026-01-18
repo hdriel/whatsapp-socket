@@ -51,10 +51,9 @@ export const AWSStreamFileSection: React.FC = ({}) => {
                 API_ENDPOINTS.AWS_FILE.replace(':fileKey', encodeURIComponent(selectedFileKey)) + `?phoneTo=${phoneTo}`,
                 data
             );
-            setSuccess('File uploaded successfully!');
+            setSuccess('AWS FileKey send successfully!');
             setSelectedFileKey(null);
             setSelectedDirectory(null);
-            (document.getElementById('file-upload-input') as HTMLInputElement).value = '';
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to upload file');
         } finally {
