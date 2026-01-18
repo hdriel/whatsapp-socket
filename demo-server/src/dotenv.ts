@@ -20,4 +20,5 @@ export const AWS_ENDPOINT = myEnv.parsed?.AWS_ENDPOINT as string;
 export const BUCKET = myEnv.parsed?.BUCKET as string;
 export const BUCKET_ACL = myEnv.parsed?.BUCKET_ACL as string;
 export const LOCALSTACK = +((myEnv.parsed?.LOCALSTACK as string) ?? '0');
+export const USE_AWS = +((myEnv.parsed?.USE_AWS as string) ?? '0');
 logger.info('SYSTEM', 'env', myEnv.parsed);

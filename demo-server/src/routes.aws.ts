@@ -11,13 +11,13 @@ export const initRouterAWS = (_io: SocketIO) => {
     const router = express.Router();
 
     router.get(['/directories/:directory', '/directories'], async (req: Request, res: Response, next: NextFunction) => {
+        if (!s3Util) return next(new Error('AWS FEATURE NOT SUPPORTED'));
+
         try {
-            const directory = req.params.directory || '/';
+            const directory = req.params.directory || '';
             const pageNumber = req.query?.page ? +req.query?.page : undefined;
             const pageSize = req.query?.size ? +req.query?.size : undefined;
-
-            // const result = await s3Util.directoryList(directory); // get ALL directory keys
-            const result = await s3Util.directoryListPaginated(directory, { pageNumber, pageSize });
+            const result = await s3Util?.directoryListPaginated(directory, { pageNumber, pageSize });
 
             logger.info('AWS', 'get directory file list from directory.', {
                 directory,
@@ -32,20 +32,22 @@ export const initRouterAWS = (_io: SocketIO) => {
         }
     });
 
-    router.get('/:directory/files', async (req: Request, res: Response, next: NextFunction) => {
+    router.get('/directories/:directory/files', async (req: Request, res: Response, next: NextFunction) => {
+        if (!s3Util) return next(new Error('AWS FEATURE NOT SUPPORTED'));
+
         try {
-            const directory = req.params?.directory;
+            const directory = req.params?.directory === '/' ? '' : req.params?.directory;
             const pageNumber = req.query?.page ? +req.query?.page : undefined;
             const pageSize = req.query?.size ? +req.query?.size : undefined;
 
-            // const result = await s3Util.directoryList(directory); // get ALL directory keys
-            const result = await s3Util.directoryListPaginated(directory, { pageNumber, pageSize });
+            const result = await s3Util?.directoryList(directory); // get ALL directory keys
+            // const result = await s3Util.directoryListPaginated(directory, { pageNumber, pageSize });
 
             logger.info('AWS', 'get directory file list from directory.', {
                 directory,
                 pageNumber,
                 pageSize,
-                totalFetched: result.totalFetched,
+                // totalFetched: result.totalFetched,
             });
             res.json(result);
         } catch (err: any) {
@@ -54,49 +56,56 @@ export const initRouterAWS = (_io: SocketIO) => {
         }
     });
 
-    router.post('/stream-file/:fileKey', async (req: Request, res: Response) => {
-        const fileKey = decodeURIComponent(req.params.fileKey);
-        const fileStream = await s3Util.getObjectFileStream(fileKey);
-        if (!fileStream) {
-            res.status(400).json({ message: 'No document file found' });
-            return;
+    router.post('/stream-file/:fileKey', async (req: Request, res: Response, next: NextFunction) => {
+        if (!s3Util) return next(new Error('AWS FEATURE NOT SUPPORTED'));
+
+        try {
+            const fileKey = decodeURIComponent(req.params.fileKey);
+            const fileStream = await s3Util?.getObjectFileStream(fileKey);
+            if (!fileStream) {
+                res.status(400).json({ message: 'No document file found' });
+                return;
+            }
+
+            const groupId = req.query?.groupId as string;
+            const toPhone = req.query?.toPhone as string;
+            if (!groupId && !toPhone) {
+                res.status(400).json({ message: 'not retrieved defined, groupId or toPhone number' });
+                return;
+            }
+
+            const filename = basename(fileKey);
+            logger.info(null, 'Sending message...', { ...req.body, ...req.query, filename });
+
+            if (groupId) {
+                const was = new WhatsappSocketGroup({
+                    mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
+                    fileAuthStateDirectoryPath: fileAuthPath,
+                    appName: 'whatsapp-socket-demo',
+                    debug: true,
+                    logger,
+                });
+
+                await was.sendDocumentMessage(groupId, fileStream as any, filename);
+            }
+
+            if (toPhone) {
+                const was = new WhatsappSocket({
+                    mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
+                    fileAuthStateDirectoryPath: fileAuthPath,
+                    appName: 'whatsapp-socket-demo',
+                    debug: true,
+                    logger,
+                });
+
+                await was.sendFileMessage(toPhone, fileStream as any, { filename });
+            }
+
+            res.status(200).json({ message: 'OK' });
+        } catch (err: any) {
+            logger.error('AWS', 'failed on getObjectFileStream', { errMsg: err.message });
+            next(err);
         }
-
-        const groupId = req.query?.groupId as string;
-        const toPhone = req.query?.toPhone as string;
-        if (!groupId && !toPhone) {
-            res.status(400).json({ message: 'not retrieved defined, groupId or toPhone number' });
-            return;
-        }
-
-        const filename = basename(fileKey);
-        logger.info(null, 'Sending message...', { ...req.body, ...req.query, filename });
-
-        if (groupId) {
-            const was = new WhatsappSocketGroup({
-                mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
-                fileAuthStateDirectoryPath: fileAuthPath,
-                appName: 'whatsapp-socket-demo',
-                debug: true,
-                logger,
-            });
-
-            await was.sendDocumentMessage(groupId, fileStream as any, filename);
-        }
-
-        if (toPhone) {
-            const was = new WhatsappSocket({
-                mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
-                fileAuthStateDirectoryPath: fileAuthPath,
-                appName: 'whatsapp-socket-demo',
-                debug: true,
-                logger,
-            });
-
-            await was.sendFileMessage(toPhone, fileStream as any, { filename });
-        }
-
-        res.status(200).json({ message: 'OK' });
     });
 
     return router;

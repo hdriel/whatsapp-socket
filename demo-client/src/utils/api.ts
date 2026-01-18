@@ -2,6 +2,7 @@ export const API_ENDPOINTS = {
     CONNECT: '/api/connect',
     DISCONNECT: '/api/disconnect',
     GENERATE_QR: '/api/generate-qr',
+    AWS_FILE: '/api/aws/stream-file/:fileKey',
     UPLOAD_FILE: '/api/private/upload-file',
     UPLOAD_IMAGE: '/api/private/upload-image',
     UPLOAD_STICKER: '/api/private/upload-sticker',
@@ -24,6 +25,8 @@ export const API_ENDPOINTS = {
     GROUP_SEND_MULTIPLE_INPUTS: '/api/groups/{groupId}/send-multiple-inputs',
 };
 
+const baseURL = import.meta.env.VITE_SERVER_URL;
+
 export const makeApiCall = async (endpoint: string, body?: FormData | Record<string, unknown>) => {
     try {
         const isFormData = body instanceof FormData;
@@ -33,12 +36,9 @@ export const makeApiCall = async (endpoint: string, body?: FormData | Record<str
         };
 
         if (!isFormData) {
-            options.headers = {
-                'Content-Type': 'application/json',
-            };
+            options.headers = { 'Content-Type': 'application/json' };
         }
 
-        const baseURL = import.meta.env.VITE_SERVER_URL;
         const response = await fetch(`${baseURL}${endpoint}`, options);
         const data = await response.json();
 
@@ -49,5 +49,29 @@ export const makeApiCall = async (endpoint: string, body?: FormData | Record<str
         return data;
     } catch (error) {
         throw error instanceof Error ? error : new Error('Unknown error occurred');
+    }
+};
+
+export const fetchAwsDirectories = async (directory: string = '') => {
+    try {
+        const response = await fetch(`${baseURL}/api/aws/directories/${encodeURIComponent(directory)}`);
+        const data = await response.json();
+        if (!response.ok) alert(data.message || 'Request failed');
+
+        return data;
+    } catch (error: any) {
+        alert(error.message || 'Unknown error occurred');
+    }
+};
+
+export const fetchAwsDirectoryFiles = async (directory: string = '/') => {
+    try {
+        const response = await fetch(`${baseURL}/api/aws/directories/${encodeURIComponent(directory)}/files`);
+        const data = await response.json();
+        if (!response.ok) alert(data.message || 'Request failed');
+
+        return data;
+    } catch (error: any) {
+        alert(error.message || 'Unknown error occurred');
     }
 };

@@ -8,10 +8,12 @@ import { MessageActionsSection } from './MessageActionsSection';
 import { MessageSection } from './MessageSection';
 import { MultipleInputsSection } from './MultipleInputsSection';
 import { LocationSection } from './LocationSection';
+import { AWSStreamFileSection } from './AWSStreamFileSection';
 import { TabType } from '../../types';
 
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },
+    { label: 'AWS File', Component: AWSStreamFileSection, phone: true },
     { label: 'Message', Component: MessageSection, phone: true },
     { label: 'Message Actions', Component: MessageActionsSection, phone: true },
     { label: 'Reply Inputs', Component: MultipleInputsSection, phone: true },
