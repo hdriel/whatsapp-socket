@@ -45,11 +45,12 @@ export const AWSStreamFileSection: React.FC = ({}) => {
         setSuccess('');
 
         try {
-            const data = {
-                message: message.trim(),
-            };
+            const data = { message: message.trim() };
 
-            await makeApiCall(API_ENDPOINTS.AWS_FILE, data);
+            await makeApiCall(
+                API_ENDPOINTS.AWS_FILE.replace(':fileKey', encodeURIComponent(selectedFileKey)) + `?phoneTo=${phoneTo}`,
+                data
+            );
             setSuccess('File uploaded successfully!');
             setSelectedFileKey(null);
             setSelectedDirectory(null);
@@ -62,7 +63,6 @@ export const AWSStreamFileSection: React.FC = ({}) => {
     };
 
     useEffect(() => {
-        debugger;
         fetchAwsDirectories(selectedDirectory || '').then((result) => {
             const directories = result.directories ?? [];
             selectedDirectory && directories.unshift(selectedDirectory);
@@ -72,7 +72,6 @@ export const AWSStreamFileSection: React.FC = ({}) => {
         });
     }, [selectedDirectory]);
 
-    console.log('directoryOptions', directoryOptions);
     return (
         <Paper elevation={2} sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

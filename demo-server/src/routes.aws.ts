@@ -68,9 +68,9 @@ export const initRouterAWS = (_io: SocketIO) => {
             }
 
             const groupId = req.query?.groupId as string;
-            const toPhone = req.query?.toPhone as string;
-            if (!groupId && !toPhone) {
-                res.status(400).json({ message: 'not retrieved defined, groupId or toPhone number' });
+            const phoneTo = req.query?.phoneTo as string;
+            if (!groupId && !phoneTo) {
+                res.status(400).json({ message: 'not retrieved defined, groupId or phoneTo number' });
                 return;
             }
 
@@ -89,7 +89,7 @@ export const initRouterAWS = (_io: SocketIO) => {
                 await was.sendDocumentMessage(groupId, fileStream as any, filename);
             }
 
-            if (toPhone) {
+            if (phoneTo) {
                 const was = new WhatsappSocket({
                     mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
                     fileAuthStateDirectoryPath: fileAuthPath,
@@ -98,7 +98,7 @@ export const initRouterAWS = (_io: SocketIO) => {
                     logger,
                 });
 
-                await was.sendFileMessage(toPhone, fileStream as any, { filename });
+                await was.sendFileMessage(phoneTo, fileStream as any, { filename });
             }
 
             res.status(200).json({ message: 'OK' });
