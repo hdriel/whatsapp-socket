@@ -3,6 +3,7 @@ import { Readable } from 'stream';
 import { WhatsappSocketPrivateMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.private.messages';
 export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.private.messages';
 import { MIME_TYPES } from './helpers';
+import type Stream from 'node:stream';
 
 export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
     constructor(props: WhatsappSocketMessagesProps) {
@@ -11,7 +12,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
 
     protected async sendFileFromStream(
         to: string,
-        stream: Readable | Buffer,
+        stream: Stream | Buffer,
         options: {
             filename: string;
             mimetype?: string;
@@ -47,7 +48,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
         return this.socket?.sendMessage(jid, messageContent, messageOptions);
     }
 
-    private async streamToBuffer(stream: Readable): Promise<Buffer> {
+    private async streamToBuffer(stream: Stream): Promise<Buffer> {
         return new Promise((resolve, reject) => {
             const chunks: Buffer[] = [];
             stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
@@ -128,7 +129,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
     // Helper method to send specific file types
     protected async sendImage(
         to: string,
-        imageBuffer: Buffer | Readable,
+        imageBuffer: Buffer | Stream,
         options: {
             caption?: string;
             filename?: string;
@@ -144,7 +145,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
 
     protected async sendVideo(
         to: string,
-        videoBuffer: Buffer | Readable,
+        videoBuffer: Buffer | Stream,
         options: {
             caption?: string;
             filename?: string;
@@ -164,7 +165,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
 
     protected async sendAudio(
         to: string,
-        audioBuffer: Buffer | Readable,
+        audioBuffer: Buffer | Stream,
         options: {
             filename?: string;
             ptt?: boolean; // Voice note
@@ -183,7 +184,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
 
     protected async sendDocument(
         to: string,
-        documentBuffer: Buffer | Readable,
+        documentBuffer: Buffer | Stream,
         options: {
             filename: string;
             caption?: string;
@@ -203,7 +204,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
 
     protected async sendVoiceNote(
         to: string,
-        audioBuffer: Buffer | Readable,
+        audioBuffer: Buffer | Stream,
         options: {
             seconds?: number;
             replyToMessageId?: string;
@@ -218,7 +219,7 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
 
     protected async sendSticker(
         to: string,
-        stickerBuffer: Buffer | Readable,
+        stickerBuffer: Buffer | Stream,
         options: {
             replyToMessageId?: string;
         } = {}

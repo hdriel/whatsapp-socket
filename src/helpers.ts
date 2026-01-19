@@ -1,6 +1,6 @@
-import { basename } from 'node:path';
 import { ReadStream } from 'node:fs';
 import ms, { type StringValue } from 'ms';
+import type Stream from 'node:stream';
 // NOTE: Hidden for Dynamic Import for ESM-only Packages
 // import { parseBuffer, parseStream } from 'music-metadata';
 
@@ -50,21 +50,21 @@ export async function getAudioFileDuration(audioFile: ReadStream | Buffer, mimeT
     }
 }
 
-export async function streamToBuffer(stream: ReadStream): Promise<Buffer> {
+export async function streamToBuffer(stream: Stream): Promise<Buffer> {
     const chunks: Buffer[] = [];
 
-    for await (const chunk of stream) {
+    for await (const chunk of stream as ReadStream) {
         chunks.push(chunk);
     }
 
     return Buffer.concat(chunks);
 }
 
-export function getFilenameFromStream(stream: ReadStream): string | undefined {
-    if (stream.path) {
-        const pathStr = stream.path.toString();
-        return basename(pathStr);
-    }
+export function getFilenameFromStream(_stream: Stream): string | undefined {
+    // if (stream.path) {
+    //     const pathStr = stream.path.toString();
+    //     return basename(pathStr);
+    // }
     return undefined;
 }
 
@@ -109,4 +109,70 @@ export const MIME_TYPES: { [key: string]: string } = {
     zip: 'application/zip',
     rar: 'application/x-rar-compressed',
     '7z': 'application/x-7z-compressed',
+};
+
+export const MIME_TO_TYPES: { [key: string]: 'Images' | 'Videos' | 'Audio' | 'Documents' } = {
+    jpg: 'Images',
+    jpeg: 'Images',
+    'image/jpeg': 'Images',
+    png: 'Images',
+    'image/png': 'Images',
+    webp: 'Images',
+    'image/webp': 'Images',
+    bmp: 'Images',
+    'image/bmp': 'Images',
+    svg: 'Images',
+    'image/svg+xml': 'Images',
+
+    // Videos
+    gif: 'Videos',
+    'image/gif': 'Videos',
+    mp4: 'Videos',
+    'video/mp4': 'Videos',
+    avi: 'Videos',
+    'video/x-msvideo': 'Videos',
+    mov: 'Videos',
+    'video/quicktime': 'Videos',
+    mkv: 'Videos',
+    'video/x-matroska': 'Videos',
+    webm: 'Videos',
+    'video/webm': 'Videos',
+
+    // Audio
+    mp3: 'Audio',
+    'audio/mpeg': 'Audio',
+    wav: 'Audio',
+    'audio/wav': 'Audio',
+    ogg: 'Audio',
+    'audio/ogg': 'Audio',
+    opus: 'Audio',
+    'audio/opus': 'Audio',
+    aac: 'Audio',
+    'audio/aac': 'Audio',
+    m4a: 'Audio',
+    'audio/mp4': 'Audio',
+
+    // Documents
+    pdf: 'Documents',
+    'application/pdf': 'Documents',
+    doc: 'Documents',
+    'application/msword': 'Documents',
+    docx: 'Documents',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Documents',
+    xls: 'Documents',
+    'application/vnd.ms-excel': 'Documents',
+    xlsx: 'Documents',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Documents',
+    ppt: 'Documents',
+    'application/vnd.ms-powerpoint': 'Documents',
+    pptx: 'Documents',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'Documents',
+    txt: 'Documents',
+    'text/plain': 'Documents',
+    zip: 'Documents',
+    'application/zip': 'Documents',
+    rar: 'Documents',
+    'application/x-rar-compressed': 'Documents',
+    '7z': 'Documents',
+    'application/x-7z-compressed': 'Documents',
 };
