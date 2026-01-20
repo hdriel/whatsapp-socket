@@ -2,7 +2,6 @@ import { type AnyMessageContent } from '@fadzzzslebew/baileys';
 import { Readable } from 'stream';
 import { WhatsappSocketPrivateMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.private.messages';
 export { type WhatsappSocketMessagesProps as WhatsappSocketStreamProps } from './whatsappSocket.private.messages';
-import { MIME_TYPES } from './helpers';
 import type Stream from 'node:stream';
 
 export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
@@ -55,11 +54,6 @@ export class WhatsappSocketPrivateStream extends WhatsappSocketPrivateMessages {
             stream.on('error', (err) => reject(err));
             stream.on('end', () => resolve(Buffer.concat(chunks)));
         });
-    }
-
-    private getMimetypeFromFilename(filename: string): string {
-        const ext = filename.split('.').pop()?.toLowerCase();
-        return MIME_TYPES[ext || ''] || 'application/octet-stream';
     }
 
     private async createFileMessage(

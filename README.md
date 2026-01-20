@@ -786,6 +786,9 @@ For MongoDB storage, install the peer dependency:
 npm install mongodb
 ```
 
+## Known Issues
+* svg, gif not send
+
 ## Best Practices
 
 1. **Session Management**: Always store session data securely. For production, use MongoDB or encrypted file storage.

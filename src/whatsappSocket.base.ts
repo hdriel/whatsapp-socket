@@ -26,7 +26,7 @@ import { type Collection, type Document as MongoDocument, MongoClient } from 'mo
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState';
-import { sleep } from './helpers';
+import { MIME_TYPES, sleep } from './helpers';
 
 const pinoLogger: any = P({ level: 'silent' });
 
@@ -517,6 +517,11 @@ export class WhatsappSocketBase {
 
     isConnected() {
         return !!this.socket?.user;
+    }
+
+    protected getMimetypeFromFilename(filename: string): string {
+        const ext = filename?.split('.')?.pop()?.toLowerCase();
+        return MIME_TYPES[ext || ''] || 'application/octet-stream';
     }
 
     /**

@@ -118,7 +118,6 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         }
     ) {
         await this.ensureSocketConnected();
-
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
 
         let jpegThumbnailBuffer: Buffer<any> | undefined;
@@ -139,6 +138,9 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         }
         filename = filename && decodeURIComponent(filename);
 
+        mimetype ||= this.getMimetypeFromFilename(filename);
+        mimetype = mimetype?.toLowerCase();
+
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'send file message', {
                 jid,
@@ -151,22 +153,26 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         }
 
         let sendSuccess = true;
+        let response: any;
         if (autoMessageClassification) {
             switch (MIME_TO_TYPES[mimetype as string]) {
-                case 'Images':
-                    await this.sendImageMessage(jid, fileBuffer, {
+                case 'Image':
+                    response = await this.sendImageMessage(jid, fileBuffer, {
                         caption,
                         filename,
                     }).catch(() => (sendSuccess = false));
                     break;
-                case 'Videos':
-                    await this.sendVideoMessage(jid, fileBuffer, {
+                case 'Sticker':
+                    response = await this.sendStickerMessage(jid, fileBuffer).catch(() => (sendSuccess = false));
+                    break;
+                case 'Video':
+                    response = await this.sendVideoMessage(jid, fileBuffer, {
                         caption,
                         filename,
                     }).catch(() => (sendSuccess = false));
                     break;
                 case 'Audio':
-                    await this.sendAudioMessage(jid, fileBuffer, {
+                    response = await this.sendAudioMessage(jid, fileBuffer, {
                         mimetype,
                         filename,
                         replyToMessageId,
@@ -183,10 +189,11 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
             }
         }
 
+        if (response && sendSuccess) return response;
         if (!autoMessageClassification || !sendSuccess) {
             return await this.sendDocument(jid, fileBuffer, {
                 caption,
-                mimetype: mimetype || 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
                 filename,
                 replyToMessageId,
                 jpegThumbnail: jpegThumbnailBuffer,
