@@ -119,8 +119,8 @@ export const MIME_TO_TYPES: { [key: string]: 'Image' | 'Video' | 'Audio' | 'Docu
     'image/png': 'Image',
     ico: 'Image',
     'image/ico': 'Image',
-    svg: 'Image',
-    'image/svg+xml': 'Image',
+    svg: 'Document',
+    'image/svg+xml': 'Document',
     // bmp: 'Image',
     // 'image/bmp': 'Image',
 
