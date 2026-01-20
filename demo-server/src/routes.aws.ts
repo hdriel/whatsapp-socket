@@ -86,7 +86,7 @@ export const initRouterAWS = (_io: SocketIO) => {
                     logger,
                 });
 
-                await was.sendDocumentMessage(groupId, fileStream as any, filename);
+                await was.sendFileMessage(phoneTo, fileStream as any, { filename });
             }
 
             if (phoneTo) {

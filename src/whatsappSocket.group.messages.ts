@@ -9,6 +9,9 @@ import type {
     CallToActionButtons,
     GroupMessageOptions,
 } from './decs';
+import Stream from 'node:stream';
+import { getFilenameFromStream, getUrlBuffer, MIME_TO_TYPES, streamToBuffer } from './helpers.ts';
+import { basename } from 'node:path';
 
 export type { WhatsappSocketGroupsProps as WhatsappSocketGroupMessagesProps } from './whatsappSocket.group.management';
 
@@ -492,5 +495,120 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
                 selectableCount: allowMultipleAnswers ? options.length : 1,
             },
         });
+    }
+
+    async sendStickerMessage(groupId: string, imageSrc: string | Buffer<any> | Stream) {
+        await this.ensureSocketConnected();
+
+        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
+
+        if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { groupId: formattedGroupId });
+        return await this.sendStickerMessage(formattedGroupId, stickerBuffer);
+    }
+
+    async sendFileMessage(
+        groupId: string,
+        fileSrc: string | Buffer<any> | Stream,
+        {
+            caption = '',
+            mimetype,
+            replyToMessageId,
+            jpegThumbnailSrc,
+            autoMessageClassification = true,
+            filename,
+        }: {
+            caption?: string;
+            mimetype?: string;
+            filename: string;
+            autoMessageClassification?: boolean;
+            replyToMessageId?: string;
+            jpegThumbnailSrc?: string | Buffer<any> | Stream;
+        }
+    ) {
+        await this.ensureSocketConnected();
+        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+
+        let jpegThumbnailBuffer: Buffer<any> | undefined;
+        if (typeof jpegThumbnailSrc === 'string') {
+            jpegThumbnailBuffer = await getUrlBuffer(jpegThumbnailSrc);
+        } else if (jpegThumbnailSrc instanceof Stream) {
+            jpegThumbnailBuffer = await streamToBuffer(jpegThumbnailSrc);
+        } else {
+            jpegThumbnailBuffer = jpegThumbnailSrc;
+        }
+
+        const fileBuffer = typeof fileSrc === 'string' ? await getUrlBuffer(fileSrc) : fileSrc;
+        if (fileSrc instanceof Stream) {
+            const fname = getFilenameFromStream(fileSrc);
+            if (fname) filename = fname;
+        } else if (typeof fileSrc === 'string') {
+            filename = basename(fileSrc);
+        }
+        filename = filename && decodeURIComponent(filename);
+
+        mimetype ||= this.getMimetypeFromFilename(filename);
+        mimetype = mimetype?.toLowerCase();
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send file message', {
+                groupId: formattedGroupId,
+                caption,
+                mimetype,
+                filename,
+                replyToMessageId,
+                includeJpegThumbnail: !!jpegThumbnailBuffer,
+            });
+        }
+
+        let sendSuccess = true;
+        let response: any;
+        if (autoMessageClassification) {
+            switch (MIME_TO_TYPES[mimetype as string]) {
+                case 'Image':
+                    response = await this.sendImageMessage(formattedGroupId, fileBuffer, {
+                        caption,
+                        filename,
+                    }).catch(() => (sendSuccess = false));
+                    break;
+                case 'Sticker':
+                    response = await this.sendStickerMessage(formattedGroupId, fileBuffer).catch(
+                        () => (sendSuccess = false)
+                    );
+                    break;
+                case 'Video':
+                    response = await this.sendVideoMessage(formattedGroupId, fileBuffer, {
+                        caption,
+                        filename,
+                    }).catch(() => (sendSuccess = false));
+                    break;
+                case 'Audio':
+                    response = await this.sendAudioMessage(formattedGroupId, fileBuffer, {
+                        mimetype,
+                        filename,
+                        replyToMessageId,
+                    }).catch(() => (sendSuccess = false));
+                    break;
+                default:
+                    return await this.sendDocumentMessage(formattedGroupId, fileBuffer, {
+                        caption,
+                        mimetype,
+                        filename,
+                        replyToMessageId,
+                        jpegThumbnail: jpegThumbnailBuffer,
+                    });
+            }
+        }
+
+        if (response && sendSuccess) return response;
+        if (!autoMessageClassification || !sendSuccess) {
+            return await this.sendDocumentMessage(formattedGroupId, fileBuffer, {
+                caption,
+                mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                filename,
+                replyToMessageId,
+                jpegThumbnail: jpegThumbnailBuffer,
+            });
+        }
     }
 }

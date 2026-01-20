@@ -117,14 +117,16 @@ export const MIME_TO_TYPES: { [key: string]: 'Image' | 'Video' | 'Audio' | 'Docu
     'image/jpeg': 'Image',
     png: 'Image',
     'image/png': 'Image',
-    webp: 'Sticker',
-    'image/webp': 'Sticker',
-    bmp: 'Image',
-    'image/bmp': 'Image',
-    svg: 'Document',
-    'image/svg+xml': 'Document',
     ico: 'Image',
     'image/ico': 'Image',
+    svg: 'Image',
+    'image/svg+xml': 'Image',
+    // bmp: 'Image',
+    // 'image/bmp': 'Image',
+
+    // Sticker
+    webp: 'Sticker',
+    'image/webp': 'Sticker',
 
     // Videos
     gif: 'Image',
