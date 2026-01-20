@@ -213,7 +213,6 @@ export class WhatsappSocketBase {
             onConnectionStatusChange,
             debug,
             printQRInTerminal,
-            pairingPhone,
             customPairingCode,
             onPreConnectionSendMessageFailed,
             appName,

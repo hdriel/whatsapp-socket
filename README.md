@@ -787,7 +787,7 @@ npm install mongodb
 ```
 
 ## Known Issues
-* not supported image formats: svg, gif, bmp
+* not supported image formats: gif, bmp, and sometime data is corrupted
 * issues to send large videos
 * peering phone not working
 
