@@ -6,7 +6,9 @@ import { API_ENDPOINTS, fetchAwsDirectories, makeApiCall } from '../../utils/api
 import { useAppContext } from '../../AppContext.tsx';
 
 export const AWSStreamFileSection: React.FC = ({}) => {
-    const { messageToPhone: phoneTo } = useAppContext();
+    const { groupOption } = useAppContext();
+    const groupId = groupOption?.value as string;
+
     const [selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
     const [selectedFileKey, setSelectedFileKey] = useState<string | null>(null);
     const [directoryOptions, setDirectoryOptions] = useState<any>([]);
@@ -30,8 +32,8 @@ export const AWSStreamFileSection: React.FC = ({}) => {
     };
 
     const handleUpload = async () => {
-        if (!phoneTo.trim()) {
-            setError('Please enter a phone number');
+        if (!groupId.trim()) {
+            setError('Please select group');
             return;
         }
 
@@ -48,7 +50,7 @@ export const AWSStreamFileSection: React.FC = ({}) => {
             const data = { message: message.trim() };
 
             await makeApiCall(
-                API_ENDPOINTS.AWS_FILE.replace(':fileKey', encodeURIComponent(selectedFileKey)) + `?phoneTo=${phoneTo}`,
+                API_ENDPOINTS.AWS_FILE.replace(':fileKey', encodeURIComponent(selectedFileKey)) + `?groupId=${groupId}`,
                 data
             );
             setSuccess('AWS FileKey send successfully!');
@@ -115,7 +117,7 @@ export const AWSStreamFileSection: React.FC = ({}) => {
                 />
 
                 <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedFileKey} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : `Send File to: ${phoneTo}`}
+                    {loading ? <CircularProgress size={24} /> : `Send File to group: ${groupOption?.label}`}
                 </Button>
 
                 {error && (

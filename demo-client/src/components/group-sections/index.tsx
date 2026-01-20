@@ -9,11 +9,13 @@ import { MessageSection } from './MessageSection';
 import { MultipleInputsSection } from './MultipleInputsSection';
 import { GroupInfoSection } from './GroupInfoSection';
 import { LocationSection } from './LocationSection';
+import { AWSStreamFileSection } from './AWSStreamFileSection';
 import { TabType } from '../../types';
 
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },
     { label: 'Group', Component: GroupInfoSection },
+    { label: 'AWS File', Component: AWSStreamFileSection, group: true },
     { label: 'Message', Component: MessageSection, group: true },
     { label: 'Message Actions', Component: MessageActionsSection, group: true },
     { label: 'Reply Inputs', Component: MultipleInputsSection, group: true },
