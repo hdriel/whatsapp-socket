@@ -10,8 +10,9 @@ import type {
     GroupMessageOptions,
 } from './decs';
 import Stream from 'node:stream';
-import { getFilenameFromStream, getUrlBuffer, MIME_TO_TYPES, streamToBuffer } from './helpers.ts';
+import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, MIME_TO_TYPES, streamToBuffer } from './helpers.ts';
 import { basename } from 'node:path';
+import { ReadStream } from 'node:fs';
 
 export type { WhatsappSocketGroupsProps as WhatsappSocketGroupMessagesProps } from './whatsappSocket.group.management';
 
@@ -88,6 +89,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
                     case !!(btn as ButtonURL).url:
                         name = 'cta_url';
                         buttonParamsJson.url = (btn as ButtonURL).url;
+                        buttonParamsJson.url = buttonParamsJson.url.startsWith('http')
+                            ? buttonParamsJson.url
+                            : `https://${buttonParamsJson.url}`;
                         break;
                     case !!(btn as ButtonCopy).copy:
                         name = 'cta_copy';
@@ -198,17 +202,30 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      */
     async sendImageMessage(
         groupId: string,
-        imageBuffer: Buffer, // todo: handle also stream and string url
-        { caption, mentions }: GroupMessageOptions & { caption?: string } = {}
+        imageSrc: string | Buffer | Stream,
+        { caption = '', filename, mentions }: GroupMessageOptions & { caption?: string; filename?: string } = {}
     ): Promise<any> {
-        if (!groupId || !imageBuffer) {
-            throw new Error('sendImage: Group ID and image buffer are required.');
+        if (!groupId || !imageSrc) {
+            throw new Error('sendImageMessage: Group ID and image source are required.');
         }
 
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
-        const messageOptions: any = { image: imageBuffer, ...(caption && { caption }) };
+        const imageBuffer =
+            typeof imageSrc === 'string'
+                ? await getUrlBuffer(imageSrc)
+                : imageSrc instanceof Stream
+                  ? await streamToBuffer(imageSrc)
+                  : imageSrc;
+
+        const decodedFilename = filename && decodeURIComponent(filename);
+
+        const messageOptions: any = {
+            image: imageBuffer,
+            ...(caption && { caption }),
+            ...(decodedFilename && { filename: decodedFilename }),
+        };
 
         if (mentions?.length) {
             messageOptions.mentions = mentions.map((phone) =>
@@ -220,6 +237,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             this.logger?.debug('WHATSAPP', 'Sending image to group', {
                 groupId: formattedGroupId,
                 hasCaption: !!caption,
+                filename: decodedFilename,
             });
         }
 
@@ -231,21 +249,43 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      */
     async sendVideoMessage(
         groupId: string,
-        videoBuffer: Buffer, // todo: handle also stream and string url
-        caption?: string,
-        options?: GroupMessageOptions
+        videoSrc: string | Buffer | Stream,
+        {
+            caption = '',
+            filename,
+            sendAsGifPlayback: gifPlayback = false,
+            mentions,
+        }: GroupMessageOptions & {
+            caption?: string;
+            filename?: string;
+            sendAsGifPlayback?: boolean;
+        } = {}
     ): Promise<any> {
-        if (!groupId || !videoBuffer) {
-            throw new Error('sendVideo: Group ID and video buffer are required.');
+        if (!groupId || !videoSrc) {
+            throw new Error('sendVideoMessage: Group ID and video source are required.');
         }
 
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
-        const messageOptions: any = { video: videoBuffer, ...(caption && { caption }) };
+        const videoBuffer =
+            typeof videoSrc === 'string'
+                ? await getUrlBuffer(videoSrc)
+                : videoSrc instanceof Stream
+                  ? await streamToBuffer(videoSrc)
+                  : videoSrc;
 
-        if (options?.mentions?.length) {
-            messageOptions.mentions = options.mentions.map((phone) =>
+        const decodedFilename = filename && decodeURIComponent(filename);
+
+        const messageOptions: any = {
+            video: videoBuffer,
+            ...(caption && { caption }),
+            gifPlayback,
+            ...(decodedFilename && { filename: decodedFilename }),
+        };
+
+        if (mentions?.length) {
+            messageOptions.mentions = mentions.map((phone) =>
                 WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)
             );
         }
@@ -254,6 +294,8 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             this.logger?.debug('WHATSAPP', 'Sending video to group', {
                 groupId: formattedGroupId,
                 hasCaption: !!caption,
+                filename: decodedFilename,
+                gifPlayback,
             });
         }
 
@@ -265,35 +307,73 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      */
     async sendAudioMessage(
         groupId: string,
-        audioBuffer: Buffer, // todo: handle also stream and string url
-        options?: { ptt?: boolean; mentions?: string[] }
+        audioSrc: string | Buffer | Stream,
+        {
+            filename,
+            replyToMessageId,
+            mimetype,
+            seconds,
+            ptt = false,
+            mentions,
+        }: {
+            filename?: string;
+            replyToMessageId?: string;
+            mimetype?: string;
+            seconds?: number;
+            ptt?: boolean;
+            mentions?: string[];
+        } = {}
     ): Promise<any> {
-        if (!groupId || !audioBuffer) {
-            throw new Error('sendAudio: Group ID and audio buffer are required.');
+        if (!groupId || !audioSrc) {
+            throw new Error('sendAudioMessage: Group ID and audio source are required.');
         }
 
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const audioBuffer =
+            typeof audioSrc === 'string'
+                ? await getUrlBuffer(audioSrc)
+                : audioSrc instanceof Stream
+                  ? await streamToBuffer(audioSrc)
+                  : audioSrc;
+
+        let durationInSeconds =
+            seconds || (await getAudioFileDuration(audioBuffer as unknown as ReadStream, mimetype).catch(() => 0));
+
+        const decodedFilename = filename && decodeURIComponent(filename);
+
         const messageOptions: any = {
             audio: audioBuffer,
-            ptt: options?.ptt ?? false, // PTT = Push To Talk (voice message)
+            ptt, // PTT = Push To Talk (voice message)
+            ...(decodedFilename && { filename: decodedFilename }),
+            ...(mimetype && { mimetype }),
+            ...(durationInSeconds && { seconds: durationInSeconds }),
         };
 
-        if (options?.mentions?.length) {
-            messageOptions.mentions = options.mentions.map((phone) =>
+        if (mentions?.length) {
+            messageOptions.mentions = mentions.map((phone) =>
                 WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)
             );
+        }
+
+        const quotedOptions: any = {};
+        if (replyToMessageId) {
+            quotedOptions.quoted = { key: { id: replyToMessageId } };
         }
 
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'Sending audio to group', {
                 groupId: formattedGroupId,
-                isPTT: messageOptions.ptt,
+                isPTT: ptt,
+                mimetype,
+                filename: decodedFilename,
+                seconds: durationInSeconds,
+                replyToMessageId,
             });
         }
 
-        return this.socket?.sendMessage(formattedGroupId, messageOptions);
+        return this.socket?.sendMessage(formattedGroupId, messageOptions, quotedOptions);
     }
 
     /**
@@ -301,38 +381,69 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      */
     async sendDocumentMessage(
         groupId: string,
-        documentBuffer: Buffer, // todo: handle also stream and string url
-        fileName: string,
-        mimeType?: string,
-        options?: GroupMessageOptions
+        documentSrc: string | Buffer | Stream,
+        {
+            fileName,
+            caption,
+            mimetype,
+            replyToMessageId,
+            jpegThumbnail,
+            mentions,
+        }: {
+            fileName: string;
+            caption?: string;
+            mimetype?: string;
+            replyToMessageId?: string;
+            jpegThumbnail?: Buffer;
+            mentions?: string[];
+        }
     ): Promise<any> {
-        if (!groupId || !documentBuffer || !fileName) {
-            throw new Error('sendDocument: Group ID, document buffer, and fileName are required.');
+        if (!groupId || !documentSrc || !fileName) {
+            throw new Error('sendDocumentMessage: Group ID, document source, and fileName are required.');
         }
 
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const documentBuffer =
+            typeof documentSrc === 'string'
+                ? await getUrlBuffer(documentSrc)
+                : documentSrc instanceof Stream
+                  ? await streamToBuffer(documentSrc)
+                  : documentSrc;
+
+        const decodedFilename = fileName && decodeURIComponent(fileName);
+
         const messageOptions: any = {
             document: documentBuffer,
-            fileName,
-            ...(mimeType && { mimetype: mimeType }),
+            fileName: decodedFilename,
+            ...(caption && { caption }),
+            ...(mimetype && { mimetype }),
+            ...(jpegThumbnail && { jpegThumbnail }),
         };
 
-        if (options?.mentions?.length) {
-            messageOptions.mentions = options.mentions.map((phone) =>
+        if (mentions?.length) {
+            messageOptions.mentions = mentions.map((phone) =>
                 WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)
             );
+        }
+
+        const quotedOptions: any = {};
+        if (replyToMessageId) {
+            quotedOptions.quoted = { key: { id: replyToMessageId } };
         }
 
         if (this.debug) {
             this.logger?.debug('WHATSAPP', 'Sending document to group', {
                 groupId: formattedGroupId,
-                fileName,
+                fileName: decodedFilename,
+                mimetype,
+                hasCaption: !!caption,
+                hasThumbnail: !!jpegThumbnail,
             });
         }
 
-        return this.socket?.sendMessage(formattedGroupId, messageOptions);
+        return this.socket?.sendMessage(formattedGroupId, messageOptions, quotedOptions);
     }
 
     /**
@@ -346,7 +457,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     ): Promise<any> {
         const { longitude, latitude } = position;
         if (!groupId || latitude === undefined || longitude === undefined) {
-            throw new Error('sendLocation: Group ID, latitude, and longitude are required.');
+            throw new Error('sendLocationMessage: Group ID, latitude, and longitude are required.');
         }
 
         await this.ensureSocketConnected();
@@ -409,7 +520,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      */
     async sendReactionMessage(groupId: string, messageId: string, emoji: string): Promise<any> {
         if (!groupId || !messageId || !emoji) {
-            throw new Error('sendReaction: Group ID, message ID, and emoji are required.');
+            throw new Error('sendReactionMessage: Group ID, message ID, and emoji are required.');
         }
 
         await this.ensureSocketConnected();
@@ -497,19 +608,41 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         });
     }
 
-    async sendStickerMessage(groupId: string, imageSrc: string | Buffer<any> | Stream) {
+    /**
+     * Send sticker to group
+     * Requirements:
+     * * format .webp
+     * * imageSize 512px x 512px
+     * * maxSize: 100kb
+     * * transparent background
+     */
+    async sendStickerMessage(groupId: string, imageSrc: string | Buffer | Stream): Promise<any> {
+        if (!groupId || !imageSrc) {
+            throw new Error('sendStickerMessage: Group ID and image source are required.');
+        }
+
         await this.ensureSocketConnected();
 
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
-        const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
+        const stickerBuffer =
+            typeof imageSrc === 'string'
+                ? await getUrlBuffer(imageSrc)
+                : imageSrc instanceof Stream
+                  ? await streamToBuffer(imageSrc)
+                  : imageSrc;
 
-        if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { groupId: formattedGroupId });
-        return await this.sendStickerMessage(formattedGroupId, stickerBuffer);
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send sticker message', {
+                groupId: formattedGroupId,
+            });
+        }
+
+        return this.socket?.sendMessage(formattedGroupId, { sticker: stickerBuffer });
     }
 
     async sendFileMessage(
         groupId: string,
-        fileSrc: string | Buffer<any> | Stream,
+        fileSrc: string | Buffer | Stream,
         {
             caption = '',
             mimetype,
@@ -523,13 +656,13 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             filename: string;
             autoMessageClassification?: boolean;
             replyToMessageId?: string;
-            jpegThumbnailSrc?: string | Buffer<any> | Stream;
+            jpegThumbnailSrc?: string | Buffer | Stream;
         }
-    ) {
+    ): Promise<any> {
         await this.ensureSocketConnected();
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
 
-        let jpegThumbnailBuffer: Buffer<any> | undefined;
+        let jpegThumbnailBuffer: Buffer | undefined;
         if (typeof jpegThumbnailSrc === 'string') {
             jpegThumbnailBuffer = await getUrlBuffer(jpegThumbnailSrc);
         } else if (jpegThumbnailSrc instanceof Stream) {
@@ -538,15 +671,19 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             jpegThumbnailBuffer = jpegThumbnailSrc;
         }
 
-        const fileBuffer = typeof fileSrc === 'string' ? await getUrlBuffer(fileSrc) : fileSrc;
-        if (fileSrc instanceof Stream) {
+        let fileBuffer: Buffer;
+        if (typeof fileSrc === 'string') {
+            fileBuffer = await getUrlBuffer(fileSrc);
+            filename = filename || basename(fileSrc);
+        } else if (fileSrc instanceof Stream) {
+            fileBuffer = await streamToBuffer(fileSrc);
             const fname = getFilenameFromStream(fileSrc);
             if (fname) filename = fname;
-        } else if (typeof fileSrc === 'string') {
-            filename = basename(fileSrc);
+        } else {
+            fileBuffer = fileSrc;
         }
-        filename = filename && decodeURIComponent(filename);
 
+        filename = filename && decodeURIComponent(filename);
         mimetype ||= this.getMimetypeFromFilename(filename);
         mimetype = mimetype?.toLowerCase();
 
@@ -591,9 +728,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
                     break;
                 default:
                     return await this.sendDocumentMessage(formattedGroupId, fileBuffer, {
+                        fileName: filename,
                         caption,
                         mimetype,
-                        filename,
                         replyToMessageId,
                         jpegThumbnail: jpegThumbnailBuffer,
                     });
@@ -603,9 +740,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         if (response && sendSuccess) return response;
         if (!autoMessageClassification || !sendSuccess) {
             return await this.sendDocumentMessage(formattedGroupId, fileBuffer, {
+                fileName: filename,
                 caption,
                 mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                filename,
                 replyToMessageId,
                 jpegThumbnail: jpegThumbnailBuffer,
             });

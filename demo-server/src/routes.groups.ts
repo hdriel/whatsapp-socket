@@ -4,7 +4,7 @@ import express, { type Request, type Response } from 'express';
 import { Server as SocketIO } from 'socket.io';
 import logger from './logger';
 import { WhatsappSocketGroup } from './whatsapp-socket';
-import { uploadImage, uploadVideo, uploadAudio, uploadFile } from './upload';
+import { uploadImage, uploadVideo, uploadAudio, uploadFile, uploadSticker } from './upload';
 import { sleep } from './helpers';
 const fileAuthPath = path.resolve(__dirname, '../..', 'authState/my-profile');
 
@@ -178,20 +178,20 @@ export const initRouterGroups = (io: SocketIO) => {
         res.status(200).json({ message: 'OK' });
     });
 
-    // router.post('/:groupId/upload-sticker', uploadSticker.single('sticker'), async (req: Request, res: Response) => {
-    //     const stickerFile = req.file;
-    //     if (!stickerFile) {
-    //         res.status(400).json({ message: 'No sticker file provided' });
-    //         return;
-    //     }
-    //
-    //     const { phoneTo } = req.body;
-    //     logger.info(null, 'Sending message...', { ...req.body });
-    //
-    //     await was.sendStickerMessage(phoneTo, stickerFile.buffer);
-    //
-    //     res.status(200).json({ message: 'OK' });
-    // });
+    router.post('/:groupId/upload-sticker', uploadSticker.single('sticker'), async (req: Request, res: Response) => {
+        const groupId = req.params.groupId;
+        const stickerFile = req.file;
+        if (!stickerFile) {
+            res.status(400).json({ message: 'No sticker file provided' });
+            return;
+        }
+
+        logger.info(null, 'Sending message...', { ...req.body });
+
+        await was.sendStickerMessage(groupId, stickerFile.buffer);
+
+        res.status(200).json({ message: 'OK' });
+    });
 
     router.post('/:groupId/upload-image', uploadImage.single('image'), async (req: Request, res: Response) => {
         const groupId = req.params.groupId;
@@ -251,20 +251,10 @@ export const initRouterGroups = (io: SocketIO) => {
             return;
         }
 
-        // const { message } = req.body;
+        const { message } = req.body;
         logger.info(null, 'Sending message...', { ...req.body });
 
-        await was.sendDocumentMessage(
-            groupId,
-            docFile.buffer,
-            docFile.originalname
-            //{
-            // filename: docFile.originalname,
-            // mimetype: docFile.mimetype,
-            // caption: message,
-            // jpegThumbnailSrc: '',
-            //}
-        );
+        await was.sendDocumentMessage(groupId, docFile.buffer, { fileName: docFile.originalname, caption: message });
 
         res.status(200).json({ message: 'OK' });
     });

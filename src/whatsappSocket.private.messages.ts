@@ -70,6 +70,9 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
                     case !!(btn as ButtonURL).url:
                         name = 'cta_url';
                         buttonParamsJson.url = (btn as ButtonURL).url;
+                        buttonParamsJson.url = buttonParamsJson.url.startsWith('http')
+                            ? buttonParamsJson.url
+                            : `https://${buttonParamsJson.url}`;
                         break;
                     case !!(btn as ButtonCopy).copy:
                         name = 'cta_copy';
