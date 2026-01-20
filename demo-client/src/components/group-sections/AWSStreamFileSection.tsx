@@ -54,8 +54,6 @@ export const AWSStreamFileSection: React.FC = ({}) => {
                 data
             );
             setSuccess('AWS FileKey send successfully!');
-            setSelectedFileKey(null);
-            setSelectedDirectory(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to upload file');
         } finally {
