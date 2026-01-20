@@ -67,7 +67,7 @@ export const MessageSection: React.FC = ({}) => {
                 />
 
                 <Button variant="contained" onClick={handleSubmit} disabled={loading} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Send Message'}
+                    {loading ? <CircularProgress size={24} /> : `Send Message to group: \"${groupOption?.label}\"`}
                 </Button>
 
                 {error && (

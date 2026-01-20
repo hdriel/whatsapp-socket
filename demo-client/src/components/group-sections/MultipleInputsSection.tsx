@@ -155,7 +155,11 @@ export const MultipleInputsSection: React.FC = ({}) => {
                 )}
 
                 <Button variant="contained" onClick={handleSubmit} disabled={loading || inputs.length === 0} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : `Submit ${inputs.length} Input(s)`}
+                    {loading ? (
+                        <CircularProgress size={24} />
+                    ) : (
+                        `Submit ${inputs.length} Input(s) to group: \"${groupOption?.label}\"`
+                    )}
                 </Button>
 
                 {error && (

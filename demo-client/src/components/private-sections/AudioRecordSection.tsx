@@ -159,7 +159,7 @@ export const AudioRecordSection: React.FC = ({}) => {
                     fullWidth
                     startIcon={<Upload fontSize="small" />}
                 >
-                    {loading ? <CircularProgress size={24} /> : 'Upload Audio'}
+                    {loading ? <CircularProgress size={24} /> : `Send Audio to: ${phoneTo}`}
                 </Button>
 
                 {error && (

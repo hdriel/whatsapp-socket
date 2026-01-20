@@ -78,7 +78,11 @@ export const LocationSection: React.FC = ({}) => {
                     fullWidth
                     startIcon={<GpsFixed fontSize="small" />}
                 >
-                    {loading ? <CircularProgress size={24} /> : 'Send Your Location'}
+                    {loading ? (
+                        <CircularProgress size={24} />
+                    ) : (
+                        `Send Your Location to group: \"${groupOption?.label}\"`
+                    )}
                 </Button>
 
                 {error && (

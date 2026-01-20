@@ -99,7 +99,7 @@ export const VideoUploadSection: React.FC = ({}) => {
                 )}
 
                 <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedVideo} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload Video'}
+                    {loading ? <CircularProgress size={24} /> : `Send Video to group: \"${groupOption?.label}\"`}
                 </Button>
 
                 {error && (

@@ -103,7 +103,7 @@ export const ImageUploadSection: React.FC = ({}) => {
                 )}
 
                 <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedImage} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload Image'}
+                    {loading ? <CircularProgress size={24} /> : `Send Image to: ${phoneTo}`}
                 </Button>
 
                 {error && (

@@ -117,7 +117,7 @@ export const AWSStreamFileSection: React.FC = ({}) => {
                 />
 
                 <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedFileKey} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : `Send File to group: ${groupOption?.label}`}
+                    {loading ? <CircularProgress size={24} /> : `Send File to group: \"${groupOption?.label}\"`}
                 </Button>
 
                 {error && (

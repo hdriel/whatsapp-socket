@@ -86,7 +86,7 @@ export const StickerUploadSection: React.FC = ({}) => {
                 )}
 
                 <Button variant="contained" onClick={handleUpload} disabled={loading || !selectedImage} fullWidth>
-                    {loading ? <CircularProgress size={24} /> : 'Upload Image'}
+                    {loading ? <CircularProgress size={24} /> : `Send Sticker to group: \"${groupOption?.label}\"`}
                 </Button>
 
                 {error && (
