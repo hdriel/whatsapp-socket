@@ -264,6 +264,7 @@ async function runWhatsAppTests() {
                 {
                     caption: 'PDF Document',
                     mimetype: 'application/pdf',
+                    filename: 'my-document.pdf',
                 }
             );
             logger.info(null, '✅ PDF from URL sent');

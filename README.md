@@ -48,6 +48,24 @@ The WhatsApp socket connection requires a persistent, stateful connection that s
 - Docker containers on persistent infrastructure
 - AWS EC2/ECS, Google Compute Engine, or Azure VM (not Lambda/Cloud Functions)
 
+## Demo
+
+For fully demo you could see in this project github repository this demos <br>
+Note: to update .env.local in each directory to run on your phone number / mongodb connection
+
+* demo-client & demo-server, <br/>
+ just run in the demo-server this line, to build and run client and server side
+```bash
+  npm run start
+  // open when ready: http://localhost:1010
+```
+ 
+* demo-script just run the following scripts to run all method function on your phone <br/>
+```bash
+  npm run test:private
+  // or
+  npm run test:group
+```
 
 ## Installation
 
@@ -137,21 +155,21 @@ await client.startConnection();
 ```
 
 #### `closeConnection()`
-Close the WhatsApp connection.
+Close the WhatsApp connection. (not really needed, the connection closed automatically when unused)
 
 ```typescript
 await client.closeConnection();
 ```
 
 #### `resetConnection(options?)`
-Reset the connection and generate a new QR code or use phone pairing.
+Reset the connection and generate a new QR code.
 
 ```typescript
 // Generate new QR code
 await client.resetConnection();
 
-// Or use phone number pairing
-await client.resetConnection({ pairingPhone: '050-000-0000' });
+// Or use phone number pairing (not working for now)
+// await client.resetConnection({ pairingPhone: '050-000-0000' });
 ```
 
 #### `isConnected()`
@@ -162,22 +180,18 @@ const connected = client.isConnected();
 console.log('Connected:', connected);
 ```
 
-### Messaging Methods
-
-#### `sendTextMessage(jid, text)`
-Send a plain text message.
+### Messaging Methods apis
 
 ```typescript
+import fs from 'fs';
+
+// Send a plain text message.
 await client.sendTextMessage(
   '0500000000',// or 050-000-0000 converted to 972500000000 , or define DEFAULT_COUNTRY to change 972 to your country 
   'Hello, this is a test message!'
 );
-```
 
-#### `sendButtonsMessage(jid, options)`
-Send an interactive message with action buttons.
-
-```typescript
+// Send an interactive message with action buttons.
 await client.sendButtonsMessage('1234567890@s.whatsapp.net', {
   title: 'Welcome to our service!',
   subtitle: 'Please choose an action below',
@@ -194,12 +208,8 @@ await client.sendButtonsMessage('1234567890@s.whatsapp.net', {
     // }
   ]
 });
-```
 
-#### `sendReplyButtonsMessage(jid, options)`
-Send a message with reply buttons (quick reply options).
-
-```typescript
+// Send a message with reply buttons (quick reply options).
 await client.sendReplyButtonsMessage('1234567890@s.whatsapp.net', {
   title: 'Choose your preferred time',
   subtitle: 'Click one of the options below',
@@ -209,62 +219,87 @@ await client.sendReplyButtonsMessage('1234567890@s.whatsapp.net', {
       'Evening (5-9)'
   ]
 });
-```
 
-#### `sendImageMessage(jid, buffer, options?)`
-Send an image message.
 
-```typescript
-import fs from 'fs';
-
+// Send an image message.
 const imageBuffer = fs.readFileSync('./photo.jpg');
 await client.sendImageMessage('050-000-0000', imageBuffer, {
   caption: 'Check out this photo!',
   filename: 'photo.jpg'
 });
-```
 
-#### `sendVideoMessage(jid, buffer, caption?)`
-Send a video message.
-
-```typescript
+// Send a video message.
 const videoBuffer = fs.readFileSync('./video.mp4');
 await client.sendVideoMessage(
   '050-000-0000',
   videoBuffer,
   { caption: 'Amazing video!' }
 );
-```
 
-#### `sendAudioMessage(jid, buffer, options?)`
-Send an audio message.
-
-```typescript
+// Send an audio message.
 const audioBuffer = fs.readFileSync('./audio.mp3');
 await client.sendAudioMessage('050-000-0000', audioBuffer, {
   filename: 'audio.mp3',
   mimetype: 'audio/mpeg'
 });
-```
 
-#### `sendFileMessage(jid, buffer, options?)`
-Send a document/file message.
-
-```typescript
+// Send a document/file message.
 const fileBuffer = fs.readFileSync('./document.pdf');
 await client.sendFileMessage('050-000-0000', fileBuffer, {
   filename: 'document.pdf',
   mimetype: 'application/pdf',
-  caption: 'Here is the requested document'
+  caption: 'Here is the requested document',
+  autoMessageClassification: false
 });
-```
 
-#### `sendStickerMessage(jid, buffer)`
-Send a sticker message (must be WebP format).
-
-```typescript
+// Send a sticker message (must be WebP format).
 const stickerBuffer = fs.readFileSync('./sticker.webp');
 await client.sendStickerMessage('050-000-0000', stickerBuffer);
+
+// Send a location message
+const position = await getCurrentLocation();
+await was.sendLocationMessage(
+    '050-000-0000', 
+    positon, // { latitude: 31.4117, longitude: 35.0818}, 
+    'Place Name', 
+    'Full Address'
+);
+
+// client side to get current location
+export const getCurrentLocation = async () => {
+    try {
+        const position: any = await new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocation is not supported by your browser'));
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true,
+                timeout: 60_000,
+                maximumAge: 0,
+            });
+        });
+
+        const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+        };
+
+        return location;
+    } catch (err: any) {
+        if (err.code === 1) {
+            throw Error('Location permission denied');
+        } else if (err.code === 2) {
+            throw Error('Location unavailable');
+        } else if (err.code === 3) {
+            throw Error('Location request timed out');
+        } else {
+            throw Error(err instanceof Error ? err.message : 'Failed to send location');
+        }
+    }
+};
 ```
 
 ### Utility Methods
@@ -276,17 +311,6 @@ Convert QR code string to base64 image.
 const qrImage = await WhatsappSocket.qrToImage(qrString);
 console.log(qrImage); // data:image/png;base64,...
 // In client side <img src={qrImage} />
-```
-
-#### `WhatsappSocket.randomPairingCode(pattern)`
-Generate a random pairing code.
-
-```typescript
-// Generate 6-digit numeric code
-const code = WhatsappSocket.randomPairingCode('[0-9]');
-
-// Generate alphanumeric code
-const alphaCode = WhatsappSocket.randomPairingCode('[a-z0-9]');
 ```
 
 ## Phone Number Format
@@ -438,8 +462,6 @@ await client.startConnection();
 
 ## Group Operations
 
-### Creating Groups
-
 ```typescript
 // Create a new group
 const group = await client.createGroup({
@@ -449,11 +471,7 @@ const group = await client.createGroup({
 });
 
 console.log('Group ID:', group.id);
-```
 
-### Group Information
-
-```typescript
 // Update group name
 await client.updateGroupName(groupId, 'New Group Name');
 
@@ -468,11 +486,7 @@ console.log('Participants:', metadata.participants.length);
 // Get all groups
 const allGroups = await client.getAllGroups();
 console.log('Total groups:', allGroups.length);
-```
 
-### Group Settings
-
-```typescript
 // Lock group (only admins can send messages)
 await client.updateGroupSettings(groupId, 'announcement');
 
@@ -484,11 +498,7 @@ await client.updateGroupSettings(groupId, 'locked');
 
 // Unlock group info (everyone can edit)
 await client.updateGroupSettings(groupId, 'unlocked');
-```
 
-### Participant Management
-
-```typescript
 // Add participants
 await client.addParticipants(groupId, '972501234567');
 // Or add multiple
@@ -505,11 +515,7 @@ await client.demoteFromAdmin(groupId, '972501234567');
 
 // Leave group
 await client.leaveGroup(groupId);
-```
 
-### Invite Management
-
-```typescript
 // Get group invite code
 const inviteCode = await client.getGroupInviteCode(groupId);
 const inviteLink = await client.getGroupInviteCode(groupId, true);  
@@ -525,16 +531,7 @@ console.log('New invite code:', newInviteCode);
 
 // Join group via invite code
 const joinedGroupId = await client.joinGroupViaInvite(inviteCode);
-```
 
-### Profile Picture Management
-
-**Note:** Requires `sharp` library to be installed:
-```bash
-npm install sharp
-```
-
-```typescript
 import fs from 'fs';
 
 // Update group profile picture
@@ -549,13 +546,8 @@ const highResUrl = await client.getGroupProfilePicture(groupId, true);
 
 // Remove profile picture
 await client.removeGroupProfilePicture(groupId);
-```
 
-### Sending Messages to Groups
-
-All messaging methods work the same for groups and individual chats:
-
-```typescript
+// All messaging methods work the same for groups and individual chats:
 // Send text message to group
 await client.sendTextMessage(groupId, 'Hello everyone!');
 
@@ -583,6 +575,86 @@ await client.sendReplyButtonsMessage(groupId, {
 const imageBuffer = fs.readFileSync('./photo.jpg');
 await client.sendImageMessage(groupId, imageBuffer, {
   caption: 'Group photo!'
+});
+
+// Send media
+const imageBuffer = fs.readFileSync('./photo.jpg');
+await client.sendFileMessage(groupId, imageBuffer, {
+  caption: 'nice photo!', 
+  filename: 'my best photo.jpg',
+  // autoMessageClassification: true (default)
+  //    true - send as file type, for example here send as image, 
+  //    false - send image as file message 
+});
+```
+
+## Stream and Buffer params
+
+All methods that receive files could get buffer and stream types! 
+not stream will converted to buffer data, so will pull all data on your server
+consider not send large files!
+
+```typescript
+router.post('/stream-file/:fileKey', async (req: Request, res: Response, next: NextFunction) => {
+    // using in this example with @hdriel/aws-utils pakcage..
+    if (!s3Util) return next(new Error('AWS FEATURE NOT SUPPORTED'));
+
+    try {
+        const fileKey = decodeURIComponent(req.params.fileKey);
+        const fileStream = await s3Util?.getObjectFileStream(fileKey);
+        if (!fileStream) {
+            res.status(400).json({ message: 'No document file found' });
+            return;
+        }
+
+        // for private phone messages
+        const phoneTo = req.query?.phoneTo as string;
+        if (!phoneTo) {
+            res.status(400).json({ message: 'not retrieved defined, phoneTo number' });
+            return;
+        }
+
+        const filename = basename(fileKey);
+        logger.info(null, 'Sending message...', { ...req.body, ...req.query, filename });
+
+        if (phoneTo) {
+            const was = new WhatsappSocket({
+                mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
+                fileAuthStateDirectoryPath: fileAuthPath,
+                appName: 'whatsapp-socket-demo',
+                debug: true,
+                logger,
+            });
+
+            await was.sendFileMessage(phoneTo, fileStream as any, { filename });
+        }
+
+        // for groupId messages
+        const groupId = req.query?.groupId as string;
+        if (!groupId) {
+            res.status(400).json({ message: 'not retrieved defined, groupId number' });
+            return;
+        }
+        
+        if (groupId) {
+            const was = new WhatsappSocketGroup({
+                mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
+                fileAuthStateDirectoryPath: fileAuthPath,
+                appName: 'whatsapp-socket-demo',
+                debug: true,
+                logger,
+            });
+
+            await was.sendFileMessage(groupId, fileStream as any, { filename });
+        }
+
+        
+
+        res.status(200).json({ message: 'OK' });
+    } catch (err: any) {
+        logger.error('AWS', 'failed on getObjectFileStream', { errMsg: err.message });
+        next(err);
+    }
 });
 ```
 
@@ -677,24 +749,6 @@ const formattedGroupId = WhatsappSocketGroup.formatGroupId('123456789');
 // Returns: '123456789@g.us'
 ```
 
-## Error Handling
-
-Always wrap group operations in try-catch blocks:
-
-```typescript
-try {
-  await client.addParticipants(groupId, phoneNumber);
-} catch (error) {
-  console.error('Failed to add participant:', error);
-  
-  if (error.message.includes('item-not-found')) {
-    console.log('Group or participant not found');
-  } else if (error.message.includes('not-authorized')) {
-    console.log('Bot is not an admin');
-  }
-}
-```
-
 ## Common Use Cases
 
 ### Auto-Welcome New Members
@@ -704,10 +758,7 @@ client.onReceiveMessages = async (messages) => {
   for (const msg of messages) {
     if (msg.messageType === 'groupParticipantsUpdate') {
       const groupId = msg.key.remoteJid;
-      await client.sendTextMessage(
-        groupId,
-        'Welcome to the group! 👋'
-      );
+      await client.sendTextMessage(groupId, 'Welcome to the group! 👋');
     }
   }
 };
@@ -720,23 +771,9 @@ import cron from 'node-cron';
 
 // Send daily message at 9 AM
 cron.schedule('0 9 * * *', async () => {
-  await client.sendMentionAll(
-    groupId,
-    '☀️ Good morning everyone! Have a great day!'
-  );
+  await client.sendMentionAll(groupId, '☀️ Good morning everyone! Have a great day!');
 });
 ```
-
-### Group Polling System
-
-```typescript
-await client.sendReplyButtonsMessage(groupId, {
-  title: '📊 Daily Poll',
-  subtitle: 'What should we have for lunch?',
-  buttons: ['🍕 Pizza', '🍔 Burgers', '🍜 Ramen', '🥗 Salad']
-});
-```
-
 ## Best Practices
 
 1. **Admin Rights**: Many operations require admin rights. Ensure your bot is an admin before performing administrative tasks.
@@ -809,17 +846,7 @@ npm install mongodb
 
 ## TypeScript Support
 
-The library is written in TypeScript and includes complete type definitions:
-
-```typescript
-import { WhatsappSocket } from '@hdriel/whatsapp-socket';
-
-// All methods and options are fully typed
-const client: WhatsappSocket = new WhatsappSocket({
-  fileAuthStateDirectoryPath: './authState',
-  debug: true
-});
-```
+The library is written in TypeScript and includes complete type definitions
 
 ## Troubleshooting
 
@@ -861,6 +888,11 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 - [pino](https://www.npmjs.com/package/pino) - Logging
 - [music-metadata](https://www.npmjs.com/package/music-metadata) - Audio metadata extraction
 - [ms](https://www.npmjs.com/package/ms) - Time string parsing
+
+## Peer Dependencies
+- [mongodb](https://www.npmjs.com/package/mongodb) ("^5.8.1") for persist connection on db collection 
+- [sharp](https://www.npmjs.com/package/sharp) ("^0.32.6") for profile group operators
+
 
 ## Author
 
