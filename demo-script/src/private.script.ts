@@ -18,8 +18,8 @@ const TEST_RECIPIENT = TARGET_PHONE;
 const TEST_CONFIG = {
     mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
     fileAuthStateDirectoryPath: FILE_AUTH_PATH,
-    mongoCollection: 'whatsapp-test-auth',
-    appName: 'WhatsApp Test Bot',
+    // mongoCollection: 'whatsapp-test-auth',
+    appName: 'whatsapp-socket-demo',
     debug: true,
     logger,
     printQRInTerminal: true,
