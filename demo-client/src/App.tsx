@@ -6,6 +6,7 @@ import { useQR } from './hooks/useQR';
 import { groupTabs, privateTabs, TabPanel } from './components';
 import { AppBar } from './components/AppBar';
 import { ActionType, useAppContext } from './AppContext.tsx';
+import { isAwsSupportedApiRequest } from './utils/api.ts';
 
 const theme = createTheme({
     palette: { mode: 'light', primary: { main: '#0b7853' }, secondary: { main: '#dea842' } },
@@ -16,6 +17,7 @@ function App() {
     const { actionType, messageToPhone, groupOption } = useAppContext();
     const [currentTab, setCurrentTab] = useState(0);
     const [serverConnected, wasClientConnectingStatus] = useSocketConnection();
+    const [isAwsSupports, setIsAwsSupports] = useState(false);
     const { QRImage } = useQR();
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -26,7 +28,14 @@ function App() {
         if (!serverConnected) setCurrentTab(0);
     }, [serverConnected]);
 
-    const tabs = actionType === ActionType.GROUP ? groupTabs : privateTabs;
+    useEffect(() => {
+        isAwsSupportedApiRequest()
+            .then(() => setIsAwsSupports(true))
+            .catch(() => setIsAwsSupports(false));
+    }, []);
+
+    const tabs = (actionType === ActionType.GROUP ? groupTabs : privateTabs).filter((tab) => !tab.aws || isAwsSupports);
+
     useEffect(() => {
         const tab = tabs[currentTab];
         const initTab = tabs.findIndex((tab) => tab.init);

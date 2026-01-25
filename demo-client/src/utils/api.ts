@@ -75,3 +75,12 @@ export const fetchAwsDirectoryFiles = async (directory: string = '/') => {
         alert(error.message || 'Unknown error occurred');
     }
 };
+
+export const isAwsSupportedApiRequest = async () => {
+    try {
+        const response = await fetch(`${baseURL}/api/aws/supported`);
+        return response.ok;
+    } catch (error: any) {
+        alert(error.message || 'Unknown error occurred');
+    }
+};

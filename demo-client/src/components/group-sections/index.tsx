@@ -15,7 +15,7 @@ import { TabType } from '../../types';
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },
     { label: 'Group', Component: GroupInfoSection },
-    { label: 'AWS File', Component: AWSStreamFileSection, group: true },
+    { label: 'AWS File', Component: AWSStreamFileSection, group: true, aws: true },
     { label: 'Message', Component: MessageSection, group: true },
     { label: 'Message Actions', Component: MessageActionsSection, group: true },
     { label: 'Reply Inputs', Component: MultipleInputsSection, group: true },

@@ -10,6 +10,10 @@ import { s3Util } from './aws.utils';
 export const initRouterAWS = (_io: SocketIO) => {
     const router = express.Router();
 
+    router.get('/supported', async (_req: Request, res: Response, _next: NextFunction) => {
+        res.sendStatus(200);
+    });
+
     router.get(['/directories/:directory', '/directories'], async (req: Request, res: Response, next: NextFunction) => {
         if (!s3Util) return next(new Error('AWS FEATURE NOT SUPPORTED'));
 

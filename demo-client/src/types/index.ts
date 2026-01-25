@@ -46,4 +46,5 @@ export interface TabType {
     init?: boolean;
     group?: boolean;
     phone?: boolean;
+    aws?: boolean;
 }

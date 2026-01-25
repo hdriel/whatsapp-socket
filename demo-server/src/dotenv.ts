@@ -3,7 +3,8 @@ import path from 'pathe';
 import { expand } from 'dotenv-expand';
 import logger from './logger';
 
-const ENV_FILE_PATH = path.resolve(__dirname, '..', '.env.local');
+// const ENV_FILE_PATH = path.resolve(__dirname, '..', '.env.local');
+const ENV_FILE_PATH = path.resolve(__dirname, '..', '.env.dev');
 logger.info('SYSTEM', `Starting dotenv: ${ENV_FILE_PATH}`);
 
 const myEnv = dotenv.config({ path: ENV_FILE_PATH });

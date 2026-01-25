@@ -13,7 +13,7 @@ import { TabType } from '../../types';
 
 export default [
     { label: 'QR Code', Component: GenerateQRSection, init: true },
-    { label: 'AWS File', Component: AWSStreamFileSection, phone: true },
+    { label: 'AWS File', Component: AWSStreamFileSection, phone: true, aws: true },
     { label: 'Message', Component: MessageSection, phone: true },
     { label: 'Message Actions', Component: MessageActionsSection, phone: true },
     { label: 'Reply Inputs', Component: MultipleInputsSection, phone: true },

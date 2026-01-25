@@ -7,8 +7,8 @@ import http, { Server as HttpServer } from 'http';
 import { initRouterConnection } from './routes.connection';
 import { initRouterPrivate } from './routes.private';
 import { initRouterGroups } from './routes.groups';
-import { initRouterAWS } from './routes.aws';
 import { Server as SocketIO } from 'socket.io';
+import { USE_AWS } from './dotenv';
 
 const server: HttpServer = http.createServer(app);
 const io = new SocketIO(server, {
@@ -28,7 +28,11 @@ app.use(express.static(path.join(__dirname, '../../demo-client/dist')));
 app.use('/api', initRouterConnection(io));
 app.use('/api/private', initRouterPrivate(io));
 app.use('/api/groups', initRouterGroups(io));
-app.use('/api/aws', initRouterAWS(io));
+if (USE_AWS) {
+    import('./routes.aws').then(({ initRouterAWS }) => {
+        app.use('/api/aws', initRouterAWS(io));
+    });
+}
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: any) => {
     logger.error(null, 'request error', {
