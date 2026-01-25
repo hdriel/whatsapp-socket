@@ -216,6 +216,7 @@ export class WhatsappSocketBase {
             customPairingCode,
             onPreConnectionSendMessageFailed,
             appName,
+            pairingPhone,
         } = props;
 
         this.appName = appName;
