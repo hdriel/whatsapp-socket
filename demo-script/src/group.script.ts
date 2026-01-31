@@ -1,8 +1,8 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
-import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 // @ts-ignore
-// import { WhatsappSocketGroup } from '../../src';
+import { WhatsappSocketGroup } from '../../src';
+// import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
 import { readFileSync } from 'node:fs';
 import { DOCUMENT_ASSET_PATH, FILE_AUTH_PATH, IMAGE_ASSET_PATH, MP3_ASSET_PATH, VIDEO_ASSET_PATH } from './paths';
 
@@ -23,22 +23,23 @@ function sleep(ms: number): Promise<void> {
 
 const runTests: Record<string, boolean> = {
     createGroup: true,
-    updateGroupInfo: true,
-    groupSettings: true, // הועבר לפני participants כדי לבדוק נעילות
-    manageParticipants: true,
-    participantPermissions: true, // טסט חדש - ניהול הרשאות
-    profilePicture: true, // הופעל - ניהול תמונת פרופיל
-    sendMessages: true,
-    sendMedia: true,
-    inviteManagement: true,
-    cleanup: true,
+    updateGroupInfo: false,
+    groupSettings: false, // הועבר לפני participants כדי לבדוק נעילות
+    manageParticipants: false,
+    participantPermissions: false, // טסט חדש - ניהול הרשאות
+    profilePicture: false, // הופעל - ניהול תמונת פרופיל
+    sendMessages: false,
+    sendList: true,
+    sendMedia: false,
+    inviteManagement: false,
+    cleanup: false,
 };
 
 async function runWhatsAppGroupTests() {
     logger.info(null, '🚀 Starting WhatsApp Group Tests...\n');
 
     let client: WhatsappSocketGroup | null = null;
-    let testGroupId: string | undefined;
+    let testGroupId: string = '';
     let inviteCode: string | undefined;
     const shouldTestTargetPhone = TARGET_PHONE && TARGET_PHONE !== MY_PHONE;
 
@@ -91,7 +92,7 @@ async function runWhatsAppGroupTests() {
                 participants: [],
             });
 
-            testGroupId = groupResult?.id;
+            testGroupId = groupResult?.id as string;
             logger.info(null, `✅ Group created with ID: ${testGroupId}`);
 
             await sleep(2000);
@@ -411,6 +412,142 @@ async function runWhatsAppGroupTests() {
             logger.info(null, '✅ TEST 8 PASSED: Messages sent successfully\n');
         }
 
+        if (runTests.sendList) {
+            // ============================================
+            // TEST 3: List Messages
+            // ============================================
+            logger.info(null, '📋 TEST 3: Testing list messages...');
+
+            // Single section list
+            await client.sendListMessage(testGroupId, {
+                title: 'Welcome! Please choose a service:',
+                subtitle: 'Select from our menu',
+                buttonText: 'View Options',
+                sections: [
+                    {
+                        title: 'Main Services',
+                        rows: [
+                            {
+                                id: 'service_support',
+                                title: '🎧 Customer Support',
+                                description: 'Get help from our support team',
+                            },
+                            {
+                                id: 'service_sales',
+                                title: '💼 Sales Inquiry',
+                                description: 'Contact our sales department',
+                            },
+                            {
+                                id: 'service_technical',
+                                title: '🔧 Technical Support',
+                                description: 'Technical assistance and troubleshooting',
+                            },
+                        ],
+                    },
+                ],
+            });
+            logger.info(null, '✅ Single section list sent');
+
+            await sleep(2000);
+
+            // Multiple sections list
+            await client.sendListMessage(testGroupId, {
+                title: 'Select a product category:',
+                subtitle: 'Browse our catalog',
+                buttonText: 'Show Categories',
+                sections: [
+                    {
+                        title: 'Electronics',
+                        rows: [
+                            {
+                                id: 'prod_phone',
+                                title: '📱 Smartphones',
+                                description: 'Latest mobile devices',
+                            },
+                            {
+                                id: 'prod_laptop',
+                                title: '💻 Laptops',
+                                description: 'Computers and notebooks',
+                            },
+                            {
+                                id: 'prod_tablet',
+                                title: '📲 Tablets',
+                                description: 'iPad and Android tablets',
+                            },
+                        ],
+                    },
+                    {
+                        title: 'Accessories',
+                        rows: [
+                            {
+                                id: 'acc_case',
+                                title: '🛡️ Cases & Covers',
+                                description: 'Protective accessories',
+                            },
+                            {
+                                id: 'acc_charger',
+                                title: '🔌 Chargers',
+                                description: 'Power adapters and cables',
+                            },
+                            {
+                                id: 'acc_headphone',
+                                title: '🎧 Headphones',
+                                description: 'Audio accessories',
+                            },
+                        ],
+                    },
+                    {
+                        title: 'Services',
+                        rows: [
+                            {
+                                id: 'srv_warranty',
+                                title: '🛡️ Extended Warranty',
+                            },
+                            {
+                                id: 'srv_repair',
+                                title: '🔧 Repair Service',
+                            },
+                        ],
+                    },
+                ],
+            });
+            logger.info(null, '✅ Multiple sections list sent');
+
+            await sleep(2000);
+
+            // Simple list without descriptions
+            await client.sendListMessage(testGroupId, {
+                title: 'Quick Actions',
+                buttonText: 'Select Action',
+                sections: [
+                    {
+                        title: 'Available Actions',
+                        rows: [
+                            {
+                                id: 'action_1',
+                                title: 'Check Balance',
+                            },
+                            {
+                                id: 'action_2',
+                                title: 'View History',
+                            },
+                            {
+                                id: 'action_3',
+                                title: 'Update Profile',
+                            },
+                            {
+                                id: 'action_4',
+                                title: 'Settings',
+                            },
+                        ],
+                    },
+                ],
+            });
+            logger.info(null, '✅ Simple list (no descriptions) sent');
+
+            logger.info(null, '✅ TEST 3 PASSED: List messages sent successfully\n');
+        }
+
         if (runTests.sendMedia && testGroupId) {
             // ============================================
             // TEST 9: Send Media to Group
@@ -426,7 +563,7 @@ async function runWhatsAppGroupTests() {
             await sleep(1500);
 
             const videoBuffer = readFileSync(VIDEO_ASSET_PATH);
-            await client.sendVideoMessage(testGroupId, videoBuffer, '🎥 Test video sent to group');
+            await client.sendVideoMessage(testGroupId, videoBuffer, { caption: '🎥 Test video sent to group' });
             logger.info(null, '✅ Video sent');
 
             await sleep(1500);
@@ -438,17 +575,20 @@ async function runWhatsAppGroupTests() {
             await sleep(1500);
 
             const docBuffer = readFileSync(DOCUMENT_ASSET_PATH);
-            await client.sendDocumentMessage(
-                testGroupId,
-                docBuffer,
-                'test-document.docx',
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            );
+            await client.sendDocumentMessage(testGroupId, docBuffer, {
+                fileName: 'test-document.docx',
+                mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            });
             logger.info(null, '✅ Document sent');
 
             await sleep(1500);
 
-            await client.sendLocationMessage(testGroupId, 32.0853, 34.7818, 'Test Location', 'Tel Aviv, Israel');
+            await client.sendLocationMessage(
+                testGroupId,
+                { latitude: 32.0853, longitude: 34.7818 },
+                'Test Location',
+                'Tel Aviv, Israel'
+            );
             logger.info(null, '✅ Location sent');
 
             logger.info(null, '✅ TEST 9 PASSED: Media sent successfully\n');

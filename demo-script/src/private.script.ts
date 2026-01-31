@@ -1,6 +1,7 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
-import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+import { WhatsappSocket } from '../../src';
+// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
 import { readFileSync, createReadStream } from 'node:fs';
 import {
     DOCUMENT_ASSET_PATH,
@@ -31,14 +32,15 @@ function sleep(ms: number): Promise<void> {
 }
 
 const runTests: Record<string, boolean> = {
-    sendMessage: true,
-    sendButtons: true,
-    sendReply: true,
-    sendImage: true,
-    sendVideo: true,
-    sendAudio: true,
-    sendFile: true,
-    sendSticker: true,
+    sendMessage: false,
+    sendButtons: false,
+    sendList: true,
+    sendReply: false,
+    sendImage: false,
+    sendVideo: false,
+    sendAudio: false,
+    sendFile: false,
+    sendSticker: false,
 };
 
 async function runWhatsAppTests() {
@@ -161,6 +163,142 @@ async function runWhatsAppTests() {
             logger.info(null, '✅ Reply buttons sent');
 
             logger.info(null, '✅ TEST 3 PASSED: Button messages sent successfully\n');
+        }
+
+        if (runTests.sendList) {
+            // ============================================
+            // TEST 3: List Messages
+            // ============================================
+            logger.info(null, '📋 TEST 3: Testing list messages...');
+
+            // Single section list
+            await client.sendListMessage(TEST_RECIPIENT, {
+                title: 'Welcome! Please choose a service:',
+                subtitle: 'Select from our menu',
+                buttonText: 'View Options',
+                sections: [
+                    {
+                        title: 'Main Services',
+                        rows: [
+                            {
+                                id: 'service_support',
+                                title: '🎧 Customer Support',
+                                description: 'Get help from our support team',
+                            },
+                            {
+                                id: 'service_sales',
+                                title: '💼 Sales Inquiry',
+                                description: 'Contact our sales department',
+                            },
+                            {
+                                id: 'service_technical',
+                                title: '🔧 Technical Support',
+                                description: 'Technical assistance and troubleshooting',
+                            },
+                        ],
+                    },
+                ],
+            });
+            logger.info(null, '✅ Single section list sent');
+
+            await sleep(2000);
+
+            // Multiple sections list
+            await client.sendListMessage(TEST_RECIPIENT, {
+                title: 'Select a product category:',
+                subtitle: 'Browse our catalog',
+                buttonText: 'Show Categories',
+                sections: [
+                    {
+                        title: 'Electronics',
+                        rows: [
+                            {
+                                id: 'prod_phone',
+                                title: '📱 Smartphones',
+                                description: 'Latest mobile devices',
+                            },
+                            {
+                                id: 'prod_laptop',
+                                title: '💻 Laptops',
+                                description: 'Computers and notebooks',
+                            },
+                            {
+                                id: 'prod_tablet',
+                                title: '📲 Tablets',
+                                description: 'iPad and Android tablets',
+                            },
+                        ],
+                    },
+                    {
+                        title: 'Accessories',
+                        rows: [
+                            {
+                                id: 'acc_case',
+                                title: '🛡️ Cases & Covers',
+                                description: 'Protective accessories',
+                            },
+                            {
+                                id: 'acc_charger',
+                                title: '🔌 Chargers',
+                                description: 'Power adapters and cables',
+                            },
+                            {
+                                id: 'acc_headphone',
+                                title: '🎧 Headphones',
+                                description: 'Audio accessories',
+                            },
+                        ],
+                    },
+                    {
+                        title: 'Services',
+                        rows: [
+                            {
+                                id: 'srv_warranty',
+                                title: '🛡️ Extended Warranty',
+                            },
+                            {
+                                id: 'srv_repair',
+                                title: '🔧 Repair Service',
+                            },
+                        ],
+                    },
+                ],
+            });
+            logger.info(null, '✅ Multiple sections list sent');
+
+            await sleep(2000);
+
+            // Simple list without descriptions
+            await client.sendListMessage(TEST_RECIPIENT, {
+                title: 'Quick Actions',
+                buttonText: 'Select Action',
+                sections: [
+                    {
+                        title: 'Available Actions',
+                        rows: [
+                            {
+                                id: 'action_1',
+                                title: 'Check Balance',
+                            },
+                            {
+                                id: 'action_2',
+                                title: 'View History',
+                            },
+                            {
+                                id: 'action_3',
+                                title: 'Update Profile',
+                            },
+                            {
+                                id: 'action_4',
+                                title: 'Settings',
+                            },
+                        ],
+                    },
+                ],
+            });
+            logger.info(null, '✅ Simple list (no descriptions) sent');
+
+            logger.info(null, '✅ TEST 3 PASSED: List messages sent successfully\n');
         }
 
         if (runTests.sendImage) {

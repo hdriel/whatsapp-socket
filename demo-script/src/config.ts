@@ -1,5 +1,7 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import { FILE_AUTH_PATH } from './paths';
+// @ts-ignore
+// import type { WhatsappSocketProps, WhatsappSocketGroupProps } from '../../src';
 import type { WhatsappSocketProps, WhatsappSocketGroupProps } from '@hdriel/whatsapp-socket';
 
 export const TEST_RECIPIENT = MY_PHONE;

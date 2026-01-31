@@ -4,8 +4,8 @@ import { resolve } from 'node:path';
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = dirname(__filename);
 
-// export const ENV_FILE_PATH = resolve(__dirname, '..', '.env.dev');
-export const ENV_FILE_PATH = resolve(__dirname, '..', '.env.local');
+export const ENV_FILE_PATH = resolve(__dirname, '..', '.env.dev');
+// export const ENV_FILE_PATH = resolve(__dirname, '..', '.env.local');
 export const FILE_AUTH_PATH = resolve(__dirname, '../..', 'authState/my-profile');
 
 export const IMAGE_ASSET_PATH = resolve(__dirname, 'test-assets/test-image.jpg');

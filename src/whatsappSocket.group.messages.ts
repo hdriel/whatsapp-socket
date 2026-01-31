@@ -197,6 +197,88 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         return this.socket?.sendMessage(formattedGroupId, messageOptions);
     }
 
+    async sendListMessage(
+        groupId: string,
+        {
+            title,
+            subtitle,
+            buttonText,
+            sections,
+        }: {
+            title: string;
+            subtitle?: string;
+            buttonText: string;
+            sections: Array<{
+                title: string;
+                rows: Array<{
+                    id: string;
+                    title: string;
+                    description?: string;
+                }>;
+            }>;
+        }
+    ): Promise<any> {
+        if (!title || !buttonText || !sections || sections.length === 0) {
+            throw new Error('sendListMessage: title, buttonText, and sections are required.');
+        }
+
+        await this.ensureSocketConnected();
+
+        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+
+        const msg = generateWAMessageFromContent(
+            formattedGroupId,
+            {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: proto.Message.InteractiveMessage.create({
+                            body: proto.Message.InteractiveMessage.Body.create({ text: title }),
+                            ...(subtitle && {
+                                footer: proto.Message.InteractiveMessage.Footer.create({ text: subtitle }),
+                            }),
+                            header: proto.Message.InteractiveMessage.Header.create({
+                                title: buttonText,
+                                hasMediaAttachment: false,
+                            }),
+                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                buttons: [
+                                    {
+                                        name: 'single_select',
+                                        buttonParamsJson: JSON.stringify({
+                                            title: buttonText,
+                                            sections: sections.map((section) => ({
+                                                title: section.title,
+                                                rows: section.rows.map((row) => ({
+                                                    header: row.title,
+                                                    title: row.title,
+                                                    description: row.description || '',
+                                                    id: row.id,
+                                                })),
+                                            })),
+                                        }),
+                                    },
+                                ],
+                            }),
+                        }),
+                    },
+                },
+            },
+            { userJid: formattedGroupId }
+        );
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'send list message', {
+                groupId: formattedGroupId,
+                title,
+                buttonText,
+                sectionsCount: sections.length,
+                totalRows: sections.reduce((acc, s) => acc + s.rows.length, 0),
+            });
+        }
+
+        return this.socket?.relayMessage(formattedGroupId, msg.message!, { messageId: msg.key.id! });
+    }
+
     /**
      * Send image to group
      */
