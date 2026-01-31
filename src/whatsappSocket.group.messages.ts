@@ -1,18 +1,12 @@
 import { type MiscMessageGenerationOptions, generateWAMessageFromContent } from '@fadzzzslebew/baileys';
 import { WAProto as proto } from '@fadzzzslebew/baileys';
 import { WhatsappSocketGroups, type WhatsappSocketGroupsProps } from './whatsappSocket.group.management';
-import type {
-    ButtonURL,
-    ButtonCopy,
-    ButtonPhone,
-    ButtonParamsJson,
-    CallToActionButtons,
-    GroupMessageOptions,
-} from './decs';
+import type { CallToActionButtons, GroupMessageOptions } from './decs';
 import Stream from 'node:stream';
 import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, MIME_TO_TYPES, streamToBuffer } from './helpers.ts';
 import { basename } from 'node:path';
 import { ReadStream } from 'node:fs';
+import { sendButtonsMessage } from './messages';
 
 export type { WhatsappSocketGroupsProps as WhatsappSocketGroupMessagesProps } from './whatsappSocket.group.management';
 
@@ -77,68 +71,10 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         }
 
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        const buttonsValue = buttons
-            ?.map((btn) => {
-                const buttonParamsJson: ButtonParamsJson = { display_text: btn.label };
-
-                let name: string;
-                switch (true) {
-                    case !!(btn as ButtonURL).url:
-                        name = 'cta_url';
-                        buttonParamsJson.url = (btn as ButtonURL).url;
-                        buttonParamsJson.url = buttonParamsJson.url.startsWith('http')
-                            ? buttonParamsJson.url
-                            : `https://${buttonParamsJson.url}`;
-                        break;
-                    case !!(btn as ButtonCopy).copy:
-                        name = 'cta_copy';
-                        buttonParamsJson.copy_code = (btn as ButtonCopy).copy;
-                        break;
-                    case !!(btn as ButtonPhone).tel:
-                        name = 'cta_call';
-                        buttonParamsJson.phone_number = (btn as ButtonPhone).tel;
-                        break;
-                    default:
-                        name = '';
-                        break;
-                }
-
-                return { name, buttonParamsJson: JSON.stringify(buttonParamsJson) };
-            })
-            .filter((v) => v.name);
-
-        const msg = generateWAMessageFromContent(
-            formattedGroupId,
-            {
-                viewOnceMessage: {
-                    message: {
-                        interactiveMessage: proto.Message.InteractiveMessage.create({
-                            body: proto.Message.InteractiveMessage.Body.create({ text: title }),
-                            ...(subtitle && {
-                                footer: proto.Message.InteractiveMessage.Footer.create({ text: subtitle }),
-                            }),
-                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                                buttons: buttonsValue,
-                            }),
-                        }),
-                    },
-                },
-            },
-            { userJid: formattedGroupId }
-        );
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending buttons message to group', {
-                groupId: formattedGroupId,
-                title,
-                buttonsCount: buttonsValue.length,
-            });
-        }
-
-        return this.socket?.relayMessage(formattedGroupId, msg.message!, { messageId: msg.key.id! });
+        return sendButtonsMessage(baseProps, formattedGroupId, { subtitle, title, buttons });
     }
 
     /**
