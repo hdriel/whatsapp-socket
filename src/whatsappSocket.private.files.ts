@@ -1,8 +1,6 @@
 import { WhatsappSocketPrivateStream, type WhatsappSocketStreamProps } from './whatsappSocket.private.stream';
-import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, MIME_TO_TYPES, streamToBuffer } from './helpers';
-import { basename } from 'node:path';
 import Stream from 'node:stream';
-import { ReadStream } from 'node:fs';
+import { sendAudioMessage, sendFileMessage, sendImageMessage, sendStickerMessage, sendVideoMessage } from './messages';
 
 export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
     constructor(props: WhatsappSocketStreamProps) {
@@ -15,13 +13,10 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         { caption = '', filename }: { caption?: string; filename?: string } = {}
     ) {
         await this.ensureSocketConnected();
-
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
-        const imageData = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
-        filename = filename && decodeURIComponent(filename);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        if (this.debug) this.logger?.debug('WHATSAPP', 'send image message', { jid, caption, filename });
-        return await this.sendImage(jid, imageData, { caption, ...(filename && { filename }) });
+        return sendImageMessage(baseProps, jid, imageSrc, { caption, filename });
     }
 
     async sendVideoMessage(
@@ -30,17 +25,14 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         {
             caption = '',
             filename,
-            sendAsGifPlayback: gifPlayback = false,
+            sendAsGifPlayback = false,
         }: { caption?: string; sendAsGifPlayback?: boolean; filename?: string } = {}
     ) {
         await this.ensureSocketConnected();
-
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
-        const videoBuffer = typeof videoSrc === 'string' ? await getUrlBuffer(videoSrc) : videoSrc;
-        filename = filename && decodeURIComponent(filename);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        if (this.debug) this.logger?.debug('WHATSAPP', 'send video message', { jid, caption, filename, gifPlayback });
-        return await this.sendVideo(jid, videoBuffer, { caption, gifPlayback, ...(filename && { filename }) });
+        return sendVideoMessage(baseProps, jid, videoSrc, { caption, filename, sendAsGifPlayback });
     }
 
     async sendAudioMessage(
@@ -54,29 +46,10 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         }: { filename?: string; replyToMessageId?: string; mimetype?: string; seconds?: number } = {}
     ) {
         await this.ensureSocketConnected();
-
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
-        const audioBuffer = typeof audioSrc === 'string' ? await getUrlBuffer(audioSrc) : audioSrc;
-        let durationInSeconds =
-            seconds || (await getAudioFileDuration(audioBuffer as ReadStream, mimetype).catch(() => 0));
-        filename = filename && decodeURIComponent(filename);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'send audio message', {
-                jid,
-                mimetype,
-                filename,
-                seconds: durationInSeconds,
-                replyToMessageId,
-            });
-        }
-
-        return await this.sendAudio(jid, audioBuffer, {
-            ...(filename && { filename }),
-            ...(mimetype && { mimetype: mimetype }),
-            ...(durationInSeconds && { seconds: durationInSeconds }),
-            ...(replyToMessageId && { replyToMessageId: replyToMessageId }),
-        });
+        return sendAudioMessage(baseProps, jid, audioSrc, { filename, replyToMessageId, mimetype, seconds });
     }
 
     /**
@@ -90,12 +63,10 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
      */
     async sendStickerMessage(to: string, imageSrc: string | Buffer<any> | Stream) {
         await this.ensureSocketConnected();
-
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
-        const stickerBuffer = typeof imageSrc === 'string' ? await getUrlBuffer(imageSrc) : imageSrc;
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        if (this.debug) this.logger?.debug('WHATSAPP', 'send sticker message', { jid });
-        return await this.sendSticker(jid, stickerBuffer);
+        return sendStickerMessage(baseProps, jid, imageSrc);
     }
 
     async sendFileMessage(
@@ -104,7 +75,6 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
         {
             caption = '',
             mimetype,
-            replyToMessageId,
             jpegThumbnailSrc,
             autoMessageClassification = true,
             filename,
@@ -113,91 +83,19 @@ export class WhatsappSocketPrivateFiles extends WhatsappSocketPrivateStream {
             mimetype?: string;
             filename: string;
             autoMessageClassification?: boolean;
-            replyToMessageId?: string;
             jpegThumbnailSrc?: string | Buffer<any> | Stream;
         }
     ) {
         await this.ensureSocketConnected();
         const jid = WhatsappSocketPrivateFiles.formatPhoneNumberToWhatsappPattern(to);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        let jpegThumbnailBuffer: Buffer<any> | undefined;
-        if (typeof jpegThumbnailSrc === 'string') {
-            jpegThumbnailBuffer = await getUrlBuffer(jpegThumbnailSrc);
-        } else if (jpegThumbnailSrc instanceof Stream) {
-            jpegThumbnailBuffer = await streamToBuffer(jpegThumbnailSrc);
-        } else {
-            jpegThumbnailBuffer = jpegThumbnailSrc;
-        }
-
-        const fileBuffer = typeof fileSrc === 'string' ? await getUrlBuffer(fileSrc) : fileSrc;
-        if (fileSrc instanceof Stream) {
-            const fname = getFilenameFromStream(fileSrc);
-            if (fname) filename = fname;
-        } else if (typeof fileSrc === 'string') {
-            filename = basename(fileSrc);
-        }
-        filename = filename && decodeURIComponent(filename);
-
-        mimetype ||= this.getMimetypeFromFilename(filename);
-        mimetype = mimetype?.toLowerCase();
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'send file message', {
-                jid,
-                caption,
-                mimetype,
-                filename,
-                replyToMessageId,
-                includeJpegThumbnail: !!jpegThumbnailBuffer,
-            });
-        }
-
-        let sendSuccess = true;
-        let response: any;
-        if (autoMessageClassification) {
-            switch (MIME_TO_TYPES[mimetype as string]) {
-                case 'Image':
-                    response = await this.sendImageMessage(jid, fileBuffer, {
-                        caption,
-                        filename,
-                    }).catch(() => (sendSuccess = false));
-                    break;
-                case 'Sticker':
-                    response = await this.sendStickerMessage(jid, fileBuffer).catch(() => (sendSuccess = false));
-                    break;
-                case 'Video':
-                    response = await this.sendVideoMessage(jid, fileBuffer, {
-                        caption,
-                        filename,
-                    }).catch(() => (sendSuccess = false));
-                    break;
-                case 'Audio':
-                    response = await this.sendAudioMessage(jid, fileBuffer, {
-                        mimetype,
-                        filename,
-                        replyToMessageId,
-                    }).catch(() => (sendSuccess = false));
-                    break;
-                default:
-                    return await this.sendDocument(jid, fileBuffer, {
-                        caption,
-                        mimetype,
-                        filename,
-                        replyToMessageId,
-                        jpegThumbnail: jpegThumbnailBuffer,
-                    });
-            }
-        }
-
-        if (response && sendSuccess) return response;
-        if (!autoMessageClassification || !sendSuccess) {
-            return await this.sendDocument(jid, fileBuffer, {
-                caption,
-                mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                filename,
-                replyToMessageId,
-                jpegThumbnail: jpegThumbnailBuffer,
-            });
-        }
+        return sendFileMessage(baseProps, jid, fileSrc, {
+            autoMessageClassification,
+            jpegThumbnailSrc,
+            mimetype,
+            filename,
+            caption,
+        });
     }
 }

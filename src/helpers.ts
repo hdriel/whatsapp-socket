@@ -1,6 +1,7 @@
 import { ReadStream } from 'node:fs';
 import ms, { type StringValue } from 'ms';
 import type Stream from 'node:stream';
+import type { AnyMessageContent } from '@fadzzzslebew/baileys';
 // NOTE: Hidden for Dynamic Import for ESM-only Packages
 // import { parseBuffer, parseStream } from 'music-metadata';
 
@@ -51,13 +52,17 @@ export async function getAudioFileDuration(audioFile: ReadStream | Buffer, mimeT
 }
 
 export async function streamToBuffer(stream: Stream): Promise<Buffer> {
-    const chunks: Buffer[] = [];
+    return new Promise((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        stream.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+        stream.on('error', (err) => reject(err));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+    });
+}
 
-    for await (const chunk of stream as ReadStream) {
-        chunks.push(chunk);
-    }
-
-    return Buffer.concat(chunks);
+export function getFilenameMimetype(filename: string): string {
+    const ext = filename?.split('.')?.pop()?.toLowerCase();
+    return MIME_TYPES[ext || ''] || 'application/octet-stream';
 }
 
 export function getFilenameFromStream(_stream: Stream): string | undefined {
@@ -180,3 +185,72 @@ export const MIME_TO_TYPES: { [key: string]: 'Image' | 'Video' | 'Audio' | 'Docu
     '7z': 'Document',
     'application/x-7z-compressed': 'Document',
 };
+
+export function getFileMessageProps(
+    buffer: Buffer,
+    mimetype: string,
+    options: {
+        filename: string;
+        caption?: string;
+        ptt?: boolean;
+        seconds?: number;
+        gifPlayback?: boolean;
+        jpegThumbnail?: Buffer | string;
+    }
+): AnyMessageContent {
+    const [type] = mimetype.split('/');
+
+    switch (type) {
+        case 'sticker':
+            return {
+                sticker: buffer,
+            };
+
+        case 'image':
+            return {
+                image: buffer,
+                caption: options.caption,
+                mimetype,
+                fileName: options.filename,
+            };
+
+        case 'video':
+            return {
+                video: buffer,
+                caption: options.caption,
+                mimetype,
+                fileName: options.filename,
+                gifPlayback: options.gifPlayback || false,
+                jpegThumbnail: options.jpegThumbnail as string,
+                ...(options.seconds && { seconds: options.seconds }),
+            };
+
+        case 'audio':
+            if (options.ptt) {
+                // Voice note
+                return {
+                    audio: buffer,
+                    mimetype: 'audio/ogg; codecs=opus',
+                    ptt: true,
+                    ...(options.seconds && { seconds: options.seconds }),
+                };
+            }
+
+            return {
+                audio: buffer,
+                mimetype,
+                fileName: options.filename,
+                ...(options.seconds && { seconds: options.seconds }),
+            };
+
+        default:
+            // Document (PDF, DOC, etc.)
+            return {
+                document: buffer,
+                mimetype,
+                fileName: options.filename,
+                caption: options.caption,
+                jpegThumbnail: options.jpegThumbnail as string,
+            };
+    }
+}
