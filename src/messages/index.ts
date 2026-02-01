@@ -10,3 +10,5 @@ export * from './video.message';
 export * from './sticker.message';
 export * from './document.message';
 export * from './file.message';
+export * from './delete.message';
+export * from './reaction.message';

@@ -14,6 +14,8 @@ import {
     sendStickerMessage,
     sendFileMessage,
     sendDocumentMessage,
+    sendDeleteMessage,
+    sendReactionMessage,
 } from './messages';
 
 export type { WhatsappSocketGroupsProps as WhatsappSocketGroupMessagesProps } from './whatsappSocket.group.management';
@@ -27,13 +29,9 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
      * Send message mentioning all group participants
      */
     async sendMentionAll(groupId: string, text: string): Promise<any> {
-        if (!groupId || !text) {
-            throw new Error('sendMentionAll: Group ID and text are required.');
-        }
-
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         // Get all group participants
         const groupMetadata = await this.getGroupMetadata(formattedGroupId);
@@ -41,75 +39,31 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             throw new Error('Could not fetch group metadata');
         }
 
-        const participants = groupMetadata.participants.map((p) => p.id);
+        const groupParticipants = groupMetadata.participants.map((p) => p.id);
 
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending mention all message to group', {
-                groupId: formattedGroupId,
-                participantsCount: participants.length,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, {
-            text,
-            mentions: participants,
-        });
+        return sendTextMessage(baseProps, formattedGroupId, { text, mentions: groupParticipants });
     }
 
     /**
      * Send reaction to a message in group
      */
     async sendReactionMessage(groupId: string, messageId: string, emoji: string): Promise<any> {
-        if (!groupId || !messageId || !emoji) {
-            throw new Error('sendReactionMessage: Group ID, message ID, and emoji are required.');
-        }
-
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending reaction to group message', {
-                groupId: formattedGroupId,
-                messageId,
-                emoji,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, {
-            react: {
-                text: emoji,
-                key: { id: messageId, remoteJid: formattedGroupId },
-            },
-        });
+        return sendReactionMessage(baseProps, formattedGroupId, { messageId, emoji });
     }
 
     /**
      * Delete a message in group (only works for own messages)
      */
     async deleteGroupMessage(groupId: string, messageId: string): Promise<any> {
-        if (!groupId || !messageId) {
-            throw new Error('deleteGroupMessage: Group ID and message ID are required.');
-        }
-
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Deleting message in group', {
-                groupId: formattedGroupId,
-                messageId,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, {
-            delete: {
-                id: messageId,
-                remoteJid: formattedGroupId,
-                fromMe: true,
-            },
-        });
+        return sendDeleteMessage(baseProps, formattedGroupId, { messageId });
     }
 
     /**

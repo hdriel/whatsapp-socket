@@ -1,9 +1,8 @@
-import { WhatsappSocketPrivateFiles } from './whatsappSocket.private.files';
-import type { WhatsappSocketGroupMessagesProps } from './whatsappSocket.group.messages';
+import { WhatsappSocketPrivateMessages, type WhatsappSocketMessagesProps } from './whatsappSocket.private.messages';
 
-export type WhatsappSocketProps = WhatsappSocketGroupMessagesProps;
+export type WhatsappSocketProps = WhatsappSocketMessagesProps;
 
-export class WhatsappSocket extends WhatsappSocketPrivateFiles {
+export class WhatsappSocket extends WhatsappSocketPrivateMessages {
     constructor(props: WhatsappSocketProps) {
         super(props);
     }

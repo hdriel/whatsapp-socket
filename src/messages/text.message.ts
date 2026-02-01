@@ -4,10 +4,10 @@ import { type WASocket } from '@fadzzzslebew/baileys';
 export const sendTextMessage = (
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    { text }: { text: string }
+    { text, mentions }: { text: string; mentions?: string[] }
 ) => {
     if (!text) {
-        throw new Error('sendButtonsMessage: No title or buttons required field found.');
+        throw new Error('sendTextMessage: No title or buttons required field found.');
     }
 
     // let options: MiscMessageGenerationOptions = {};
@@ -27,5 +27,5 @@ export const sendTextMessage = (
         logger?.debug('WHATSAPP', 'send text message', { jid, text });
     }
 
-    return socket?.sendMessage(jid, { text });
+    return socket?.sendMessage(jid, { text, ...(mentions?.length && { mentions }) });
 };
