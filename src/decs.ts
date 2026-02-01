@@ -24,7 +24,7 @@ export type CallToActionButtons = Array<
     // ButtonEmail | ButtonReminder // not supported
 >;
 
-export type GroupMessageOptions = {
+export type MessageOptions = {
     mentions?: string[]; // phone numbers to mention
     replyToMessageId?: string;
 };

@@ -1,12 +1,17 @@
-import { type MiscMessageGenerationOptions, generateWAMessageFromContent } from '@fadzzzslebew/baileys';
-import { WAProto as proto } from '@fadzzzslebew/baileys';
 import { WhatsappSocketGroups, type WhatsappSocketGroupsProps } from './whatsappSocket.group.management';
-import type { CallToActionButtons, GroupMessageOptions } from './decs';
+import type { CallToActionButtons, MessageOptions } from './decs';
 import Stream from 'node:stream';
 import { getAudioFileDuration, getFilenameFromStream, getUrlBuffer, MIME_TO_TYPES, streamToBuffer } from './helpers.ts';
 import { basename } from 'node:path';
 import { ReadStream } from 'node:fs';
-import { sendButtonsMessage } from './messages';
+import {
+    sendButtonsMessage,
+    sendSurveyMessage,
+    sendTextMessage,
+    sendReplyMessage,
+    sendListMessage,
+    sendLocationMessage,
+} from './messages';
 
 export type { WhatsappSocketGroupsProps as WhatsappSocketGroupMessagesProps } from './whatsappSocket.group.management';
 
@@ -18,37 +23,12 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     /**
      * Send text message to group
      */
-    async sendTextMessage(groupId: string, text: string, options?: GroupMessageOptions): Promise<any> {
-        if (!groupId || !text) {
-            throw new Error('sendTextMessage: Group ID and text are required.');
-        }
+    async sendTextMessage(groupId: string, text: string): Promise<any> {
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
-        const messageOptions: MiscMessageGenerationOptions = {};
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        // // Add mentions if provided
-        // if (options?.mentions?.length) {
-        //     const formattedMentions = options.mentions.map((phone) =>
-        //         WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)
-        //     );
-        //     messageOptions.mentions = formattedMentions;
-        // }
-
-        // Add reply if provided
-        if (options?.replyToMessageId) {
-            messageOptions.quoted = { key: { id: options.replyToMessageId } };
-        }
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending text message to group', {
-                groupId: formattedGroupId,
-                textLength: text.length,
-                hasMentions: !!options?.mentions?.length,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, { text }, messageOptions);
+        return sendTextMessage(baseProps, formattedGroupId, { text });
     }
 
     /**
@@ -66,10 +46,6 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             buttons: CallToActionButtons;
         }
     ): Promise<any> {
-        if (!groupId || !title || !buttons?.length) {
-            throw new Error('sendButtonsMessage: Group ID, title, and buttons are required.');
-        }
-
         await this.ensureSocketConnected();
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
@@ -94,43 +70,16 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             mentions?: string[];
         }
     ): Promise<any> {
-        if (!groupId || !title || !buttons?.length) {
-            throw new Error('sendReplyButtonsMessage: Group ID, title, and buttons are required.');
-        }
-
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        const buttonsValue = buttons
-            .filter((v) => v)
-            .map((btn, index) =>
-                typeof btn === 'string'
-                    ? { buttonId: `id-${index}`, buttonText: { displayText: btn }, type: 1 }
-                    : { buttonId: `${btn.id}`, buttonText: { displayText: btn.label }, type: 1 }
-            );
-
-        const messageOptions: any = {
-            text: title,
-            buttons: buttonsValue,
-            ...(subtitle && { footer: subtitle }),
-        };
-
-        if (mentions?.length) {
-            messageOptions.mentions = mentions.map((phone) =>
-                WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)
-            );
-        }
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending reply buttons message to group', {
-                groupId: formattedGroupId,
-                title,
-                buttonsCount: buttonsValue.length,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, messageOptions);
+        return sendReplyMessage(baseProps, formattedGroupId, {
+            subtitle,
+            title,
+            buttons,
+            mentions: mentions?.map((phone) => WhatsappSocketGroupMessages.formatPhoneNumberToWhatsappPattern(phone)),
+        });
     }
 
     async sendListMessage(
@@ -154,65 +103,50 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             }>;
         }
     ): Promise<any> {
-        if (!title || !buttonText || !sections || sections.length === 0) {
-            throw new Error('sendListMessage: title, buttonText, and sections are required.');
-        }
-
         await this.ensureSocketConnected();
-
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        const msg = generateWAMessageFromContent(
-            formattedGroupId,
-            {
-                viewOnceMessage: {
-                    message: {
-                        interactiveMessage: proto.Message.InteractiveMessage.create({
-                            body: proto.Message.InteractiveMessage.Body.create({ text: title }),
-                            ...(subtitle && {
-                                footer: proto.Message.InteractiveMessage.Footer.create({ text: subtitle }),
-                            }),
-                            header: proto.Message.InteractiveMessage.Header.create({
-                                title: buttonText,
-                                hasMediaAttachment: false,
-                            }),
-                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                                buttons: [
-                                    {
-                                        name: 'single_select',
-                                        buttonParamsJson: JSON.stringify({
-                                            title: buttonText,
-                                            sections: sections.map((section) => ({
-                                                title: section.title,
-                                                rows: section.rows.map((row) => ({
-                                                    header: row.title,
-                                                    title: row.title,
-                                                    description: row.description || '',
-                                                    id: row.id,
-                                                })),
-                                            })),
-                                        }),
-                                    },
-                                ],
-                            }),
-                        }),
-                    },
-                },
-            },
-            { userJid: formattedGroupId }
-        );
+        return sendListMessage(baseProps, formattedGroupId, { subtitle, title, sections, buttonText });
+    }
 
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'send list message', {
-                groupId: formattedGroupId,
-                title,
-                buttonText,
-                sectionsCount: sections.length,
-                totalRows: sections.reduce((acc, s) => acc + s.rows.length, 0),
-            });
+    /**
+     * Send location to group
+     */
+    async sendLocationMessage(
+        groupId: string,
+        {
+            latitude,
+            longitude,
+            name,
+            address,
+        }: {
+            latitude: number;
+            longitude: number;
+            name?: string;
+            address?: string;
         }
+    ): Promise<any> {
+        await this.ensureSocketConnected();
+        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        return this.socket?.relayMessage(formattedGroupId, msg.message!, { messageId: msg.key.id! });
+        return sendLocationMessage(baseProps, formattedGroupId, { latitude, longitude, name, address });
+    }
+
+    async sendSurveyMessage(
+        groupId: string,
+        {
+            question,
+            options,
+            allowMultipleAnswers = false,
+        }: { question: string; options: string[]; allowMultipleAnswers?: boolean }
+    ): Promise<any> {
+        await this.ensureSocketConnected();
+        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
+        const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
+
+        return sendSurveyMessage(baseProps, formattedGroupId, { options, question, allowMultipleAnswers });
     }
 
     /**
@@ -221,7 +155,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     async sendImageMessage(
         groupId: string,
         imageSrc: string | Buffer | Stream,
-        { caption = '', filename, mentions }: GroupMessageOptions & { caption?: string; filename?: string } = {}
+        { caption = '', filename, mentions }: MessageOptions & { caption?: string; filename?: string } = {}
     ): Promise<any> {
         if (!groupId || !imageSrc) {
             throw new Error('sendImageMessage: Group ID and image source are required.');
@@ -273,7 +207,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
             filename,
             sendAsGifPlayback: gifPlayback = false,
             mentions,
-        }: GroupMessageOptions & {
+        }: MessageOptions & {
             caption?: string;
             filename?: string;
             sendAsGifPlayback?: boolean;
@@ -465,42 +399,6 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
     }
 
     /**
-     * Send location to group
-     */
-    async sendLocationMessage(
-        groupId: string,
-        position: { latitude: number; longitude: number },
-        name?: string,
-        address?: string
-    ): Promise<any> {
-        const { longitude, latitude } = position;
-        if (!groupId || latitude === undefined || longitude === undefined) {
-            throw new Error('sendLocationMessage: Group ID, latitude, and longitude are required.');
-        }
-
-        await this.ensureSocketConnected();
-
-        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'Sending location to group', {
-                groupId: formattedGroupId,
-                latitude,
-                longitude,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, {
-            location: {
-                degreesLatitude: latitude,
-                degreesLongitude: longitude,
-                ...(name && { name }),
-                ...(address && { address }),
-            },
-        });
-    }
-
-    /**
      * Send message mentioning all group participants
      */
     async sendMentionAll(groupId: string, text: string): Promise<any> {
@@ -585,43 +483,6 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
                 id: messageId,
                 remoteJid: formattedGroupId,
                 fromMe: true,
-            },
-        });
-    }
-
-    async sendSurveyMessage(
-        groupId: string,
-        question: string,
-        options: string[],
-        allowMultipleAnswers = false
-    ): Promise<any> {
-        if (!groupId || !question || !options || options.length < 2) {
-            throw new Error('sendSurveyMessage: question and at least 2 options are required.');
-        }
-
-        if (options.length > 12) {
-            throw new Error('sendSurveyMessage: maximum 12 options allowed.');
-        }
-
-        await this.ensureSocketConnected();
-
-        const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
-        const pollOptions = options;
-
-        if (this.debug) {
-            this.logger?.debug('WHATSAPP', 'send survey message', {
-                groupId: formattedGroupId,
-                question,
-                options: pollOptions,
-                allowMultipleAnswers,
-            });
-        }
-
-        return this.socket?.sendMessage(formattedGroupId, {
-            poll: {
-                name: question,
-                values: pollOptions,
-                selectableCount: allowMultipleAnswers ? options.length : 1,
             },
         });
     }
