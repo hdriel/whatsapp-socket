@@ -32,15 +32,15 @@ function sleep(ms: number): Promise<void> {
 }
 
 const runTests: Record<string, boolean> = {
-    sendMessage: false,
-    sendButtons: false,
+    sendMessage: true,
+    sendButtons: true,
     sendList: true,
-    sendReply: false,
-    sendImage: false,
-    sendVideo: false,
-    sendAudio: false,
-    sendFile: false,
-    sendSticker: false,
+    sendReply: true,
+    sendImage: true,
+    sendVideo: true,
+    sendAudio: true,
+    sendFile: true,
+    sendSticker: true,
 };
 
 async function runWhatsAppTests() {
@@ -72,9 +72,6 @@ async function runWhatsAppTests() {
             },
             onConnectionStatusChange: async (status) => {
                 logger.info(null, `📊 Connection status: ${status}`);
-            },
-            onReceiveMessages: async (messages, type) => {
-                logger.info(null, `📨 Received ${messages?.length} messages (${type})`);
             },
         });
 
@@ -172,7 +169,7 @@ async function runWhatsAppTests() {
             logger.info(null, '📋 TEST 3: Testing list messages...');
 
             // Single section list
-            await client.sendListMessage(TEST_RECIPIENT, {
+            await client.sendMenuMessage(TEST_RECIPIENT, {
                 title: 'Welcome! Please choose a service:',
                 subtitle: 'Select from our menu',
                 buttonText: 'View Options',
@@ -204,7 +201,7 @@ async function runWhatsAppTests() {
             await sleep(2000);
 
             // Multiple sections list
-            await client.sendListMessage(TEST_RECIPIENT, {
+            await client.sendMenuMessage(TEST_RECIPIENT, {
                 title: 'Select a product category:',
                 subtitle: 'Browse our catalog',
                 buttonText: 'Show Categories',
@@ -269,7 +266,7 @@ async function runWhatsAppTests() {
             await sleep(2000);
 
             // Simple list without descriptions
-            await client.sendListMessage(TEST_RECIPIENT, {
+            await client.sendMenuMessage(TEST_RECIPIENT, {
                 title: 'Quick Actions',
                 buttonText: 'Select Action',
                 sections: [

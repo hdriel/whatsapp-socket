@@ -464,20 +464,18 @@ export class WhatsappSocketBase {
                     const { messages, type: type } = props;
                     console.log('Received messages received', props);
 
-                    if (type !== 'notify' && type !== 'append') {
-                        debugger;
-                        return;
-                    }
+                    // if (type === 'append') return;
+                    if (type !== 'notify') return;
 
                     messages
-                        .filter((message) => !message.key.fromMe)
+                        .filter((message) => !message.key.fromMe && message.message)
                         .forEach((message) => {
                             const messageId = message.key.id;
                             const remoteJid = message.key.remoteJid;
                             const username = message.pushName ?? '';
                             const timestamp = new Date(message.messageTimestamp * 1000);
 
-                            const text = message.message?.extendedTextMessage?.text ?? '';
+                            const text = message.message.extendedTextMessage?.text ?? '';
                             const image = message.message?.imageMessage
                                 ? {
                                       url: message.message.imageMessage.url,
@@ -530,20 +528,30 @@ export class WhatsappSocketBase {
                                 : undefined;
 
                             const isMenuMessage =
-                                message.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.name ===
+                                message.message.interactiveResponseMessage?.nativeFlowResponseMessage?.name ===
                                 'menu_options';
 
                             const listMessageParamJson =
                                 isMenuMessage &&
                                 JSON.parse(
-                                    message.message?.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson
+                                    message.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson
                                 );
 
                             const menuOption = isMenuMessage
                                 ? {
+                                      participant: message.message?.interactiveResponseMessage.contextInfo.participant,
                                       text: message.message?.interactiveResponseMessage.body.text,
                                       description: listMessageParamJson.description,
                                       id: listMessageParamJson.id,
+                                  }
+                                : undefined;
+
+                            const buttonsResponse = message.message?.buttonsResponseMessage
+                                ? {
+                                      participant: message.message?.buttonsResponseMessage.contextInfo.participant,
+                                      description: message.message?.buttonsResponseMessage.description,
+                                      text: message.message?.buttonsResponseMessage.selectedDisplayText,
+                                      id: message.message?.buttonsResponseMessage.selectedButtonId,
                                   }
                                 : undefined;
 
@@ -555,8 +563,17 @@ export class WhatsappSocketBase {
                                             username,
                                             timestamp,
                                             type,
-                                            totalMessages: messages.length,
-                                            data: { text, image, video, audio, location, file, sticker, menuOption },
+                                            data: {
+                                                text,
+                                                image,
+                                                video,
+                                                audio,
+                                                location,
+                                                file,
+                                                sticker,
+                                                menuOption,
+                                                buttonsResponse,
+                                            },
                                         });
                                     });
                                 });
