@@ -456,6 +456,8 @@ export class WhatsappSocketBase {
                 sock.ev.on('creds.update', saveCreds);
 
                 sock.ev.on('messages.upsert', async (props: { messages: WAMessage[]; type: MessageUpsertType }) => {
+                    if (!Object.keys(this.messageReceivedCBs).length) return;
+
                     this.logger?.info('WHATSAPP', 'Received messages', {
                         type: props.type,
                         totalMessages: props.messages.length,
