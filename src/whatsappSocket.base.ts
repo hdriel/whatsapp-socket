@@ -562,7 +562,6 @@ export class WhatsappSocketBase {
                                         cb(remoteJid, messageId, {
                                             username,
                                             timestamp,
-                                            type,
                                             data: {
                                                 text,
                                                 image,
