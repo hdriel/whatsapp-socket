@@ -157,7 +157,12 @@ export const initRouterPrivate = (_io: SocketIO) => {
         const { phoneTo, position, name = 'name', address = 'address' } = req.body;
         logger.info(null, 'Sending message...', { ...req.body });
 
-        await was.sendLocationMessage(phoneTo, position, name, address);
+        await was.sendLocationMessage(phoneTo, {
+            latitude: position.latitude,
+            longitude: position.longitude,
+            name,
+            address,
+        });
 
         // await was.sendSurveyMessage(phoneTo, 'my question?', ['A', 'B', 'C', 'D'], true);
         res.status(200).json({ message: 'OK' });

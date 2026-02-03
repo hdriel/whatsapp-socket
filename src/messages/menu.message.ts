@@ -1,7 +1,7 @@
 import { WAProto as proto, type WASocket, generateWAMessageFromContent } from '@fadzzzslebew/baileys';
 import type { Logger } from 'stack-trace-logger';
 
-export async function sendListMessage(
+export async function sendMenuMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
     {
@@ -24,7 +24,7 @@ export async function sendListMessage(
     }
 ): Promise<any> {
     if (!title || !buttonText || !sections || sections.length === 0) {
-        throw new Error('sendListMessage: title, buttonText, and sections are required.');
+        throw new Error('sendMenuMessage: title, buttonText, and sections are required.');
     }
 
     const msg = generateWAMessageFromContent(
@@ -68,7 +68,7 @@ export async function sendListMessage(
     );
 
     if (debug) {
-        logger?.debug('WHATSAPP', 'send list message', {
+        logger?.debug('WHATSAPP', 'send menu message', {
             jid,
             title,
             buttonText,

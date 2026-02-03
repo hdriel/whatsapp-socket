@@ -3,7 +3,7 @@ export type { WhatsappSocketBaseProps as WhatsappSocketMessagesProps } from './w
 import type { CallToActionButtons } from './decs';
 import {
     sendButtonsMessage,
-    sendListMessage,
+    sendMenuMessage,
     sendReplyMessage,
     sendLocationMessage,
     sendSurveyMessage,
@@ -51,7 +51,7 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         return sendButtonsMessage(baseProps, jid, { subtitle, title, buttons });
     }
 
-    async sendListMessage(
+    async sendMenuMessage(
         to: string,
         {
             title,
@@ -72,7 +72,7 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        return sendListMessage(baseProps, jid, { subtitle, title, sections, buttonText });
+        return sendMenuMessage(baseProps, jid, { subtitle, title, sections, buttonText });
     }
 
     async sendReplyButtonsMessage(

@@ -264,7 +264,12 @@ export const initRouterGroups = (io: SocketIO) => {
         const { position, name = 'name', address = 'address' } = req.body;
         logger.info(null, 'Sending message...', { ...req.body });
 
-        await was.sendLocationMessage(groupId, position, name, address);
+        await was.sendLocationMessage(groupId, {
+            latitude: position.latitude,
+            longitude: position.longitude,
+            name,
+            address,
+        });
 
         res.status(200).json({ message: 'OK' });
     });

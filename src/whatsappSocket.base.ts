@@ -27,6 +27,7 @@ import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState';
 import { sleep } from './helpers';
+import type { MessageReceivedCB } from './decs.ts';
 
 const pinoLogger: any = P({ level: 'silent' });
 
@@ -40,7 +41,6 @@ export type WhatsappSocketBaseProps = (
     onOpen?: () => Promise<void> | void;
     onClose?: () => Promise<void> | void;
     onConnectionStatusChange?: (connectionStatus: 'connecting' | 'close' | 'open') => Promise<void> | void;
-    onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void> | void;
     onPreConnectionSendMessageFailed?: (error: Error | string) => Promise<void> | void;
     onQR?: (qr: string, code?: string | null) => Promise<void> | void;
     debug?: boolean;
@@ -56,6 +56,7 @@ export class WhatsappSocketBase {
     protected readonly logger?: MyLogger;
     protected readonly debug?: boolean;
     protected readonly printQRInTerminal?: boolean;
+    protected readonly messageReceivedCBs: Record<string, MessageReceivedCB[]> = {};
     protected readonly pairingPhone?: string;
     protected readonly customPairingCode?: string;
     protected readonly appName?: string;
@@ -64,7 +65,6 @@ export class WhatsappSocketBase {
     private onClose?: () => Promise<void> | void;
     private onQR?: (qr: string, code?: string | null) => Promise<void> | void;
     private onConnectionStatusChange?: (connectionStatus: 'open' | 'close' | 'connecting') => Promise<void> | void;
-    private readonly onReceiveMessages?: (messages: WAMessage[], type: MessageUpsertType) => Promise<void> | void;
     static DEFAULT_COUNTRY_CODE: string = '972';
     static CONNECTION_TIMEOUT: StringValue = '2s';
 
@@ -209,7 +209,6 @@ export class WhatsappSocketBase {
             onOpen,
             onClose,
             onQR,
-            onReceiveMessages,
             onConnectionStatusChange,
             debug,
             printQRInTerminal,
@@ -230,7 +229,6 @@ export class WhatsappSocketBase {
         this.customPairingCode = customPairingCode;
         this.onPreConnectionSendMessageFailed = onPreConnectionSendMessageFailed;
         this.onConnectionStatusChange = onConnectionStatusChange;
-        this.onReceiveMessages = onReceiveMessages;
         this.onOpen = onOpen;
         this.onClose = onClose;
         this.onQR = onQR;
@@ -271,19 +269,31 @@ export class WhatsappSocketBase {
     }
 
     private async getAuthCollection(): Promise<[] | [Collection<MongoDocument>, MongoClient]> {
-        if (!this.mongoURL) return [];
+        return new Promise(async (resolve, reject) => {
+            if (!this.mongoURL) {
+                resolve([]);
+                return;
+            }
 
-        const mongoClient = new MongoClient(this.mongoURL);
-        await mongoClient.connect();
-        const collection = mongoClient.db().collection(this.mongoCollection);
-
-        return [collection, mongoClient];
+            const mongoClient = new MongoClient(this.mongoURL);
+            await mongoClient
+                .connect()
+                .then(() => {
+                    const collection = mongoClient.db().collection(this.mongoCollection);
+                    resolve([collection, mongoClient]);
+                })
+                .catch((error) => {
+                    this.logger?.error('WHASTAPP', 'Error connecting to MongoDB connection', error);
+                    reject(error);
+                });
+        });
     }
 
     private async authenticate(): Promise<{ auth: AuthenticationState; saveCreds: any }> {
         if (!this.mongoURL && !this.fileAuthStateDirectoryPath) {
             throw new Error('fileAuthStateDirectoryPath/MongoURL is missing');
         }
+
         if (!this.mongoURL) {
             const { saveCreds, state } = await useMultiFileAuthState(this.fileAuthStateDirectoryPath as string);
             return { auth: state, saveCreds };
@@ -445,25 +455,125 @@ export class WhatsappSocketBase {
                 // Save credentials when they update
                 sock.ev.on('creds.update', saveCreds);
 
-                // Handle messages
-                if (this.onReceiveMessages && typeof this.onReceiveMessages === 'function') {
-                    sock.ev.on('messages.upsert', async ({ messages, type }) => {
-                        this.logger?.info('WHATSAPP', 'Received messages', { type, totalMessages: messages.length });
-                        this.onReceiveMessages?.(messages, type);
-
-                        // const msg = messages[0]
-                        // if (!msg.key.fromMe && msg.message?.conversation) {
-                        //     const sender = msg.key.remoteJid
-                        //     const text = msg.message.conversation.toLowerCase()
-                        //
-                        //     console.log(`📩 Message from ${sender}: ${text}`)
-                        //
-                        //     if (text === 'hi') {
-                        //         await sock.sendMessage(sender, { text: 'Hello! How can I help you today?' })
-                        //     }
-                        // }
+                sock.ev.on('messages.upsert', async (props: { messages: WAMessage[]; type: MessageUpsertType }) => {
+                    this.logger?.info('WHATSAPP', 'Received messages', {
+                        type: props.type,
+                        totalMessages: props.messages.length,
                     });
-                }
+
+                    const { messages, type: type } = props;
+                    console.log('Received messages received', props);
+
+                    if (type !== 'notify' && type !== 'append') {
+                        debugger;
+                        return;
+                    }
+
+                    messages
+                        .filter((message) => !message.key.fromMe)
+                        .forEach((message) => {
+                            const messageId = message.key.id;
+                            const remoteJid = message.key.remoteJid;
+                            const username = message.pushName ?? '';
+                            const timestamp = new Date(message.messageTimestamp * 1000);
+
+                            const text = message.message?.extendedTextMessage?.text ?? '';
+                            const image = message.message?.imageMessage
+                                ? {
+                                      url: message.message.imageMessage.url,
+                                      mimetype: message.message.imageMessage.mimetype,
+                                      fileLength: message.message.imageMessage.fileLength,
+                                      height: message.message.imageMessage.height,
+                                      width: message.message.imageMessage.width,
+                                      caption: message.message.imageMessage.caption,
+                                  }
+                                : undefined;
+                            const video = message.message?.videoMessage
+                                ? {
+                                      url: message.message.videoMessage.url,
+                                      mimetype: message.message.videoMessage.mimetype,
+                                      fileLength: message.message.videoMessage.fileLength,
+                                      caption: message.message.videoMessage.caption,
+                                  }
+                                : undefined;
+                            const audio = message.message?.audioMessage
+                                ? {
+                                      url: message.message.audioMessage.url,
+                                      mimetype: message.message.audioMessage.mimetype,
+                                      fileLength: message.message.audioMessage.fileLength,
+                                      seconds: message.message.audioMessage.seconds,
+                                  }
+                                : undefined;
+                            const location = message.message?.locationMessage
+                                ? {
+                                      degreesLatitude: message.message.locationMessage.degreesLatitude,
+                                      degreesLongitude: message.message.locationMessage.degreesLongitude,
+                                      name: message.message.locationMessage.name,
+                                      address: message.message.locationMessage.address,
+                                  }
+                                : undefined;
+                            const file = message.message?.documentMessage
+                                ? {
+                                      url: message.message.documentMessage.url,
+                                      mimetype: message.message.documentMessage.mimetype,
+                                      fileLength: message.message.documentMessage.fileLength,
+                                      fileName: message.message.documentMessage.fileName,
+                                      caption: message.message.documentMessage.caption,
+                                  }
+                                : undefined;
+                            const sticker = message.message?.stickerMessage
+                                ? {
+                                      url: message.message.stickerMessage.url,
+                                      mimetype: message.message.stickerMessage.mimetype,
+                                      fileLength: message.message.stickerMessage.fileLength,
+                                  }
+                                : undefined;
+
+                            const isMenuMessage =
+                                message.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.name ===
+                                'menu_options';
+
+                            const listMessageParamJson =
+                                isMenuMessage &&
+                                JSON.parse(
+                                    message.message?.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson
+                                );
+
+                            const menuOption = isMenuMessage
+                                ? {
+                                      text: message.message?.interactiveResponseMessage.body.text,
+                                      description: listMessageParamJson.description,
+                                      id: listMessageParamJson.id,
+                                  }
+                                : undefined;
+
+                            Object.keys(this.messageReceivedCBs)
+                                .filter((jid) => ['from_any_groups', 'from_any_phones', remoteJid].includes(jid))
+                                .forEach(async (jid) => {
+                                    this.messageReceivedCBs[jid]?.forEach((cb) => {
+                                        cb(remoteJid, messageId, {
+                                            username,
+                                            timestamp,
+                                            type,
+                                            totalMessages: messages.length,
+                                            data: { text, image, video, audio, location, file, sticker, menuOption },
+                                        });
+                                    });
+                                });
+                        });
+
+                    // const msg = messages[0]
+                    // if (!msg.key.fromMe && msg.message?.conversation) {
+                    //     const sender = msg.key.remoteJid
+                    //     const text = msg.message.conversation.toLowerCase()
+                    //
+                    //     console.log(`📩 Message from ${sender}: ${text}`)
+                    //
+                    //     if (text === 'hi') {
+                    //         await sock.sendMessage(sender, { text: 'Hello! How can I help you today?' })
+                    //     }
+                    // }
+                });
             });
         };
 

@@ -49,4 +49,4 @@ export type UpdateGroupOptions = {
 
 export type GroupSettingsType = 'announcement' | 'not_announcement' | 'locked' | 'unlocked';
 
-export type MessageReceivedCB = (messageId: string, options: any) => void | Promise<void>;
+export type MessageReceivedCB = (remoteJid: string, messageId: string, options: any) => void | Promise<void>;

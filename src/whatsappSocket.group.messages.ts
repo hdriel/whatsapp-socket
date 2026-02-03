@@ -6,7 +6,7 @@ import {
     sendSurveyMessage,
     sendTextMessage,
     sendReplyMessage,
-    sendListMessage,
+    sendMenuMessage,
     sendLocationMessage,
     sendAudioMessage,
     sendImageMessage,
@@ -128,7 +128,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         });
     }
 
-    async sendListMessage(
+    async sendMenuMessage(
         groupId: string,
         {
             title,
@@ -153,7 +153,7 @@ export class WhatsappSocketGroupMessages extends WhatsappSocketGroups {
         const formattedGroupId = WhatsappSocketGroupMessages.formatGroupId(groupId);
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
-        return sendListMessage(baseProps, formattedGroupId, { subtitle, title, sections, buttonText });
+        return sendMenuMessage(baseProps, formattedGroupId, { subtitle, title, sections, buttonText });
     }
 
     /**
