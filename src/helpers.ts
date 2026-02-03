@@ -1,7 +1,7 @@
 import { ReadStream } from 'node:fs';
 import ms, { type StringValue } from 'ms';
 import type Stream from 'node:stream';
-import type { AnyMessageContent } from '@fadzzzslebew/baileys';
+import { type AnyMessageContent, type WAMessage, downloadMediaMessage } from '@fadzzzslebew/baileys';
 // NOTE: Hidden for Dynamic Import for ESM-only Packages
 // import { parseBuffer, parseStream } from 'music-metadata';
 
@@ -253,4 +253,197 @@ export function getFileMessageProps(
                 jpegThumbnail: options.jpegThumbnail as string,
             };
     }
+}
+
+export function getBufferDataUri(buffer: Buffer, mimetype: string = 'image/jpeg'): string {
+    const base64 = buffer.toString('base64');
+    const dataUri = `data:${mimetype};base64,${base64}`;
+    return dataUri;
+}
+
+function formatFileSize(bytes: number, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+type MessageData = {
+    messageId: string;
+    fromMe: boolean;
+    sender: string;
+    username: string;
+    timestamp: number;
+    text?: string;
+    reaction?: { messageId: string; emoji: string; timestamp: number };
+    image?: {
+        jpegThumbnail: Buffer;
+        buffer: Buffer;
+        mimetype: string;
+        fileLength: number;
+        fileSize: string;
+        height: number;
+        width: number;
+        caption?: string;
+    };
+    video?: {
+        jpegThumbnail: Buffer;
+        buffer: Buffer;
+        mimetype: string;
+        fileLength: number;
+        fileSize: string;
+        caption?: string;
+    };
+    audio?: { buffer: Buffer; mimetype: string; fileLength: number; fileSize: string; seconds: number };
+    location?: { latitude: number; longitude: number; name: string; address: string };
+    file?: {
+        buffer: Buffer;
+        mimetype: string;
+        fileLength: number;
+        fileSize: string;
+        fileName: string;
+        caption?: string;
+    };
+    sticker?: { buffer: Buffer; mimetype: string; fileLength: number; fileSize: string };
+    menuOption?: { participant: string; text: string; description?: string; id: string };
+    buttonsResponse?: { participant: string; description?: string; text: string; id: string };
+};
+
+export async function extractMessageData(message: WAMessage): Promise<MessageData> {
+    const data: MessageData = {} as MessageData;
+
+    data.messageId = message.key.id;
+    data.fromMe = message.key.fromMe;
+    data.sender = message.key.remoteJid;
+    data.username = message.pushName ?? '';
+    data.timestamp = message.messageTimestamp * 1000;
+
+    data.text = message.message.conversation ?? message.message.extendedTextMessage?.text ?? undefined;
+
+    data.reaction = message.message.reactionMessage
+        ? {
+              messageId: message.message.reactionMessage?.key.id,
+              emoji: message.message.reactionMessage?.text ?? '',
+              timestamp: +message.message.reactionMessage?.senderTimestampMs,
+          }
+        : undefined;
+
+    if (message.message?.imageMessage) {
+        const mimetype = message.message.imageMessage.mimetype;
+        const jpegThumbnail = Buffer.from(message.message.imageMessage.jpegThumbnail, 'base64');
+        const buffer = await downloadMediaMessage(message, 'buffer', {});
+        const fileLength = message.message.imageMessage.fileLength.low;
+
+        data.image = {
+            mimetype,
+            buffer,
+            jpegThumbnail,
+            fileLength,
+            fileSize: formatFileSize(fileLength),
+            height: message.message.imageMessage.height,
+            width: message.message.imageMessage.width,
+            caption: message.message.imageMessage.caption,
+        };
+    }
+
+    if (message.message?.videoMessage) {
+        const mimetype = message.message.videoMessage.mimetype;
+        const jpegThumbnail = Buffer.from(message.message.videoMessage.jpegThumbnail, 'base64');
+        const buffer = await downloadMediaMessage(message, 'buffer', {});
+        const fileLength = message.message.videoMessage.fileLength.low;
+
+        data.video = {
+            buffer,
+            jpegThumbnail,
+            mimetype,
+            fileLength,
+            fileSize: formatFileSize(fileLength),
+            caption: message.message.videoMessage.caption,
+        };
+    }
+
+    if (message.message?.audioMessage) {
+        const mimetype = message.message.audioMessage.mimetype;
+        const buffer = await downloadMediaMessage(message, 'buffer', {});
+        const fileLength = message.message.audioMessage.fileLength.low;
+
+        data.audio = {
+            buffer,
+            mimetype,
+            fileLength,
+            fileSize: formatFileSize(fileLength),
+            seconds: message.message.audioMessage.seconds,
+        };
+    }
+
+    if (message.message?.documentMessage) {
+        const mimetype = message.message.documentMessage.mimetype;
+        const buffer = await downloadMediaMessage(message, 'buffer', {});
+        const fileLength = message.message.documentMessage.fileLength.low;
+
+        data.file = {
+            buffer,
+            mimetype,
+            fileLength,
+            fileSize: formatFileSize(fileLength),
+            fileName: message.message.documentMessage.fileName,
+            caption: message.message.documentMessage.caption,
+        };
+    }
+
+    if (message.message?.stickerMessage) {
+        const mimetype = message.message.stickerMessage.mimetype;
+        const buffer = await downloadMediaMessage(message, 'buffer', {});
+        const fileLength = message.message.stickerMessage.fileLength.low;
+
+        // @ts-ignore
+        // const dataUri = getBufferDataUri(buffer, mimetype);
+
+        data.sticker = {
+            buffer,
+            mimetype,
+            fileLength,
+            fileSize: formatFileSize(fileLength),
+        };
+    }
+
+    data.location = message.message?.locationMessage
+        ? {
+              latitude: message.message.locationMessage.degreesLatitude,
+              longitude: message.message.locationMessage.degreesLongitude,
+              name: message.message.locationMessage.name,
+              address: message.message.locationMessage.address,
+          }
+        : undefined;
+
+    const isMenuMessage =
+        message.message.interactiveResponseMessage?.nativeFlowResponseMessage?.name === 'menu_options';
+
+    const listMessageParamJson =
+        isMenuMessage && JSON.parse(message.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
+
+    data.menuOption = isMenuMessage
+        ? {
+              participant: message.message?.interactiveResponseMessage.contextInfo.participant,
+              text: message.message?.interactiveResponseMessage.body.text,
+              description: listMessageParamJson.description,
+              id: listMessageParamJson.id,
+          }
+        : undefined;
+
+    data.buttonsResponse = message.message?.buttonsResponseMessage
+        ? {
+              participant: message.message?.buttonsResponseMessage.contextInfo.participant,
+              description: message.message?.buttonsResponseMessage.description,
+              text: message.message?.buttonsResponseMessage.selectedDisplayText,
+              id: message.message?.buttonsResponseMessage.selectedButtonId,
+          }
+        : undefined;
+
+    return JSON.parse(JSON.stringify(data));
 }

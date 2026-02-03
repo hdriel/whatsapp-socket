@@ -26,7 +26,7 @@ import { type Collection, type Document as MongoDocument, MongoClient } from 'mo
 import P from 'pino';
 import type { Boom } from '@hapi/boom';
 import useMongoDBAuthState from './mongoAuthState';
-import { sleep } from './helpers';
+import { extractMessageData, sleep } from './helpers';
 import type { MessageReceivedCB } from './decs.ts';
 
 const pinoLogger: any = P({ level: 'silent' });
@@ -462,118 +462,37 @@ export class WhatsappSocketBase {
                     });
 
                     const { messages, type: type } = props;
-                    console.log('Received messages received', props);
 
                     // if (type === 'append') return;
                     if (type !== 'notify') return;
 
-                    messages
-                        .filter((message) => !message.key.fromMe && message.message)
-                        .forEach((message) => {
-                            const messageId = message.key.id;
-                            const remoteJid = message.key.remoteJid;
-                            const username = message.pushName ?? '';
-                            const timestamp = new Date(message.messageTimestamp * 1000);
+                    const messageDataList = await Promise.allSettled(
+                        messages
+                            .filter((message) => message.message)
+                            .map(async (message) => extractMessageData(message))
+                    );
 
-                            const text = message.message.extendedTextMessage?.text ?? '';
-                            const image = message.message?.imageMessage
-                                ? {
-                                      url: message.message.imageMessage.url,
-                                      mimetype: message.message.imageMessage.mimetype,
-                                      fileLength: message.message.imageMessage.fileLength,
-                                      height: message.message.imageMessage.height,
-                                      width: message.message.imageMessage.width,
-                                      caption: message.message.imageMessage.caption,
-                                  }
-                                : undefined;
-                            const video = message.message?.videoMessage
-                                ? {
-                                      url: message.message.videoMessage.url,
-                                      mimetype: message.message.videoMessage.mimetype,
-                                      fileLength: message.message.videoMessage.fileLength,
-                                      caption: message.message.videoMessage.caption,
-                                  }
-                                : undefined;
-                            const audio = message.message?.audioMessage
-                                ? {
-                                      url: message.message.audioMessage.url,
-                                      mimetype: message.message.audioMessage.mimetype,
-                                      fileLength: message.message.audioMessage.fileLength,
-                                      seconds: message.message.audioMessage.seconds,
-                                  }
-                                : undefined;
-                            const location = message.message?.locationMessage
-                                ? {
-                                      degreesLatitude: message.message.locationMessage.degreesLatitude,
-                                      degreesLongitude: message.message.locationMessage.degreesLongitude,
-                                      name: message.message.locationMessage.name,
-                                      address: message.message.locationMessage.address,
-                                  }
-                                : undefined;
-                            const file = message.message?.documentMessage
-                                ? {
-                                      url: message.message.documentMessage.url,
-                                      mimetype: message.message.documentMessage.mimetype,
-                                      fileLength: message.message.documentMessage.fileLength,
-                                      fileName: message.message.documentMessage.fileName,
-                                      caption: message.message.documentMessage.caption,
-                                  }
-                                : undefined;
-                            const sticker = message.message?.stickerMessage
-                                ? {
-                                      url: message.message.stickerMessage.url,
-                                      mimetype: message.message.stickerMessage.mimetype,
-                                      fileLength: message.message.stickerMessage.fileLength,
-                                  }
-                                : undefined;
+                    messageDataList
+                        .map((p, i) => ({ ...p, message: messages[i] }))
+                        .filter((p) => p.status === 'rejected')
+                        .forEach(({ reason, message }) => {
+                            this.logger?.error('WHATSAPP', 'failed to handle message', {
+                                error: reason?.message,
+                                message,
+                            });
+                        });
 
-                            const isMenuMessage =
-                                message.message.interactiveResponseMessage?.nativeFlowResponseMessage?.name ===
-                                'menu_options';
-
-                            const listMessageParamJson =
-                                isMenuMessage &&
-                                JSON.parse(
-                                    message.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson
-                                );
-
-                            const menuOption = isMenuMessage
-                                ? {
-                                      participant: message.message?.interactiveResponseMessage.contextInfo.participant,
-                                      text: message.message?.interactiveResponseMessage.body.text,
-                                      description: listMessageParamJson.description,
-                                      id: listMessageParamJson.id,
-                                  }
-                                : undefined;
-
-                            const buttonsResponse = message.message?.buttonsResponseMessage
-                                ? {
-                                      participant: message.message?.buttonsResponseMessage.contextInfo.participant,
-                                      description: message.message?.buttonsResponseMessage.description,
-                                      text: message.message?.buttonsResponseMessage.selectedDisplayText,
-                                      id: message.message?.buttonsResponseMessage.selectedButtonId,
-                                  }
-                                : undefined;
+                    messageDataList
+                        .filter((p) => p.status === 'fulfilled')
+                        .forEach(({ value: messageData }) => {
+                            console.log('handle message', messageData);
+                            const { sender, messageId, username, timestamp, fromMe, ...data } = messageData;
 
                             Object.keys(this.messageReceivedCBs)
-                                .filter((jid) => ['from_any_groups', 'from_any_phones', remoteJid].includes(jid))
+                                .filter((jid) => ['from_any_groups', 'from_any_phones', sender].includes(jid))
                                 .forEach(async (jid) => {
                                     this.messageReceivedCBs[jid]?.forEach((cb) => {
-                                        cb(remoteJid, messageId, {
-                                            username,
-                                            timestamp,
-                                            data: {
-                                                text,
-                                                image,
-                                                video,
-                                                audio,
-                                                location,
-                                                file,
-                                                sticker,
-                                                menuOption,
-                                                buttonsResponse,
-                                            },
-                                        });
+                                        cb(sender, messageId, { username, timestamp, fromMe, data });
                                     });
                                 });
                         });
