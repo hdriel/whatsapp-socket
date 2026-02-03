@@ -1,18 +1,11 @@
 import type { Logger } from 'stack-trace-logger';
 import type { WASocket } from '@fadzzzslebew/baileys';
+import type { SurveyMessageProps } from './messages.decs.ts';
 
 export async function sendSurveyMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    {
-        question,
-        options,
-        allowMultipleAnswers = false,
-    }: {
-        question: string;
-        options: string[];
-        allowMultipleAnswers?: boolean;
-    }
+    { question, options, allowMultipleAnswers = false }: SurveyMessageProps
 ): Promise<any> {
     if (!question || !options || options.length < 2) {
         throw new Error('sendSurveyMessage: question and at least 2 options are required.');

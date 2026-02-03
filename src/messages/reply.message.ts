@@ -1,20 +1,11 @@
 import type { Logger } from 'stack-trace-logger';
 import type { WASocket } from '@fadzzzslebew/baileys';
+import type { ReplyMessageProps } from './messages.decs.ts';
 
 export async function sendReplyMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    {
-        title,
-        subtitle,
-        buttons,
-        mentions: formattedMentionsPhones,
-    }: {
-        title: string;
-        subtitle?: string;
-        buttons: Array<string | { id: number | string; label: string }>;
-        mentions?: string[];
-    }
+    { title, subtitle, buttons, mentions: formattedMentionsPhones }: ReplyMessageProps & { mentions?: string[] }
 ): Promise<any> {
     if (!title || !buttons.length) {
         throw new Error('sendReplyButtonsMessage: No title or buttons required field found.');

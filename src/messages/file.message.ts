@@ -8,26 +8,13 @@ import { sendImageMessage } from './image.message';
 import { sendVideoMessage } from './video.message';
 import { sendStickerMessage } from './sticker.message';
 import { sendDocumentMessage } from './document.message';
+import type { FileMessageProps } from './messages.decs.ts';
 
 export async function sendFileMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
     fileSrc: string | Buffer<any> | Stream,
-    {
-        caption = '',
-        mimetype,
-        jpegThumbnailSrc,
-        autoMessageClassification = true,
-        filename,
-        mentions,
-    }: {
-        caption?: string;
-        mimetype?: string;
-        filename: string;
-        autoMessageClassification?: boolean;
-        jpegThumbnailSrc?: string | Buffer<any> | Stream;
-        mentions?: string[];
-    }
+    { caption = '', mimetype, jpegThumbnailSrc, autoMessageClassification = true, filename, mentions }: FileMessageProps
 ) {
     let jpegThumbnailBuffer: Buffer<any> | undefined;
     if (typeof jpegThumbnailSrc === 'string') {

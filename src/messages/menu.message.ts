@@ -1,27 +1,11 @@
 import { WAProto as proto, type WASocket, generateWAMessageFromContent } from '@fadzzzslebew/baileys';
 import type { Logger } from 'stack-trace-logger';
+import type { MenuMessageProps } from './messages.decs.ts';
 
 export async function sendMenuMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    {
-        title,
-        subtitle,
-        buttonText,
-        sections,
-    }: {
-        title: string;
-        subtitle?: string;
-        buttonText: string;
-        sections: Array<{
-            title: string;
-            rows: Array<{
-                id: string;
-                title: string;
-                description?: string;
-            }>;
-        }>;
-    }
+    { title, subtitle, buttonText, sections }: MenuMessageProps
 ): Promise<any> {
     if (!title || !buttonText || !sections || sections.length === 0) {
         throw new Error('sendMenuMessage: title, buttonText, and sections are required.');

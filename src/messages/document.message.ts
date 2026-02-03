@@ -3,24 +3,13 @@ import { getUrlBuffer } from '../helpers.ts';
 import type { Logger } from 'stack-trace-logger';
 import type { WASocket } from '@fadzzzslebew/baileys';
 import { sendFileFromStream } from './file-stream.message';
+import type { DocumentMessageProps } from './messages.decs.ts';
 
 export async function sendDocumentMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
     documentSrc: string | Buffer<any> | Stream,
-    {
-        filename = 'audio-message.mp3',
-        caption = '',
-        mimetype,
-        mentions,
-        jpegThumbnail,
-    }: {
-        filename?: string;
-        caption?: string;
-        mimetype?: string;
-        mentions?: string[];
-        jpegThumbnail?: Buffer | string;
-    } = {}
+    { filename = 'audio-message.mp3', caption = '', mimetype, mentions, jpegThumbnail }: DocumentMessageProps = {}
 ) {
     if (!jid || !documentSrc) {
         throw new Error('sendDocumentMessage: jid and document source are required.');
