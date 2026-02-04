@@ -3,24 +3,40 @@ import type {
     ReplyMessageProps,
     TextMessageProps,
     ButtonsMessageProps,
+    SurveyMessageProps,
+    ImageMessageProps,
+    VideoMessageProps,
+    StickerMessageProps,
+    AudioMessageProps,
+    DocumentMessageProps,
+    LocationMessageProps,
 } from './messages/messages.decs.ts';
 
-type TextMessage = TextMessageProps;
-type MenuMessage = { menu: MenuMessageProps };
 type ReplyMessage = Omit<ReplyMessageProps, 'buttons'> & { buttons: Array<{ id: number | string; label: string }> };
-type ButtonsMessage = ButtonsMessageProps;
 
-type Message = TextMessage | MenuMessage | ReplyMessage | ButtonsMessage;
+type Message =
+    | (TextMessageProps & { type: 'text' })
+    | (MenuMessageProps & { type: 'menu' })
+    | (ReplyMessage & { type: 'reply' })
+    | (ButtonsMessageProps & { type: 'buttons' })
+    | (SurveyMessageProps & { type: 'survey' })
+    | (ImageMessageProps & { type: 'image' })
+    | (VideoMessageProps & { type: 'video' })
+    | (StickerMessageProps & { type: 'sticker' })
+    | (AudioMessageProps & { type: 'audio' })
+    | (DocumentMessageProps & { type: 'document' })
+    | (LocationMessageProps & { type: 'location' });
 
 type Scenario = {
     messages: Message[];
-    response: Record<
-        string,
-        {
-            validation: (input: any) => boolean;
-            onSubmit: (input: any) => void | Promise<void>;
-            next: Scenario;
-        }
+    response?: Record<
+        string, // input or buttonId
+        | {
+              validation?: (input: any) => boolean;
+              onSubmit?: (input: any) => void | Promise<void>;
+              next?: Scenario;
+          }
+        | undefined
     >;
 };
 
