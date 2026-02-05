@@ -25,8 +25,8 @@ export class WhatsappSocket extends WhatsappSocketPrivateMessages {
         this.messageReceivedCBs[jid].push(cb);
     }
 
-    offPhoneMessageReceived(phone: string, cb: MessageReceivedCB) {
+    offPhoneMessageReceived(phone: string, cb?: MessageReceivedCB) {
         const jid = WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
-        this.messageReceivedCBs[jid] = (this.messageReceivedCBs[jid] ?? []).filter((c) => c !== cb);
+        this.messageReceivedCBs[jid] = cb ? (this.messageReceivedCBs[jid] ?? []).filter((c) => c !== cb) : [];
     }
 }

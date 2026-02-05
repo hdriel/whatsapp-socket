@@ -5,7 +5,7 @@ import { sleep, TEST_CONFIG } from './config';
 
 const bot = new WhatsappSocketBot('0502350009', {
     name: 'Digital_Service_Bot',
-    scenario: {
+    flow: {
         messages: [
             {
                 reply: {

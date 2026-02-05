@@ -27,7 +27,7 @@ type Message =
     | { document: DocumentMessageProps }
     | { location: LocationMessageProps };
 
-type Scenario = {
+export type Scenario = {
     messages: Message[];
     response?: Record<
         string, // input or buttonId
@@ -47,5 +47,5 @@ export type BotSchema = {
     exitCode?: string;
     backCode?: string;
     matches?: (string | RegExp)[];
-    scenario?: Scenario;
+    flow?: Scenario;
 };
