@@ -15,17 +15,17 @@ import type {
 type ReplyMessage = Omit<ReplyMessageProps, 'buttons'> & { buttons: Array<{ id: number | string; label: string }> };
 
 type Message =
-    | (TextMessageProps & { type: 'text' })
-    | (MenuMessageProps & { type: 'menu' })
-    | (ReplyMessage & { type: 'reply' })
-    | (ButtonsMessageProps & { type: 'buttons' })
-    | (SurveyMessageProps & { type: 'survey' })
-    | (ImageMessageProps & { type: 'image' })
-    | (VideoMessageProps & { type: 'video' })
-    | (StickerMessageProps & { type: 'sticker' })
-    | (AudioMessageProps & { type: 'audio' })
-    | (DocumentMessageProps & { type: 'document' })
-    | (LocationMessageProps & { type: 'location' });
+    | { text: TextMessageProps }
+    | { menu: MenuMessageProps }
+    | { reply: ReplyMessage }
+    | { buttons: ButtonsMessageProps }
+    | { survey: SurveyMessageProps }
+    | { image: ImageMessageProps }
+    | { video: VideoMessageProps }
+    | { sticker: StickerMessageProps }
+    | { audio: AudioMessageProps }
+    | { document: DocumentMessageProps }
+    | { location: LocationMessageProps };
 
 type Scenario = {
     messages: Message[];
