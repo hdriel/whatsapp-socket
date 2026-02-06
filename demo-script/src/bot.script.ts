@@ -3,58 +3,61 @@ import { WhatsappSocket, WhatsappSocketBot } from '../../src';
 import logger from './logger';
 import { sleep, TEST_CONFIG } from './config';
 
-const bot = new WhatsappSocketBot('0502350009', {
-    name: 'Digital_Service_Bot',
-    flow: {
-        messages: [
-            {
-                reply: {
-                    title: "שלום! 👋 ברוכים הבאים ל-'שירות בוט דיגטלי'.",
-                    subtitle: 'איך נוכל לעזור לכם היום?',
-                    buttons: [
-                        { id: 'collect_details', label: '📝 השארת פרטים' },
-                        { id: 'send_location', label: '📍 מיקום החברה' },
-                        { id: 'send_website', label: '🌐 אתר האינטרנט שלנו' },
-                        { id: 'human_agent', label: '👤 לדבר עם נציג' },
-                    ],
+let client: WhatsappSocket | null = null;
+const bot = new WhatsappSocketBot(
+    {
+        name: 'Digital_Service_Bot',
+        flow: {
+            messages: [
+                {
+                    reply: {
+                        title: "שלום! 👋 ברוכים הבאים ל-'שירות בוט דיגטלי'.",
+                        subtitle: 'איך נוכל לעזור לכם היום?',
+                        buttons: [
+                            { id: 'collect_details', label: '📝 השארת פרטים' },
+                            { id: 'send_location', label: '📍 מיקום החברה' },
+                            { id: 'send_website', label: '🌐 אתר האינטרנט שלנו' },
+                            { id: 'human_agent', label: '👤 לדבר עם נציג' },
+                        ],
+                    },
                 },
-            },
-        ],
-        response: {
-            collect_details: {
-                next: {
-                    messages: [{ text: { text: 'נשמח להכיר! מה השם המלא שלך?' } }],
-                    response: {
-                        '': {
-                            validation: (name) => name.split(' ').length > 1,
-                            next: {
-                                messages: [{ text: { text: 'מעולה, מה מספר הטלפון לחזרה?' } }],
-                                response: {
-                                    '': {
-                                        validation: (phone) => phone.startsWith('05'),
-                                        next: {
-                                            messages: [
-                                                {
-                                                    reply: {
-                                                        title: 'באיזה נושא תרצה שחזור אליך?',
-                                                        buttons: [
-                                                            { id: 'sales', label: 'מכירות' },
-                                                            { id: 'services', label: 'שירות' },
-                                                            { id: 'other', label: 'אחר' },
-                                                        ],
+            ],
+            response: {
+                collect_details: {
+                    next: {
+                        messages: [{ text: { text: 'נשמח להכיר! מה השם המלא שלך?' } }],
+                        response: {
+                            '': {
+                                validation: (name) => name.split(' ').length > 1,
+                                next: {
+                                    messages: [{ text: { text: 'מעולה, מה מספר הטלפון לחזרה?' } }],
+                                    response: {
+                                        '': {
+                                            validation: (phone) => phone.startsWith('05'),
+                                            next: {
+                                                messages: [
+                                                    {
+                                                        reply: {
+                                                            title: 'באיזה נושא תרצה שחזור אליך?',
+                                                            buttons: [
+                                                                { id: 'sales', label: 'מכירות' },
+                                                                { id: 'services', label: 'שירות' },
+                                                                { id: 'other', label: 'אחר' },
+                                                            ],
+                                                        },
                                                     },
-                                                },
-                                            ],
-                                            response: {
-                                                '': {
-                                                    next: {
-                                                        messages: [
-                                                            {
-                                                                text: {
-                                                                    text: 'תודה רבה! הפרטים נקלטו, נציג שלנו יחזור אליך בהקדם. 🚀',
+                                                ],
+                                                response: {
+                                                    '': {
+                                                        next: {
+                                                            messages: [
+                                                                {
+                                                                    text: {
+                                                                        text: 'תודה רבה! הפרטים נקלטו, נציג שלנו יחזור אליך בהקדם. 🚀',
+                                                                    },
                                                                 },
-                                                            },
-                                                        ],
+                                                            ],
+                                                        },
                                                     },
                                                 },
                                             },
@@ -65,49 +68,50 @@ const bot = new WhatsappSocketBot('0502350009', {
                         },
                     },
                 },
-            },
-            send_location: {
-                next: {
-                    messages: [
-                        {
-                            location: {
-                                latitude: 32.053,
-                                longitude: 34.787,
-                                name: 'שירותי דיגיטלי לעסקים',
-                                address: 'ברחוב החרש 10, תל אביב',
+                send_location: {
+                    next: {
+                        messages: [
+                            {
+                                location: {
+                                    latitude: 32.053,
+                                    longitude: 34.787,
+                                    name: 'שירותי דיגיטלי לעסקים',
+                                    address: 'ברחוב החרש 10, תל אביב',
+                                },
                             },
-                        },
-                    ],
-                    response: undefined,
+                        ],
+                        response: undefined,
+                    },
                 },
-            },
-            send_website: {
-                next: {
-                    messages: [
-                        {
-                            buttons: {
-                                title: 'כל המידע, המוצרים והשירותים שלנו נמצאים כאן: 👇',
-                                buttons: [{ label: 'קישור לאתר', url: 'https://www.example.co.il' }],
+                send_website: {
+                    next: {
+                        messages: [
+                            {
+                                buttons: {
+                                    title: 'כל המידע, המוצרים והשירותים שלנו נמצאים כאן: 👇',
+                                    buttons: [{ label: 'קישור לאתר', url: 'https://www.example.co.il' }],
+                                },
                             },
-                        },
-                    ],
-                    response: undefined,
+                        ],
+                        response: undefined,
+                    },
                 },
-            },
-            human_agent: {
-                next: {
-                    messages: [{ text: { text: 'מעביר אותך לנציג אנושי... בינתיים אפשר לכתוב כאן את השאלה שלך. ⏳' } }],
-                    response: undefined,
+                human_agent: {
+                    next: {
+                        messages: [
+                            { text: { text: 'מעביר אותך לנציג אנושי... בינתיים אפשר לכתוב כאן את השאלה שלך. ⏳' } },
+                        ],
+                        response: undefined,
+                    },
                 },
             },
         },
     },
-});
+    '0502350009'
+);
 
 async function runWhatsAppTests() {
-    logger.info(null, '🚀 Starting WhatsApp Socket Tests...\n');
-
-    let client: WhatsappSocket | null = null;
+    logger.info(null, '🚀 Starting WhatsApp Socket Bot Tests...\n');
 
     try {
         // ============================================
@@ -119,6 +123,7 @@ async function runWhatsAppTests() {
         client = new WhatsappSocket({
             ...TEST_CONFIG,
             logger: logger as any,
+            printQRInTerminal: true,
             onOpen: async () => {
                 logger.info(null, '✅ Connection opened successfully!');
             },
@@ -165,7 +170,6 @@ async function runWhatsAppTests() {
 runWhatsAppTests()
     .then(() => {
         logger.info(null, '\n✨ Test suite completed successfully');
-        process.exit(0);
     })
     .catch((error) => {
         logger.error(null, '\n💥 Test suite failed:', error);

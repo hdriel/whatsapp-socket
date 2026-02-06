@@ -1,8 +1,6 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
-// @ts-ignore
-import { WhatsappSocketGroup } from '../../src';
-// import { WhatsappSocketGroup } from '@hdriel/whatsapp-socket';
+import { WhatsappSocketGroup } from './whatsapp-socket';
 import { readFileSync } from 'node:fs';
 import { DOCUMENT_ASSET_PATH, FILE_AUTH_PATH, IMAGE_ASSET_PATH, MP3_ASSET_PATH, VIDEO_ASSET_PATH } from './paths';
 
@@ -66,9 +64,6 @@ async function runWhatsAppGroupTests() {
             },
             onConnectionStatusChange: async (status) => {
                 logger.info(null, `📊 Connection status: ${status}`);
-            },
-            onReceiveMessages: async (messages, type) => {
-                logger.info(null, `📨 Received ${messages?.length} messages (${type})`);
             },
         });
 
@@ -419,7 +414,7 @@ async function runWhatsAppGroupTests() {
             logger.info(null, '📋 TEST 3: Testing list messages...');
 
             // Single section list
-            await client.sendListMessage(testGroupId, {
+            await client.sendMenuMessage(testGroupId, {
                 title: 'Welcome! Please choose a service:',
                 subtitle: 'Select from our menu',
                 buttonText: 'View Options',
@@ -451,7 +446,7 @@ async function runWhatsAppGroupTests() {
             await sleep(2000);
 
             // Multiple sections list
-            await client.sendListMessage(testGroupId, {
+            await client.sendMenuMessage(testGroupId, {
                 title: 'Select a product category:',
                 subtitle: 'Browse our catalog',
                 buttonText: 'Show Categories',
@@ -516,7 +511,7 @@ async function runWhatsAppGroupTests() {
             await sleep(2000);
 
             // Simple list without descriptions
-            await client.sendListMessage(testGroupId, {
+            await client.sendMenuMessage(testGroupId, {
                 title: 'Quick Actions',
                 buttonText: 'Select Action',
                 sections: [
@@ -583,12 +578,12 @@ async function runWhatsAppGroupTests() {
 
             await sleep(1500);
 
-            await client.sendLocationMessage(
-                testGroupId,
-                { latitude: 32.0853, longitude: 34.7818 },
-                'Test Location',
-                'Tel Aviv, Israel'
-            );
+            await client.sendLocationMessage(testGroupId, {
+                latitude: 32.0853,
+                longitude: 34.7818,
+                name: 'Test Location',
+                address: 'Tel Aviv, Israel',
+            });
             logger.info(null, '✅ Location sent');
 
             logger.info(null, '✅ TEST 9 PASSED: Media sent successfully\n');

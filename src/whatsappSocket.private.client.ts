@@ -20,7 +20,7 @@ export class WhatsappSocket extends WhatsappSocketPrivateMessages {
     }
 
     onPhoneMessageReceived(phone: string, cb: MessageReceivedCB) {
-        const jid = WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
+        const jid = phone && WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
         this.messageReceivedCBs[jid] ||= [];
         this.messageReceivedCBs[jid].push(cb);
     }

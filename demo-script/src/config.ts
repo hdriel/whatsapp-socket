@@ -1,15 +1,13 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import { FILE_AUTH_PATH } from './paths';
-// @ts-ignore
-// import type { WhatsappSocketProps, WhatsappSocketGroupProps } from '../../src';
-import type { WhatsappSocketProps, WhatsappSocketGroupProps } from '@hdriel/whatsapp-socket';
+import type { WhatsappSocketProps, WhatsappSocketGroupProps } from './whatsapp-socket';
 
 export const TEST_RECIPIENT = MY_PHONE;
 export const TEST_CONFIG: WhatsappSocketProps | WhatsappSocketGroupProps = {
     mongoURL: USE_MONGODB_STORAGE ? MONGODB_URI : undefined,
     fileAuthStateDirectoryPath: FILE_AUTH_PATH,
-    mongoCollection: 'whatsapp-test-auth',
-    appName: 'WhatsApp Test Bot',
+    // mongoCollection: 'whatsapp-test-auth',
+    appName: 'whatsapp-socket-demo',
     debug: true,
     printQRInTerminal: true,
     pairingPhone: MY_PHONE,
