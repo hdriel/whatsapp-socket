@@ -94,9 +94,9 @@ export class WhatsappSocketBot {
             }
 
             const key = this.getResponseId(options);
-            const { next, validate, onSubmit } = flow[key] || this.schema.flow;
+            const { next, validation, onSubmit } = flow[key] || this.schema.flow;
 
-            if (!validate || validate?.(messageId, options)) {
+            if (!validation || validation?.(messageId, options)) {
                 await onSubmit?.(messageId, options);
             } else {
                 console.log('warning invalid fields! send re-enter data again');
@@ -104,6 +104,7 @@ export class WhatsappSocketBot {
 
             await this.sendMessageList(remoteJid, next?.messages);
             if (next?.response) this.setFlow(remoteJid, next.response);
+            else if (!next?.messages) this.setFlow(remoteJid, null);
 
             return;
         };
