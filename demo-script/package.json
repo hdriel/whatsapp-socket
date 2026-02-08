@@ -6,7 +6,8 @@
     "scripts": {
         "test:private": "tsx src/private.script.ts",
         "test:group": "tsx src/group.script.ts",
-        "test:bot": "tsx src/bot.script.ts",
+        "test:bot:digital-service": "tsx src/bot.digital-service.script.ts",
+        "test:bot:ping-pong": "tsx src/bot.ping.script.ts",
         "test": "jest",
         "yalc:add": "yalc add @hdriel/whatsapp-socket",
         "yalc:remove": "tsx remove @hdriel/whatsapp-socket"

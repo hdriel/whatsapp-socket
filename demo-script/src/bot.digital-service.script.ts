@@ -12,6 +12,19 @@ const bot = new WhatsappSocketBot(
         matches: ['בוט', 'bot', /b\d+/],
         description: 'בוט לדוגמה של פרטים לחנות דיגיטלית',
         idleTimeout: '2m',
+        exitMsg: {
+            text: {
+                text: 'החלטת לצאת מהשיחה ניתן לחזור אלינו שוב בכתיבת ההודעות הבאות: {matches}'.replace(
+                    '{matches}',
+                    ['בוט', 'bot', /b\d+/].join(', ')
+                ),
+            },
+        },
+        timeoutMsg: {
+            text: {
+                text: 'הזמן שהוקצה לשיחה ללא תגובה היינו 2 דקות והם עברו\nמוזמן ליצור איתנו קשר שוב כאן\nבהצלחה',
+            },
+        },
         flow: {
             messages: [
                 {
@@ -24,6 +37,14 @@ const bot = new WhatsappSocketBot(
                             { id: 'send_website', label: '🌐 אתר האינטרנט שלנו' },
                             { id: 'human_agent', label: '👤 לדבר עם נציג' },
                         ],
+                    },
+                },
+                {
+                    text: {
+                        text: [
+                            'בכל שלב ניתן לסיים את השיחה בכתיבת הודעה: {exitCode}'.replace('{exitCode}', '999'),
+                            'או לחזור לתפריט קודם בהודעה: {backCode}'.replace('{backCode}', '-1'),
+                        ].join('\n'),
                     },
                 },
             ],

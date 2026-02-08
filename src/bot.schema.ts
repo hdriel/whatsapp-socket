@@ -46,8 +46,10 @@ export type Scenario = {
 export type BotSchema = {
     name?: string;
     description?: string;
-    idleTimeout?: StringValue | number;
     exitCode?: string;
+    exitMsg?: Message;
+    idleTimeout?: StringValue | number;
+    timeoutMsg?: Message;
     backCode?: string;
     matches?: (string | RegExp)[];
     flow?: Scenario;
