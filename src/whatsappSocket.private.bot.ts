@@ -1,5 +1,5 @@
 import { WhatsappSocket } from './whatsappSocket.private.client';
-import type { BotSchema, Scenario } from './bot.schema';
+import type { BotSchema, Scenario, ScenarioResponse } from './bot.schema';
 export type { BotSchema } from './bot.schema';
 
 export class WhatsappSocketBot {
@@ -87,26 +87,37 @@ export class WhatsappSocketBot {
     onMessageReceived() {
         const cb = async (remoteJid: string, messageId: string, options: any) => {
             const flow = this.getFlow(remoteJid);
+            const msgText = options?.text ?? (typeof options === 'string' ? options : '');
+
             if (!flow) {
+                if (
+                    this.schema.matches?.length &&
+                    !this.schema.matches.every((match) =>
+                        typeof match === 'string' ? match === msgText : match.test(msgText)
+                    )
+                ) {
+                    return;
+                }
+
                 await this.sendMessageList(remoteJid, this.schema.flow?.messages);
                 this.setFlow(remoteJid, this.schema.flow?.response);
                 return;
             }
 
             const key = this.getResponseId(options);
-            const { next, validation, onSubmit } = flow[key] || this.schema.flow;
+            const { next, validationError, validate, onSubmit }: ScenarioResponse = flow[key] || this.schema.flow;
 
-            if (!validation || validation?.(messageId, options)) {
+            const text = options?.text ?? (typeof options === 'string' ? options : key);
+            if (!validate || validate?.(text)) {
                 await onSubmit?.(messageId, options);
             } else {
-                console.log('warning invalid fields! send re-enter data again');
+                const errMsg = typeof validationError === 'function' ? validationError(text) : validationError;
+                await this.client?.sendTextMessage(remoteJid, errMsg || 'invalid input!');
             }
 
             await this.sendMessageList(remoteJid, next?.messages);
             if (next?.response) this.setFlow(remoteJid, next.response);
             else if (!next?.messages) this.setFlow(remoteJid, null);
-
-            return;
         };
 
         if (this.phone) this.client?.onPhoneMessageReceived(this.phone, cb);

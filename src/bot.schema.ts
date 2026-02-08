@@ -1,3 +1,4 @@
+import { type StringValue } from 'ms';
 import type {
     MenuMessageProps,
     ReplyMessageProps,
@@ -27,23 +28,25 @@ type Message =
     | { document: DocumentMessageProps }
     | { location: LocationMessageProps };
 
+export type ScenarioResponse = {
+    validate?: (input: string) => boolean;
+    validationError?: string | ((input?: string) => string);
+    onSubmit?: (messageId: string, options?: any) => void | Promise<void>;
+    next?: Scenario;
+};
+
 export type Scenario = {
     messages: Message[];
     response?: Record<
         string, // input or buttonId
-        | {
-              validation?: (input: any) => boolean;
-              onSubmit?: (input: any) => void | Promise<void>;
-              next?: Scenario;
-          }
-        | undefined
+        ScenarioResponse | undefined
     >;
 };
 
 export type BotSchema = {
     name?: string;
     description?: string;
-    idleTimeout?: number;
+    idleTimeout?: StringValue | number;
     exitCode?: string;
     backCode?: string;
     matches?: (string | RegExp)[];

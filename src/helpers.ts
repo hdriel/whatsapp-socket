@@ -1,13 +1,17 @@
 import { ReadStream } from 'node:fs';
 import ms, { type StringValue } from 'ms';
 import type Stream from 'node:stream';
-import { type AnyMessageContent, type WAMessage, downloadMediaMessage } from '@fadzzzslebew/baileys';
+import { type AnyMessageContent, downloadMediaMessage, type WAMessage } from '@fadzzzslebew/baileys';
 // NOTE: Hidden for Dynamic Import for ESM-only Packages
 // import { parseBuffer, parseStream } from 'music-metadata';
 
 export const getTotalSeconds = (msValue: StringValue) => {
     const value = ms(msValue);
     return value / 1000;
+};
+
+export const getMS = (msValue: number | StringValue) => {
+    return typeof msValue === 'number' ? msValue : ms(msValue);
 };
 
 export async function getUrlBuffer(url: string) {

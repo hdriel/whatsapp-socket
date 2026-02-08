@@ -7,6 +7,11 @@ let client: WhatsappSocket | null = null;
 const bot = new WhatsappSocketBot(
     {
         name: 'Digital_Service_Bot',
+        exitCode: '999',
+        backCode: '-1',
+        matches: ['בוט', 'bot', /b\d+/],
+        description: 'בוט לדוגמה של פרטים לחנות דיגיטלית',
+        idleTimeout: '2m',
         flow: {
             messages: [
                 {
@@ -28,26 +33,49 @@ const bot = new WhatsappSocketBot(
                         messages: [{ text: { text: 'נשמח להכיר! מה השם המלא שלך?' } }],
                         response: {
                             '': {
-                                validation: (name) => name.split(' ').length > 1,
+                                validate: (name: string) => name.split(' ').length > 1,
+                                validationError: 'שם מלא חייב להיות לפחות 2 מילים',
                                 next: {
                                     messages: [{ text: { text: 'מעולה, מה מספר הטלפון לחזרה?' } }],
                                     response: {
                                         '': {
-                                            validation: (phone) => phone.startsWith('05'),
+                                            validate: (phone: string) => phone.startsWith('05'),
+                                            validationError: (input?: string) =>
+                                                'מספר הטלפון: "{phone}" לא חוקי, חייב להתחיל ב05X-XXX-XXXX'.replace(
+                                                    '{phone}',
+                                                    input || ''
+                                                ),
                                             next: {
                                                 messages: [
                                                     {
-                                                        reply: {
+                                                        menu: {
                                                             title: 'באיזה נושא תרצה שחזור אליך?',
-                                                            buttons: [
-                                                                { id: 'sales', label: 'מכירות' },
-                                                                { id: 'services', label: 'שירות' },
-                                                                { id: 'other', label: 'אחר' },
+                                                            buttonText: 'בחר מהאפשרויות הבאות',
+                                                            sections: [
+                                                                {
+                                                                    title: 'בחר נושא',
+                                                                    rows: [
+                                                                        { id: 'sales', title: 'מכירות' },
+                                                                        { id: 'services', title: 'שירות' },
+                                                                        { id: 'other', title: 'אחר' },
+                                                                    ],
+                                                                },
                                                             ],
                                                         },
                                                     },
                                                 ],
                                                 response: {
+                                                    other: {
+                                                        next: {
+                                                            messages: [
+                                                                {
+                                                                    text: {
+                                                                        text: 'תודה רבה! הפרטים נקלטו, בינתיים ציין את מהות הפנייה שלך ונחזור אליך בהקדם',
+                                                                    },
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
                                                     '': {
                                                         next: {
                                                             messages: [
