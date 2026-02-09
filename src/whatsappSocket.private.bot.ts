@@ -1,5 +1,7 @@
 import { WhatsappSocket } from './whatsappSocket.private.client';
-import type { BotSchema, Scenario, ScenarioResponse } from './bot.schema';
+import type { BotSchema, Message, Scenario, ScenarioResponse } from './bot.schema';
+import { getMS } from './helpers.ts';
+import { clearTimeout, setTimeout } from 'node:timers';
 export type { BotSchema } from './bot.schema';
 
 export class WhatsappSocketBot {
@@ -8,6 +10,8 @@ export class WhatsappSocketBot {
     protected client?: WhatsappSocket;
     private schemaRefs: Record<string, any> = {};
     private remoteFlow: Record<string, any> = {};
+    private timeoutFlow: Record<string, string> = {};
+    private timers: Record<string, Record<number, { timeoutId: number; date: Date; data: Message }>> = {};
 
     constructor(schema: BotSchema, phone?: string) {
         this.phone = phone && WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
@@ -28,11 +32,13 @@ export class WhatsappSocketBot {
         this.onMessageReceived();
     }
 
-    private async sendMessageList(remoteJid: string, messageList?: any[]) {
+    private async sendMessageList(remoteJid: string, messages?: Message | Message[] | undefined) {
+        const messageList: Message[] = ([] as Message[]).concat(messages as Message).filter((v) => v);
         if (!messageList?.length) return;
 
         for (const message of messageList) {
             const [key, value]: any = Object.entries(message)[0];
+
             switch (key) {
                 case 'text':
                     await this.client?.sendTextMessage(remoteJid, value);
@@ -58,7 +64,6 @@ export class WhatsappSocketBot {
                 case 'location':
                     await this.client?.sendLocationMessage(remoteJid, value);
                     break;
-
                 default:
                     await this.client?.sendTextMessage(remoteJid, 'Done');
                     return;
@@ -72,6 +77,35 @@ export class WhatsappSocketBot {
 
     private setFlow(remoteJid: string, flow: any) {
         this.remoteFlow[remoteJid] = flow;
+    }
+
+    public setTimer(remoteJid: string, to: string, message: Message, timeout: number) {
+        const timerId = setTimeout(() => this.sendMessageList(to, message), timeout);
+
+        this.timers[remoteJid][+timerId] = {
+            timeoutId: timeout,
+            date: new Date(new Date().getTime() + timeout),
+            data: message,
+        };
+    }
+
+    public getTimers(remoteJid: string) {
+        return Object.entries(this.timers[remoteJid] ?? {}).map(([key, message]) => {
+            return { code: key, message }; // todo: defined the message format to display
+        });
+    }
+
+    public removeTimerId(remoteJid: string, timerId: number) {
+        clearTimeout(timerId);
+        delete this.timers[remoteJid][timerId];
+    }
+
+    private setTimeoutFlow(remoteJid: string, timeoutId: any) {
+        const oldTimeoutId = this.timeoutFlow[remoteJid];
+        if (oldTimeoutId) {
+            clearTimeout(oldTimeoutId);
+        }
+        this.timeoutFlow[remoteJid] = timeoutId;
     }
 
     private getResponseId(response: any) {
@@ -90,24 +124,36 @@ export class WhatsappSocketBot {
             const msgText = options?.text ?? (typeof options === 'string' ? options : '');
 
             if (!flow) {
-                if (
-                    this.schema.matches?.length &&
-                    !this.schema.matches.every((match) =>
-                        typeof match === 'string' ? match === msgText : match.test(msgText)
-                    )
-                ) {
-                    return;
-                }
+                const shouldMatchingForStart = this.schema.matches?.length;
+                const matchingFound = this.schema.matches?.find((match) =>
+                    typeof match === 'string' ? match === msgText : match.test(msgText)
+                );
+                if (shouldMatchingForStart && !matchingFound) return;
 
                 await this.sendMessageList(remoteJid, this.schema.flow?.messages);
                 this.setFlow(remoteJid, this.schema.flow?.response);
+                const idleTimeoutMS = this.schema.idleTimeout && getMS(this.schema.idleTimeout);
+                if (idleTimeoutMS && this.schema.idleTimeout) {
+                    this.setTimeoutFlow(
+                        remoteJid,
+                        setTimeout(async () => {
+                            await this.sendMessageList(remoteJid, this.schema.timeoutMsg);
+                        }, idleTimeoutMS)
+                    );
+                }
+
+                return;
+            }
+
+            if (this.schema.exitCode === msgText) {
+                await this.sendMessageList(remoteJid, this.schema.exitMsg);
                 return;
             }
 
             const key = this.getResponseId(options);
             const { next, validationError, validate, onSubmit }: ScenarioResponse = flow[key] || this.schema.flow;
 
-            const text = options?.text ?? (typeof options === 'string' ? options : key);
+            const text = msgText || key;
             if (!validate || validate?.(text)) {
                 await onSubmit?.(messageId, options);
             } else {

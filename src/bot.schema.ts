@@ -15,7 +15,7 @@ import type {
 
 type ReplyMessage = Omit<ReplyMessageProps, 'buttons'> & { buttons: Array<{ id: number | string; label: string }> };
 
-type Message =
+export type Message =
     | { text: TextMessageProps }
     | { menu: MenuMessageProps }
     | { reply: ReplyMessage }
