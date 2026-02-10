@@ -121,7 +121,7 @@ export class WhatsappSocketBot {
     onMessageReceived() {
         const cb = async (remoteJid: string, messageId: string, options: any) => {
             const flow = this.getFlow(remoteJid);
-            const msgText = options?.text ?? (typeof options === 'string' ? options : '');
+            const msgText = options?.data?.text ?? (typeof options === 'string' ? options : '');
 
             if (!flow) {
                 const shouldMatchingForStart = this.schema.matches?.length;

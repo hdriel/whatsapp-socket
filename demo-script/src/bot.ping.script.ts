@@ -2,6 +2,9 @@
 import { WhatsappSocket, WhatsappSocketBot } from '../../src';
 import logger from './logger';
 import { sleep, TEST_CONFIG } from './config';
+import { TARGET_PHONE } from './dotenv';
+
+const TEST_RECIPIENT = TARGET_PHONE;
 
 let client: WhatsappSocket | null = null;
 const bot = new WhatsappSocketBot({
@@ -24,7 +27,6 @@ async function runWhatsAppTests() {
         client = new WhatsappSocket({
             ...TEST_CONFIG,
             logger: logger as any,
-            printQRInTerminal: true,
             onOpen: async () => {
                 logger.info(null, '✅ Connection opened successfully!');
             },
@@ -41,7 +43,6 @@ async function runWhatsAppTests() {
                 logger.info(null, `📊 Connection status: ${status}`);
             },
         });
-        bot.socket = client;
 
         await client.startConnection({ connectionAttempts: 3 });
 
@@ -51,6 +52,13 @@ async function runWhatsAppTests() {
         if (!client.isConnected()) {
             throw new Error('Failed to connect to WhatsApp');
         }
+
+        bot.socket = client;
+
+        await client.sendTextMessage(
+            TEST_RECIPIENT,
+            'Hello! This is a test message from WhatsApp Socket BOT - ping pong 🏓'
+        );
 
         logger.info(null, '✅ Successfully connected to WhatsApp\n');
         logger.info(null, 'Waiting for messages\n');
