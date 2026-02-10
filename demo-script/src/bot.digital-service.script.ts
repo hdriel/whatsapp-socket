@@ -16,7 +16,7 @@ const bot = new WhatsappSocketBot(
             text: {
                 text: 'החלטת לצאת מהשיחה ניתן לחזור אלינו שוב בכתיבת ההודעות הבאות: {matches}'.replace(
                     '{matches}',
-                    ['בוט', 'bot', /b\d+/].join(', ')
+                    '\n* ' + ['בוט', 'bot', /b\d+/].join('\n* ')
                 ),
             },
         },
