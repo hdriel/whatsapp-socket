@@ -9,7 +9,7 @@ const bot = new WhatsappSocketBot(
         name: 'Digital_Service_Bot',
         exitCode: '999',
         backCode: '-1',
-        matches: ['בוט', 'bot', /b\d+/],
+        matches: ['בוט', 'bot', /^b\d+$/],
         description: 'בוט לדוגמה של פרטים לחנות דיגיטלית',
         idleTimeout: '2m',
         exitMsg: {
@@ -54,12 +54,14 @@ const bot = new WhatsappSocketBot(
                         messages: [{ text: { text: 'נשמח להכיר! מה השם המלא שלך?' } }],
                         response: {
                             '': {
+                                field: 'name',
                                 validate: (name: string) => name.split(' ').length > 1,
                                 validationError: 'שם מלא חייב להיות לפחות 2 מילים',
                                 next: {
                                     messages: [{ text: { text: 'מעולה, מה מספר הטלפון לחזרה?' } }],
                                     response: {
                                         '': {
+                                            field: 'phone',
                                             validate: (phone: string) => phone.startsWith('05'),
                                             validationError: (input?: string) =>
                                                 'מספר הטלפון: "{phone}" לא חוקי, חייב להתחיל ב05X-XXX-XXXX'.replace(
@@ -87,6 +89,7 @@ const bot = new WhatsappSocketBot(
                                                 ],
                                                 response: {
                                                     other: {
+                                                        field: 'message',
                                                         next: {
                                                             messages: [
                                                                 {
@@ -98,6 +101,7 @@ const bot = new WhatsappSocketBot(
                                                         },
                                                     },
                                                     '': {
+                                                        field: 'message',
                                                         next: {
                                                             messages: [
                                                                 {

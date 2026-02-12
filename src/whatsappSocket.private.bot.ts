@@ -10,6 +10,7 @@ export class WhatsappSocketBot {
     protected client?: WhatsappSocket;
     private schemaRefs: Record<string, any> = {};
     private remoteFlow: Record<string, any> = {};
+    private dataFlow: Record<string, any> = {};
     private timeoutFlow: Record<string, string> = {};
     private timers: Record<string, Record<number, { timeoutId: number; date: Date; data: Message }>> = {};
 
@@ -79,6 +80,18 @@ export class WhatsappSocketBot {
         this.remoteFlow[remoteJid] = flow;
     }
 
+    private getDataFlow(remoteJid: string) {
+        return this.dataFlow[remoteJid];
+    }
+
+    private setDataFlow(remoteJid: string, field: string, data: any) {
+        this.dataFlow[remoteJid] ||= { ...this.dataFlow[remoteJid], [field]: data };
+    }
+
+    private resetDataFlow(remoteJid: string) {
+        delete this.dataFlow[remoteJid];
+    }
+
     public setTimer(remoteJid: string, to: string, message: Message, timeout: number) {
         const timerId = setTimeout(() => this.sendMessageList(to, message), timeout);
 
@@ -132,6 +145,8 @@ export class WhatsappSocketBot {
 
                 await this.sendMessageList(remoteJid, this.schema.flow?.messages);
                 this.setFlow(remoteJid, this.schema.flow?.response);
+                this.resetDataFlow(remoteJid);
+
                 const idleTimeoutMS = this.schema.idleTimeout && getMS(this.schema.idleTimeout);
                 if (idleTimeoutMS && this.schema.idleTimeout) {
                     this.setTimeoutFlow(
@@ -151,11 +166,19 @@ export class WhatsappSocketBot {
             }
 
             const key = this.getResponseId(options);
-            const { next, validationError, validate, onSubmit }: ScenarioResponse = flow[key] || this.schema.flow;
+            const { field, next, validationError, validate, onSubmit }: ScenarioResponse =
+                flow[key] || this.schema.flow;
+
+            if (field) this.setDataFlow(remoteJid, field, key);
 
             const text = msgText || key;
             if (!validate || validate?.(text)) {
-                await onSubmit?.(messageId, options);
+                await onSubmit?.({
+                    remoteJid,
+                    messageId,
+                    options,
+                    data: this.getDataFlow(remoteJid),
+                });
             } else {
                 const errMsg = typeof validationError === 'function' ? validationError(text) : validationError;
                 await this.client?.sendTextMessage(remoteJid, errMsg || 'invalid input!');

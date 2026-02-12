@@ -29,9 +29,10 @@ export type Message =
     | { location: LocationMessageProps };
 
 export type ScenarioResponse = {
+    field?: string;
     validate?: (input: string) => boolean;
     validationError?: string | ((input?: string) => string);
-    onSubmit?: (messageId: string, options?: any) => void | Promise<void>;
+    onSubmit?: (values: { messageId: string; options?: any; data?: any; remoteJid: string }) => void | Promise<void>;
     next?: Scenario;
 };
 
