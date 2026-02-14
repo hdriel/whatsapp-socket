@@ -36,8 +36,10 @@ export type ScenarioResponse = {
     next?: Scenario;
 };
 
+export type MessageCB = (remoteJid: string, dataFlow: any) => Message | Promise<Message>;
+export type MessageItem = MessageCB | Message;
 export type Scenario = {
-    messages: Message[];
+    messages: MessageItem[];
     response?: Record<
         string, // input or buttonId
         ScenarioResponse | undefined
