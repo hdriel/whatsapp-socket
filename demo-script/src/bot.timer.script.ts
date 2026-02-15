@@ -39,7 +39,7 @@ const bot = new WhatsappSocketBot({
                 validationError: 'הזן שם מלא או חלקי עבור איש הקשר',
                 next: {
                     messages: [
-                        async (_remoteJid: string, dataFlow: any) => {
+                        async (_remoteJid: string, _dataFlow: any) => {
                             const contacts = await client?.getContacts();
                             if (!contacts?.length) {
                                 return {
