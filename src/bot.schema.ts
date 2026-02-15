@@ -16,17 +16,17 @@ import type {
 type ReplyMessage = Omit<ReplyMessageProps, 'buttons'> & { buttons: Array<{ id: number | string; label: string }> };
 
 export type Message =
-    | { text: TextMessageProps }
-    | { menu: MenuMessageProps }
-    | { reply: ReplyMessage }
-    | { buttons: ButtonsMessageProps }
-    | { survey: SurveyMessageProps }
-    | { image: ImageMessageProps }
-    | { video: VideoMessageProps }
-    | { sticker: StickerMessageProps }
-    | { audio: AudioMessageProps }
-    | { document: DocumentMessageProps }
-    | { location: LocationMessageProps };
+    | { forceExit?: boolean; text: TextMessageProps }
+    | { forceExit?: boolean; menu: MenuMessageProps }
+    | { forceExit?: boolean; reply: ReplyMessage }
+    | { forceExit?: boolean; buttons: ButtonsMessageProps }
+    | { forceExit?: boolean; survey: SurveyMessageProps }
+    | { forceExit?: boolean; image: ImageMessageProps }
+    | { forceExit?: boolean; video: VideoMessageProps }
+    | { forceExit?: boolean; sticker: StickerMessageProps }
+    | { forceExit?: boolean; audio: AudioMessageProps }
+    | { forceExit?: boolean; document: DocumentMessageProps }
+    | { forceExit?: boolean; location: LocationMessageProps };
 
 export type ScenarioResponse = {
     field?: string;
@@ -54,6 +54,10 @@ export type BotSchema = {
     idleTimeout?: StringValue | number;
     timeoutMsg?: Message;
     backCode?: string;
-    matches?: (string | RegExp)[];
+    matches?: (
+        | string
+        | RegExp
+        | ((remoteJid: string, textMsg: string, fromMe?: boolean) => boolean | Promise<boolean>)
+    )[];
     flow?: Scenario;
 };

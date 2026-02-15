@@ -17,6 +17,7 @@ import {
     type WAMessage,
     type WASocket,
     type AuthenticationState,
+    type Contact,
 } from '@fadzzzslebew/baileys';
 import { type StringValue } from 'ms';
 import type { Logger as MyLogger } from 'stack-trace-logger';
@@ -494,7 +495,9 @@ export class WhatsappSocketBase {
                                 .filter((jid) => ['from_any_groups', 'from_any_phones', sender].includes(jid))
                                 .forEach(async (jid) => {
                                     this.messageReceivedCBs[jid]?.forEach((cb) => {
-                                        cb(sender, messageId, { username, timestamp, fromMe, data });
+                                        if (sender) {
+                                            cb(sender, messageId, { username, timestamp, fromMe, data });
+                                        }
                                     });
                                 });
                         });
@@ -683,5 +686,84 @@ export class WhatsappSocketBase {
             }
             return null;
         }
+    }
+
+    async getContactByJid(remoteJid: string): Promise<Contact | undefined> {
+        if (!remoteJid) return undefined;
+
+        await this.ensureSocketConnected();
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Fetching contacts');
+        }
+
+        // @ts-ignore
+        const contact = this.socket?.store?.contacts[remoteJid] as Contact;
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Contacts fetched', { remoteJid, contact });
+        }
+
+        return contact;
+    }
+
+    async getContacts(username?: string, byWords = true): Promise<Contact[]> {
+        await this.ensureSocketConnected();
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Fetching contacts');
+        }
+
+        // @ts-ignore
+        let contacts = Object.values(this.socket?.store?.contacts || {}) as Contact[];
+        if (username?.trim()) {
+            const names = byWords ? username?.trim().split(' ') : [username?.trim()];
+            contacts = contacts.filter((contact) => names.some((word) => contact.name?.includes(word)));
+        }
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Contacts fetched', {
+                count: contacts.length,
+            });
+        }
+
+        return contacts;
+    }
+
+    async areRegisteredOnWhatsApp(
+        phone: string | string[]
+    ): Promise<Array<{ phone: string; exists: boolean; jid?: string; contact: Contact | undefined }>> {
+        await this.ensureSocketConnected();
+
+        const phoneNumbers = ([] as string[])
+            .concat(phone)
+            .map((p) => WhatsappSocketBase.formatPhoneNumberToWhatsappPattern(p));
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Checking is registered numbers', { count: phoneNumbers.length });
+        }
+
+        const results = await this.socket?.onWhatsApp(...phoneNumbers);
+
+        const mappedResultsPromises = await Promise.allSettled(
+            (results ?? []).map(async (result, index) => ({
+                phone: phoneNumbers[index],
+                exists: !!result?.exists,
+                jid: result?.jid,
+                contact: await this.getContactByJid(result.jid),
+            }))
+        );
+        const mappedResults = mappedResultsPromises
+            .filter((result) => result.status === 'fulfilled')
+            .map((result) => result.value);
+
+        if (this.debug) {
+            this.logger?.debug('WHATSAPP', 'Multiple registration check results', {
+                total: mappedResults.length,
+                registered: mappedResults.filter((r) => r.exists).length,
+            });
+        }
+
+        return mappedResults;
     }
 }

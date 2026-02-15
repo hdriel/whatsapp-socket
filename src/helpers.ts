@@ -14,6 +14,10 @@ export const getMS = (msValue: number | StringValue) => {
     return typeof msValue === 'number' ? msValue : ms(msValue);
 };
 
+export const awaitIfNeeded = async <T>(value: T | Promise<T>): Promise<T> => {
+    return Promise.resolve(value);
+};
+
 export async function getUrlBuffer(url: string) {
     const response = await fetch(url);
     const arrayBuffer = await response.arrayBuffer();
@@ -323,9 +327,12 @@ export async function extractMessageData(message: WAMessage): Promise<MessageDat
 
     data.messageId = message.key.id;
     data.fromMe = message.key.fromMe;
-    data.sender = message.key.remoteJid;
     data.username = message.pushName ?? '';
     data.timestamp = message.messageTimestamp * 1000;
+
+    const participantButtonsResponse = message.message?.buttonsResponseMessage?.contextInfo?.participant;
+    data.sender = participantButtonsResponse ?? message.key.participant ?? message.key.remoteJid;
+    if (data.sender.endsWith('@lid')) data.sender = '';
 
     data.text = message.message.conversation ?? message.message.extendedTextMessage?.text ?? undefined;
 

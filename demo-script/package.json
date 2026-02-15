@@ -8,6 +8,7 @@
         "test:group": "tsx src/group.script.ts",
         "test:bot:digital-service": "tsx src/bot.digital-service.script.ts",
         "test:bot:ping-pong": "tsx src/bot.ping.script.ts",
+        "test:bot:timer": "tsx src/bot.timer.script.ts",
         "test": "jest",
         "yalc:add": "yalc add @hdriel/whatsapp-socket",
         "yalc:remove": "tsx remove @hdriel/whatsapp-socket"

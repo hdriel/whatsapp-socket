@@ -1,6 +1,6 @@
 import { WhatsappSocket } from './whatsappSocket.private.client';
 import type { BotSchema, Message, MessageCB, MessageItem, Scenario, ScenarioResponse } from './bot.schema';
-import { getMS } from './helpers.ts';
+import { awaitIfNeeded, getMS } from './helpers.ts';
 import { clearTimeout, setTimeout } from 'node:timers';
 export type { BotSchema } from './bot.schema';
 
@@ -33,15 +33,20 @@ export class WhatsappSocketBot {
         this.onMessageReceived();
     }
 
+    get socket() {
+        return this.client as WhatsappSocket;
+    }
+
     private async sendMessageList(remoteJid: string, messages?: MessageItem | MessageItem[] | undefined) {
         const messageList: Message[] = ([] as Message[]).concat(messages as Message).filter((v) => v);
-        if (!messageList?.length) return;
+        if (!messageList?.length) return false;
 
         for (let message of messageList) {
             if (typeof message === 'function') {
                 message = await (<MessageCB>message)(remoteJid, this.dataFlow[remoteJid]);
             }
-            const [key, value]: any = Object.entries(message)[0];
+
+            const [key, { forceExit, ...value }]: any = Object.entries(message)[0];
 
             switch (key) {
                 case 'text':
@@ -70,9 +75,13 @@ export class WhatsappSocketBot {
                     break;
                 default:
                     await this.client?.sendTextMessage(remoteJid, 'Done');
-                    return;
+                    break;
             }
+
+            if (forceExit) return true;
         }
+
+        return false;
     }
 
     private getFlow(remoteJid: string) {
@@ -162,6 +171,26 @@ export class WhatsappSocketBot {
             }
         };
 
+        const checkForMatches = async (matches) => {
+            for (const match of matches) {
+                if (match === undefined || match === null) continue;
+
+                let isMatched = false;
+
+                if (typeof match === 'string') {
+                    isMatched = match === msgText;
+                } else if (typeof match === 'function') {
+                    isMatched = await awaitIfNeeded<boolean>((<any>match)(remoteJid, msgText, !!options.fromMe));
+                } else {
+                    isMatched = match.test(msgText);
+                }
+
+                if (isMatched) return match;
+            }
+
+            return null;
+        };
+
         // get current flow
         const flow = this.getFlow(remoteJid);
 
@@ -171,14 +200,17 @@ export class WhatsappSocketBot {
         // if not exists flow, start over from schema matching flow
         if (!flow) {
             // check if msgText as match to matching current schema if not ignore message, unless start session
-            const shouldMatchingForStart = this.schema.matches?.length;
-            const matchingFound = this.schema.matches?.find((match) =>
-                typeof match === 'string' ? match === msgText : match.test(msgText)
-            );
-            if (shouldMatchingForStart && !matchingFound) return;
+            const shouldMatchingForStart = !!this.schema.matches?.length;
+            const matchedItems = await checkForMatches(this.schema.matches);
+            const notRelevant = shouldMatchingForStart && !matchedItems;
+            if (notRelevant) return;
 
             // start schema flow session send intro messages
-            await this.sendMessageList(remoteJid, this.schema.flow?.messages);
+            const forceExit = await this.sendMessageList(remoteJid, this.schema.flow?.messages);
+            if (forceExit) {
+                await cleanupRemoteJid();
+                return;
+            }
 
             // save schema flow session to current remoteJid
             this.setFlow(remoteJid, this.schema.flow?.response);
@@ -228,9 +260,15 @@ export class WhatsappSocketBot {
 
         // send next session messages
         if (next?.messages?.length) {
-            await this.sendMessageList(remoteJid, next?.messages);
-            // save next response flow
-            if (next?.response) this.setFlow(remoteJid, next.response);
+            const forceExit = await this.sendMessageList(remoteJid, next?.messages);
+            if (forceExit) {
+                await cleanupRemoteJid();
+                return;
+            }
+
+            if (next?.response)
+                // save next response flow
+                this.setFlow(remoteJid, next.response);
         } else {
             // reset session if not exists any continue session
             await cleanupRemoteJid();
@@ -238,7 +276,8 @@ export class WhatsappSocketBot {
     }
 
     onMessageReceived() {
-        if (this.phone) this.client?.onPhoneMessageReceived(this.phone, this.onMessageReceivedCB);
-        else this.client?.onAnyMessageReceived(this.onMessageReceivedCB);
+        const cb = this.onMessageReceivedCB.bind(this);
+        if (this.phone) this.client?.onPhoneMessageReceived(this.phone, cb);
+        else this.client?.onAnyMessageReceived(cb);
     }
 }
