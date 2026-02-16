@@ -31,35 +31,37 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         super(props);
     }
 
+    protected async sendMessageByType(remoteJid: string | null, messageType: MessageType, message: any) {
+        switch (messageType) {
+            case 'text':
+                await this.sendTextMessage(remoteJid, message);
+                break;
+            case 'reply':
+                await this.sendReplyButtonsMessage(remoteJid, message);
+                break;
+            case 'menu':
+                await this.sendMenuMessage(remoteJid, message);
+                break;
+            case 'buttons':
+                await this.sendButtonsMessage(remoteJid, message);
+                break;
+            case 'image':
+                await this.sendImageMessage(remoteJid, message);
+                break;
+            case 'video':
+                await this.sendVideoMessage(remoteJid, message);
+                break;
+            case 'audio':
+                await this.sendAudioMessage(remoteJid, message);
+                break;
+            case 'location':
+                await this.sendLocationMessage(remoteJid, message);
+                break;
+        }
+    }
+
     public setTimer(remoteJid: string, messageType: MessageType, message: any, timeout: number) {
-        const timerId = setTimeout(async () => {
-            switch (messageType) {
-                case 'text':
-                    await this.sendTextMessage(remoteJid, message);
-                    break;
-                case 'reply':
-                    await this.sendReplyButtonsMessage(remoteJid, message);
-                    break;
-                case 'menu':
-                    await this.sendMenuMessage(remoteJid, message);
-                    break;
-                case 'buttons':
-                    await this.sendButtonsMessage(remoteJid, message);
-                    break;
-                case 'image':
-                    await this.sendImageMessage(remoteJid, message);
-                    break;
-                case 'video':
-                    await this.sendVideoMessage(remoteJid, message);
-                    break;
-                case 'audio':
-                    await this.sendAudioMessage(remoteJid, message);
-                    break;
-                case 'location':
-                    await this.sendLocationMessage(remoteJid, message);
-                    break;
-            }
-        }, timeout);
+        const timerId = setTimeout(() => this.sendMessageByType(remoteJid, messageType, message), timeout);
 
         this.timers[remoteJid] ||= {};
         this.timers[remoteJid][+timerId] = {
