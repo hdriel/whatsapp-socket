@@ -16,20 +16,21 @@ import type {
 type ReplyMessage = Omit<ReplyMessageProps, 'buttons'> & { buttons: Array<{ id: number | string; label: string }> };
 
 export type Message =
-    | { forceExit?: boolean; text: TextMessageProps }
-    | { forceExit?: boolean; menu: MenuMessageProps }
-    | { forceExit?: boolean; reply: ReplyMessage }
-    | { forceExit?: boolean; buttons: ButtonsMessageProps }
-    | { forceExit?: boolean; survey: SurveyMessageProps }
-    | { forceExit?: boolean; image: ImageMessageProps }
-    | { forceExit?: boolean; video: VideoMessageProps }
-    | { forceExit?: boolean; sticker: StickerMessageProps }
-    | { forceExit?: boolean; audio: AudioMessageProps }
-    | { forceExit?: boolean; document: DocumentMessageProps }
-    | { forceExit?: boolean; location: LocationMessageProps };
+    | { timeout?: StringValue | number; forceExit?: boolean; text: TextMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; menu: MenuMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; reply: ReplyMessage }
+    | { timeout?: StringValue | number; forceExit?: boolean; buttons: ButtonsMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; survey: SurveyMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; image: ImageMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; video: VideoMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; sticker: StickerMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; audio: AudioMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; document: DocumentMessageProps }
+    | { timeout?: StringValue | number; forceExit?: boolean; location: LocationMessageProps };
 
 export type ScenarioResponse = {
     field?: string;
+    parseFieldData?: (input: string) => any;
     validate?: (input: string) => boolean;
     validationError?: string | ((input?: string) => string);
     onSubmit?: (values: { messageId: string; options?: any; data?: any; remoteJid: string }) => void | Promise<void>;

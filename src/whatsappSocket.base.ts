@@ -464,7 +464,7 @@ export class WhatsappSocketBase {
                         totalMessages: props.messages.length,
                     });
 
-                    const { messages, type: type } = props;
+                    const { messages, type } = props;
 
                     // if (type === 'append') return;
                     if (type !== 'notify') return;
@@ -567,6 +567,11 @@ export class WhatsappSocketBase {
 
     isConnected() {
         return !!this.socket?.user;
+    }
+
+    myJID() {
+        if (!this.socket?.user?.id) return null;
+        return WhatsappSocketBase.formatPhoneNumberToWhatsappPattern(this.socket?.user?.id);
     }
 
     /**
