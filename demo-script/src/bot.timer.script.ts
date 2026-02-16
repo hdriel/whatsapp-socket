@@ -41,7 +41,7 @@ const dateTimeSchema: Scenario = {
                                     field: 'message',
                                     validate: (str) => str.trim().length > 0,
                                     validationError: 'חובה לכלול הודעה כלשהי',
-                                    onSubmit: ({ remoteJid, data }) => {
+                                    onSubmit: async ({ remoteJid, data }) => {
                                         const now = new Date();
                                         let targetDate: Date;
 
@@ -68,7 +68,7 @@ const dateTimeSchema: Scenario = {
                                             return;
                                         }
 
-                                        bot.setTimer(
+                                        await client?.setTimer(
                                             remoteJid,
                                             data.phone ?? data.contact?.id,
                                             { text: { text: data.message } },

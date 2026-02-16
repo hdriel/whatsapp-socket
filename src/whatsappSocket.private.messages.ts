@@ -60,7 +60,17 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }
     }
 
-    public setTimer(remoteJid: string, messageType: MessageType, message: any, timeout: number) {
+    public async setTimer(
+        remoteJid: string,
+        messageType: MessageType,
+        message: any,
+        timeout: number,
+        autoSelfNotificationFormat: string | null = [
+            '✅ ההודעה תישלח ב-{date}',
+            'אל המספר: {phone}',
+            'מזהה הבקשה: {timerId}',
+        ].join('\n')
+    ) {
         const timerId = setTimeout(() => this.sendMessageByType(remoteJid, messageType, message), timeout);
 
         this.timers[remoteJid] ||= {};
@@ -70,6 +80,18 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
             data: message,
             messageType,
         };
+
+        if (autoSelfNotificationFormat) {
+            await this.sendTextMessage(
+                null,
+                autoSelfNotificationFormat
+                    .replace('{date}', this.timers[remoteJid][+timerId].date.toLocaleString('he-IL'))
+                    .replace('{timerId}', `${+timerId}`)
+                    .replace('{phone}', remoteJid.split('@')[0])
+            );
+        }
+
+        return timerId;
     }
 
     public getTimers(remoteJid: string) {
