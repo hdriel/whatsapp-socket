@@ -42,13 +42,30 @@ const dateTimeSchema: Scenario = {
                                     validate: (str) => str.trim().length > 0,
                                     validationError: 'חובה לכלול הודעה כלשהי',
                                     onSubmit: async ({ remoteJid, data }) => {
+                                        if (!data.date) {
+                                            logger.warn('bot', 'missing date', data);
+                                            return;
+                                        }
+                                        if (!data.time) {
+                                            logger.warn('bot', 'missing time', data);
+                                            return;
+                                        }
+                                        if (!(data.phone ?? data.contact?.id)) {
+                                            logger.warn('bot', 'missing phone or contact id', data);
+                                            return;
+                                        }
+                                        if (!data.message) {
+                                            logger.warn('bot', 'missing message', data);
+                                            return;
+                                        }
+
                                         const now = new Date();
                                         let targetDate: Date;
 
                                         if (data.date === 'היום') {
                                             targetDate = new Date();
                                         } else {
-                                            const dateParts = data.date.split('.');
+                                            const dateParts = data.date?.split('.');
                                             const day = parseInt(dateParts[0]);
                                             const month = parseInt(dateParts[1]) - 1; // חודשים מתחילים מ-0
                                             const year = dateParts[2] ? parseInt(dateParts[2]) : now.getFullYear();
@@ -96,6 +113,7 @@ const bot = new WhatsappSocketBot({
     description: 'בוט שליחת הודעות מתוזמנות',
     exitCode: '0000',
     exitMsg: { text: { text: 'סיום סשן' } },
+    unknownInputMsg: { text: { text: 'קלט לא תקין נסה שוב או סיים את הסשן בהקלדה של "0000"' } },
     flow: {
         messages: [
             {

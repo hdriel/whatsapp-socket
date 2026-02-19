@@ -52,6 +52,7 @@ export type BotSchema = {
     description?: string;
     exitCode?: string;
     exitMsg?: Message;
+    unknownInputMsg?: Message;
     idleTimeout?: StringValue | number;
     timeoutMsg?: Message;
     backCode?: string;

@@ -12,6 +12,7 @@ export class WhatsappSocketBot {
     private remoteFlow: Record<string, any> = {};
     private dataFlow: Record<string, any> = {};
     private timeoutFlow: Record<string, string> = {};
+    private lastMessages: Record<string, string[]> = {};
 
     constructor(schema: BotSchema, phone?: string) {
         this.phone = phone && WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
@@ -40,6 +41,8 @@ export class WhatsappSocketBot {
         const messageList: Message[] = ([] as Message[]).concat(messages as Message).filter((v) => v);
         if (!messageList?.length) return false;
 
+        const messageIds: string[] = [];
+
         for (let message of messageList) {
             if (typeof message === 'function') {
                 message = await (<MessageCB>message)(remoteJid, this.dataFlow[remoteJid]);
@@ -52,39 +55,44 @@ export class WhatsappSocketBot {
                 return forceExit;
             }
 
+            let messageResponse: any;
             switch (key) {
                 case 'text':
-                    await this.client?.sendTextMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendTextMessage(remoteJid, value);
                     break;
                 case 'reply':
-                    await this.client?.sendReplyButtonsMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendReplyButtonsMessage(remoteJid, value);
                     break;
                 case 'menu':
-                    await this.client?.sendMenuMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendMenuMessage(remoteJid, value);
                     break;
                 case 'buttons':
-                    await this.client?.sendButtonsMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendButtonsMessage(remoteJid, value);
                     break;
                 case 'image':
-                    await this.client?.sendImageMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendImageMessage(remoteJid, value);
                     break;
                 case 'video':
-                    await this.client?.sendVideoMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendVideoMessage(remoteJid, value);
                     break;
                 case 'audio':
-                    await this.client?.sendAudioMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendAudioMessage(remoteJid, value);
                     break;
                 case 'location':
-                    await this.client?.sendLocationMessage(remoteJid, value);
+                    messageResponse = await this.client?.sendLocationMessage(remoteJid, value);
                     break;
                 default:
-                    await this.client?.sendTextMessage(remoteJid, 'Done');
+                    messageResponse = await this.client?.sendTextMessage(remoteJid, 'Done');
                     break;
             }
 
+            messageIds.push(messageResponse.key.id as string);
             if (forceExit) return true;
         }
 
+        this.lastMessages[remoteJid] ||= [];
+        this.lastMessages[remoteJid].unshift(...messageIds);
+        this.lastMessages[remoteJid] = this.lastMessages[remoteJid].slice(0, 10);
         return false;
     }
 
@@ -137,6 +145,8 @@ export class WhatsappSocketBot {
     }
 
     private async onMessageReceivedCB(remoteJid: string, messageId: string, options: any) {
+        if (this.lastMessages[remoteJid]?.includes(messageId)) return;
+
         const cleanupRemoteJid = async (sendExitMsg = true) => {
             sendExitMsg && (await this.sendMessageList(remoteJid, this.schema.exitMsg));
             this.resetDataFlow(remoteJid);
@@ -230,8 +240,13 @@ export class WhatsappSocketBot {
         // extract user data (id) options
         const key = this.getResponseId(options);
 
+        if (!flow[key]) {
+            if (key) await this.sendMessageList(remoteJid, this.schema.unknownInputMsg);
+            return;
+        }
+
         // get user schema by current response flow ids if not exists start again from scratch
-        const { field, parseFieldData, next, validationError, validate, onSubmit }: ScenarioResponse = flow[key];
+        const { field, parseFieldData, next, validationError, validate, onSubmit }: ScenarioResponse = flow[key] ?? {};
 
         // validate user response
         const text = msgText || key;
