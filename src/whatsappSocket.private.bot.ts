@@ -246,7 +246,7 @@ export class WhatsappSocketBot {
         }
 
         // get user schema by current response flow ids if not exists start again from scratch
-        const { field, parseFieldData, next, validationError, validate, onSubmit }: ScenarioResponse = flow[key] ?? {};
+        const { field, parseFieldData, next, validationError, validate, onSubmit }: ScenarioResponse = flow[key];
 
         // validate user response
         const text = msgText || key;
@@ -268,6 +268,9 @@ export class WhatsappSocketBot {
             // send to user warning about invalid input
             const errMsg = typeof validationError === 'function' ? validationError(text) : validationError;
             await this.client?.sendTextMessage(remoteJid, errMsg || 'invalid input!');
+            await this.sendMessageList(remoteJid, this.getFlow(remoteJid)?.next?.messages);
+
+            return;
         }
 
         // send next session messages
