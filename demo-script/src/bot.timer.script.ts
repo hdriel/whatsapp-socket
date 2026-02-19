@@ -141,9 +141,9 @@ const bot = new WhatsappSocketBot({
                     response: {
                         '': {
                             field: 'phone',
-                            validate: (phone) => /^05\d[\d-]{8,9}$/.test(phone.replace(/\s/g, '')),
+                            validate: (phone) => /^05\d-?\d\d\d-?\d\d\d\d$/.test(phone.replace(/\s/g, '')),
                             parseFieldData: (phone) => phone.replace(/[-\s]/g, ''),
-                            validationError: 'מספר פלאפון לא חוקי, הזמן שוב',
+                            validationError: 'מספר פלאפון לא חוקי, הזן שוב',
                             next: dateTimeSchema,
                         },
                     },
