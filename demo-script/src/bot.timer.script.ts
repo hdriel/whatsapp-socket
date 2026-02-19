@@ -19,7 +19,7 @@ const dateTimeSchema: Scenario = {
     response: {
         '': {
             field: 'date',
-            validate: (str) => str === 'היום' || /\d\d?.\d\d?(.yyyy)?/.test(str), // todo: check that after now
+            validate: (str) => str === 'היום' || /\d\d?\.\d\d?(\.\d\d\d\d)?/.test(str), // todo: check that after now
             validationError: 'פורמט לא תקין, נסה שוב',
             next: {
                 messages: [{ text: { text: 'בחר שעה בפורמט hh:mm' } }],
