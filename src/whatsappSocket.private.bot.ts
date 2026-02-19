@@ -245,32 +245,36 @@ export class WhatsappSocketBot {
             return;
         }
 
-        // get user schema by current response flow ids if not exists start again from scratch
-        const { field, parseFieldData, next, validationError, validate, onSubmit }: ScenarioResponse = flow[key];
-
         // validate user response
         const text = msgText || key;
-        if (!validate || validate(text)) {
-            // store user response data flow
-            if (field) {
-                const data = parseFieldData?.(msgText) ?? msgText;
-                this.setDataFlow(remoteJid, field, data);
+
+        // get user schema by current response flow ids if not exists start again from scratch
+        const { field, next, onSubmit }: ScenarioResponse = flow[key];
+        const { parseFieldData, validationError, validate } = this.schema.fields[field as string] ?? {};
+
+        if (field) {
+            if (!validate || validate(text)) {
+                // store user response data flow
+                if (field) {
+                    const data = parseFieldData?.(msgText) ?? msgText;
+                    this.setDataFlow(remoteJid, field, data);
+                }
+
+                // apply to submit handler of this current step if exists handler
+                await onSubmit?.({
+                    remoteJid,
+                    messageId,
+                    options,
+                    data: this.getDataFlow(remoteJid),
+                });
+            } else {
+                // send to user warning about invalid input
+                const errMsg = typeof validationError === 'function' ? validationError(text) : validationError;
+                await this.client?.sendTextMessage(remoteJid, errMsg || 'invalid input!');
+                await this.sendMessageList(remoteJid, this.getFlow(remoteJid)?.next?.messages);
+
+                return;
             }
-
-            // apply to submit handler of this current step if exists handler
-            await onSubmit?.({
-                remoteJid,
-                messageId,
-                options,
-                data: this.getDataFlow(remoteJid),
-            });
-        } else {
-            // send to user warning about invalid input
-            const errMsg = typeof validationError === 'function' ? validationError(text) : validationError;
-            await this.client?.sendTextMessage(remoteJid, errMsg || 'invalid input!');
-            await this.sendMessageList(remoteJid, this.getFlow(remoteJid)?.next?.messages);
-
-            return;
         }
 
         // send next session messages

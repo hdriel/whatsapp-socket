@@ -19,21 +19,11 @@ const dateTimeSchema: Scenario = {
     response: {
         '': {
             field: 'date',
-            validate: (str) => str === 'היום' || /\d\d?\.\d\d?(\.\d\d\d\d)?/.test(str), // todo: check that after now
-            validationError: 'פורמט לא תקין, נסה שוב',
             next: {
                 messages: [{ text: { text: 'בחר שעה בפורמט hh:mm' } }],
                 response: {
                     '': {
                         field: 'time',
-                        validate: (str) => {
-                            const match = /^(\d{2}):(\d{2})$/.test(str);
-                            if (!match) return false;
-
-                            const [hours, minutes] = str.split(':').map(Number);
-                            return hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60;
-                        },
-                        validationError: 'פורמט לא תקין, נסה שוב',
                         next: {
                             messages: [{ text: { text: 'כתוב את ההודעה שלך' } }],
                             response: {
@@ -141,9 +131,6 @@ const bot = new WhatsappSocketBot({
                     response: {
                         '': {
                             field: 'phone',
-                            validate: (phone) => /^05\d-?\d\d\d-?\d\d\d\d$/.test(phone.replace(/\s/g, '')),
-                            parseFieldData: (phone) => phone.replace(/[-\s]/g, ''),
-                            validationError: 'מספר פלאפון לא חוקי, הזן שוב',
                             next: dateTimeSchema,
                         },
                     },
@@ -151,8 +138,6 @@ const bot = new WhatsappSocketBot({
             },
             contact: {
                 field: 'username',
-                validate: (name) => name.trim().length > 0,
-                validationError: 'הזן שם מלא או חלקי עבור איש הקשר',
                 next: {
                     messages: [
                         async (_remoteJid: string, _dataFlow: any) => {
@@ -192,6 +177,35 @@ const bot = new WhatsappSocketBot({
                     },
                 },
             },
+        },
+    },
+    fields: {
+        phone: {
+            validate: (phone: string) => /^05\d-?\d\d\d-?\d\d\d\d$/.test(phone.replace(/\s/g, '')),
+            parseFieldData: (phone: string) => phone.replace(/[-\s]/g, ''),
+            validationError: 'מספר פלאפון לא חוקי, הזן שוב',
+        },
+        username: {
+            validate: (name: string) => name.trim().length > 0,
+            validationError: 'הזן שם מלא או חלקי עבור איש הקשר',
+        },
+        date: {
+            validate: (date: string) => date === 'היום' || /\d\d?\.\d\d?(\.\d\d\d\d)?/.test(date), // todo: check that after now
+            validationError: 'פורמט לא תקין, נסה שוב',
+        },
+        time: {
+            validate: (time: string) => {
+                const match = /^\d\d?:\d\d?$/.test(time);
+                if (!match) return false;
+
+                const [hours, minutes] = time.split(':').map(Number);
+                return hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60;
+            },
+            validationError: 'פורמט לא תקין, נסה שוב',
+        },
+        message: {
+            validate: (message: string) => message.trim().length > 0,
+            validationError: 'חובה לכלול הודעה כלשהי',
         },
     },
 });
