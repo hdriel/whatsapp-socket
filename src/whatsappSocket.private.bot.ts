@@ -146,6 +146,7 @@ export class WhatsappSocketBot {
 
     private async onMessageReceivedCB(remoteJid: string, messageId: string, options: any) {
         if (this.lastMessages[remoteJid]?.includes(messageId)) return;
+        if (options.fromMe && !Object.keys(options.data ?? {}).length && !options.username) return;
 
         const cleanupRemoteJid = async (sendExitMsg = true) => {
             sendExitMsg && (await this.sendMessageList(remoteJid, this.schema.exitMsg));
@@ -241,7 +242,9 @@ export class WhatsappSocketBot {
         const key = this.getResponseId(options);
 
         if (!currentFlow[key]) {
-            if (options.data) await this.sendMessageList(remoteJid, this.schema.unknownInputMsg);
+            if (options.data && this.schema.unknownInputMsg) {
+                await this.sendMessageList(remoteJid, this.schema.unknownInputMsg);
+            }
             return;
         }
 

@@ -367,11 +367,11 @@ export class WhatsappSocketBase {
                     version: version,
                     logger: pinoLogger,
                     browser: [this.appName || 'baileys', '1.0.0', ''], // ['Ubuntu', 'Chrome', '20.0.04'],
-                    syncFullHistory: true, // Don't sync full history on first connect
-                    // shouldSyncHistoryMessage: () => false,
+                    syncFullHistory: false, // Don't sync full history on first connect
+                    shouldSyncHistoryMessage: () => false,
                     shouldIgnoreJid: (jid) => jid.includes('@newsletter'), // Ignore newsletter
                     ...options,
-                    printQRInTerminal: false,
+                    printQRInTerminal: false, // baileys not good with it, printing manually to terminal later
                     ...{ auth },
                 });
 
@@ -464,10 +464,11 @@ export class WhatsappSocketBase {
                         totalMessages: props.messages.length,
                     });
 
-                    const { messages, type } = props;
-
+                    // const messageUpsertType = props.type;
                     // if (type === 'append') return;
-                    if (type !== 'notify') return;
+                    // if (type !== 'notify') return;
+
+                    const messages = props.messages;
 
                     const messageDataList = await Promise.allSettled(
                         messages
