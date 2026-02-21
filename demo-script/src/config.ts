@@ -1,6 +1,7 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE } from './dotenv';
 import { FILE_AUTH_PATH } from './paths';
 import type { WhatsappSocketProps, WhatsappSocketGroupProps } from './whatsapp-socket';
+import logger from './logger';
 
 export const TEST_RECIPIENT = MY_PHONE;
 export const TEST_CONFIG: WhatsappSocketProps | WhatsappSocketGroupProps = {
@@ -11,6 +12,7 @@ export const TEST_CONFIG: WhatsappSocketProps | WhatsappSocketGroupProps = {
     debug: true,
     printQRInTerminal: true,
     pairingPhone: MY_PHONE,
+    logger,
 };
 
 export function sleep(ms: number): Promise<void> {

@@ -2,13 +2,12 @@
 import { WhatsappSocket, WhatsappSocketBot } from '../../src';
 import logger from './logger';
 import { sleep, TEST_CONFIG } from './config';
-import { TARGET_PHONE } from './dotenv';
+import { MY_PHONE /* TARGET_PHONE as TEST_RECIPIENT */ } from './dotenv';
 import type { Scenario } from '../../src/bot.schema';
-
-const TEST_RECIPIENT = TARGET_PHONE;
 
 let client: WhatsappSocket | null = null;
 const dateTimeSchema: Scenario = {
+    field: 'date',
     messages: [
         {
             text: {
@@ -18,17 +17,16 @@ const dateTimeSchema: Scenario = {
     ],
     response: {
         '': {
-            field: 'date',
             next: {
+                field: 'time',
                 messages: [{ text: { text: 'בחר שעה בפורמט hh:mm' } }],
                 response: {
                     '': {
-                        field: 'time',
                         next: {
+                            field: 'message',
                             messages: [{ text: { text: 'כתוב את ההודעה שלך' } }],
                             response: {
                                 '': {
-                                    field: 'message',
                                     validate: (str) => str.trim().length > 0,
                                     validationError: 'חובה לכלול הודעה כלשהי',
                                     onSubmit: async ({ remoteJid, data }) => {
@@ -121,6 +119,7 @@ const bot = new WhatsappSocketBot({
             exit: {},
             phone: {
                 next: {
+                    field: 'phone',
                     messages: [
                         {
                             text: {
@@ -128,17 +127,12 @@ const bot = new WhatsappSocketBot({
                             },
                         },
                     ],
-                    response: {
-                        '': {
-                            field: 'phone',
-                            next: dateTimeSchema,
-                        },
-                    },
+                    response: { '': { next: dateTimeSchema } },
                 },
             },
             contact: {
-                field: 'username',
                 next: {
+                    field: 'username',
                     messages: [
                         async (_remoteJid: string, _dataFlow: any) => {
                             const contacts = await client?.getContacts();
@@ -219,10 +213,8 @@ async function runWhatsAppTests() {
         // ============================================
         logger.info(null, '📱 TEST 1: Connecting to WhatsApp...');
 
-        // @ts-ignore
         client = new WhatsappSocket({
             ...TEST_CONFIG,
-            logger: logger as any,
             onOpen: async () => {
                 logger.info(null, '✅ Connection opened successfully!');
             },
@@ -231,9 +223,7 @@ async function runWhatsAppTests() {
             },
             onQR: async (_qr: string, code: string | null | undefined) => {
                 logger.info(null, '📸 QR Code received');
-                if (code) {
-                    logger.info(null, `🔑 Pairing Code: ${code}`);
-                }
+                if (code) logger.info(null, `🔑 Pairing Code: ${code}`);
             },
             onConnectionStatusChange: async (status) => {
                 logger.info(null, `📊 Connection status: ${status}`);
@@ -252,7 +242,7 @@ async function runWhatsAppTests() {
         bot.socket = client;
 
         await client.sendTextMessage(
-            TEST_RECIPIENT,
+            MY_PHONE, // TEST_RECIPIENT,
             'Hello! This is a test message from WhatsApp Socket BOT - timer messages ⏱️'
         );
 
@@ -260,15 +250,17 @@ async function runWhatsAppTests() {
         logger.info(null, 'Waiting for messages\n');
     } catch (error) {
         console.error('\n❌ TEST FAILED:', error);
-        throw error;
-    } finally {
-        // Cleanup
+
         if (client) {
             logger.info(null, '\n🧹 Cleaning up...');
             await sleep(2000);
             await client.closeConnection();
             logger.info(null, '✅ Connection closed');
         }
+
+        throw error;
+    } finally {
+        // Cleanup
     }
 }
 

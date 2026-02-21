@@ -40,6 +40,7 @@ export type ScenarioResponse = {
 export type MessageCB = (remoteJid: string, dataFlow: any) => Message | Promise<Message>;
 export type MessageItem = MessageCB | Message;
 export type Scenario = {
+    field?: string;
     messages: MessageItem[];
     response?: Record<
         string, // input or buttonId

@@ -1,5 +1,5 @@
 import { WhatsappSocket } from './whatsappSocket.private.client';
-import type { BotSchema, Message, MessageCB, MessageItem, Scenario, ScenarioResponse } from './bot.schema';
+import type { BotSchema, Message, MessageCB, MessageItem, Scenario } from './bot.schema';
 import { awaitIfNeeded, getMS } from './helpers.ts';
 import { clearTimeout, setTimeout } from 'node:timers';
 export type { BotSchema } from './bot.schema';
@@ -191,13 +191,13 @@ export class WhatsappSocketBot {
         };
 
         // get current flow
-        const flow = this.getFlow(remoteJid);
+        const currentFlow = this.getFlow(remoteJid);
 
         // get current text message
         const msgText = options?.data?.text ?? (typeof options === 'string' ? options : '');
 
         // if not exists flow, start over from schema matching flow
-        if (!flow) {
+        if (!currentFlow) {
             if (this.schema.exitCode && this.schema.exitCode === msgText) {
                 await cleanupRemoteJid(false);
                 return;
@@ -217,7 +217,7 @@ export class WhatsappSocketBot {
             }
 
             // save schema flow session to current remoteJid
-            this.setFlow(remoteJid, this.schema.flow?.response);
+            this.setFlow(remoteJid, this.schema.flow);
 
             // reset schema flow data session to current remoteJid
             this.resetDataFlow(remoteJid);
@@ -240,54 +240,60 @@ export class WhatsappSocketBot {
         // extract user data (id) options
         const key = this.getResponseId(options);
 
-        if (!flow[key]) {
-            if (key) await this.sendMessageList(remoteJid, this.schema.unknownInputMsg);
+        if (!currentFlow[key]) {
+            if (options.data) await this.sendMessageList(remoteJid, this.schema.unknownInputMsg);
             return;
         }
 
-        // validate user response
         const text = msgText || key;
-
-        // get user schema by current response flow ids if not exists start again from scratch
-        const { field, next, onSubmit }: ScenarioResponse = flow[key];
+        const field = currentFlow.field;
+        const stepMessages = currentFlow?.messages;
         const { parseFieldData, validationError, validate } = this.schema.fields[field as string] ?? {};
+
+        const forceExit = await this.sendMessageList(remoteJid, stepMessages);
+        if (forceExit) {
+            await cleanupRemoteJid();
+            return;
+        }
 
         if (field) {
             if (!validate || validate(text)) {
+                // validate user response
                 // store user response data flow
                 if (field) {
                     const data = parseFieldData?.(msgText) ?? msgText;
                     this.setDataFlow(remoteJid, field, data);
                 }
-
-                // apply to submit handler of this current step if exists handler
-                await onSubmit?.({
-                    remoteJid,
-                    messageId,
-                    options,
-                    data: this.getDataFlow(remoteJid),
-                });
             } else {
                 // send to user warning about invalid input
                 const errMsg = typeof validationError === 'function' ? validationError(text) : validationError;
                 await this.client?.sendTextMessage(remoteJid, errMsg || 'invalid input!');
-                await this.sendMessageList(remoteJid, this.getFlow(remoteJid)?.next?.messages);
+                await this.sendMessageList(remoteJid, currentFlow?.messages);
 
                 return;
             }
         }
 
+        // apply to submit handler of this current step if exists handler
+        await currentFlow.response[key]?.onSubmit?.({
+            remoteJid,
+            messageId,
+            options,
+            data: this.getDataFlow(remoteJid),
+        });
+
+        const nextFlow = currentFlow[key]?.next;
+        const nextMessages = nextFlow?.messages;
+
         // send next session messages
-        if (next?.messages?.length) {
-            const forceExit = await this.sendMessageList(remoteJid, next?.messages);
+        if (nextMessages?.length) {
+            const forceExit = await this.sendMessageList(remoteJid, nextMessages);
             if (forceExit) {
                 await cleanupRemoteJid();
                 return;
             }
 
-            if (next?.response)
-                // save next response flow
-                this.setFlow(remoteJid, next.response);
+            this.setFlow(remoteJid, nextFlow);
         } else {
             // reset session if not exists any continue session
             await cleanupRemoteJid();
