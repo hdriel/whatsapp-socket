@@ -112,6 +112,10 @@ export class WhatsappSocketBot {
         return this.dataFlow[remoteJid];
     }
 
+    private getLastMessages(remoteJid: string) {
+        return this.lastMessages[remoteJid];
+    }
+
     private setDataFlow(remoteJid: string, field: string, data: any) {
         this.dataFlow[remoteJid] ||= { ...this.dataFlow[remoteJid], [field]: data };
     }
@@ -145,21 +149,35 @@ export class WhatsappSocketBot {
     }
 
     private async onMessageReceivedCB(remoteJid: string, messageId: string, options: any) {
-        if (this.lastMessages[remoteJid]?.includes(messageId)) return;
+        if (this.getLastMessages(remoteJid)?.includes(messageId)) return;
         if (options.fromMe && !Object.keys(options.data ?? {}).length && !options.username) return;
 
+        const {
+            exitCode: EXIT_CODE,
+            exitMsg: EXIT_MSG,
+            timeoutMsg: TIMEOUT_MSG,
+            unknownInputMsg: UNKNOWN_INPUT_MSG,
+            flow: FLOW,
+            idleTimeout: IDLE_TIMEOUT,
+            fields: FIELDS,
+            matches: MATCHES,
+            // backCode,
+            // name,
+            // description,
+        } = this.schema;
+
         const cleanupRemoteJid = async (sendExitMsg = true) => {
-            sendExitMsg && (await this.sendMessageList(remoteJid, this.schema.exitMsg));
+            sendExitMsg && (await this.sendMessageList(remoteJid, EXIT_MSG));
             this.resetDataFlow(remoteJid);
             this.resetFlow(remoteJid);
             this.resetTimeoutFlow(remoteJid);
         };
 
         const restartIdleTimeout = () => {
-            const idleTimeoutMS = this.schema.idleTimeout && getMS(this.schema.idleTimeout);
-            if (idleTimeoutMS && this.schema.idleTimeout) {
+            const idleTimeoutMS = IDLE_TIMEOUT && getMS(IDLE_TIMEOUT);
+            if (idleTimeoutMS && IDLE_TIMEOUT) {
                 const timeoutId = setTimeout(async () => {
-                    await this.sendMessageList(remoteJid, this.schema.timeoutMsg);
+                    await this.sendMessageList(remoteJid, TIMEOUT_MSG);
                     await cleanupRemoteJid();
                 }, idleTimeoutMS);
 
@@ -199,26 +217,26 @@ export class WhatsappSocketBot {
 
         // if not exists flow, start over from schema matching flow
         if (!currentFlow) {
-            if (this.schema.exitCode && this.schema.exitCode === msgText) {
+            if (EXIT_CODE && EXIT_CODE === msgText) {
                 await cleanupRemoteJid(false);
                 return;
             }
 
             // check if msgText as match to matching current schema if not ignore message, unless start session
-            const shouldMatchingForStart = !!this.schema.matches?.length;
-            const matchedItem = await checkForMatches(this.schema.matches);
+            const shouldMatchingForStart = !!MATCHES?.length;
+            const matchedItem = await checkForMatches(MATCHES);
             const notRelevant = shouldMatchingForStart && !matchedItem;
             if (notRelevant) return;
 
             // start schema flow session send intro messages
-            const forceExit = await this.sendMessageList(remoteJid, this.schema.flow?.messages);
+            const forceExit = await this.sendMessageList(remoteJid, FLOW?.messages);
             if (forceExit) {
                 await cleanupRemoteJid();
                 return;
             }
 
             // save schema flow session to current remoteJid
-            this.setFlow(remoteJid, this.schema.flow);
+            this.setFlow(remoteJid, FLOW);
 
             // reset schema flow data session to current remoteJid
             this.resetDataFlow(remoteJid);
@@ -233,7 +251,7 @@ export class WhatsappSocketBot {
         restartIdleTimeout();
 
         // if user decide to quit by typing the exit code then reset session
-        if (this.schema.exitCode && this.schema.exitCode === msgText) {
+        if (EXIT_CODE && EXIT_CODE === msgText) {
             await cleanupRemoteJid();
             return;
         }
@@ -241,17 +259,17 @@ export class WhatsappSocketBot {
         // extract user data (id) options
         const key = this.getResponseId(options);
 
-        if (!currentFlow[key]) {
-            if (options.data && this.schema.unknownInputMsg) {
-                await this.sendMessageList(remoteJid, this.schema.unknownInputMsg);
+        if (!currentFlow.response[key]) {
+            if (options.data && UNKNOWN_INPUT_MSG) {
+                await this.sendMessageList(remoteJid, UNKNOWN_INPUT_MSG);
             }
             return;
         }
 
         const text = msgText || key;
         const field = currentFlow.field;
-        const stepMessages = currentFlow?.messages;
-        const { parseFieldData, validationError, validate } = this.schema.fields[field as string] ?? {};
+        const stepMessages = currentFlow.messages;
+        const { parseFieldData, validationError, validate } = FIELDS[field as string] ?? {};
 
         const forceExit = await this.sendMessageList(remoteJid, stepMessages);
         if (forceExit) {
