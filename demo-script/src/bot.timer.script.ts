@@ -107,7 +107,6 @@ const bot = new WhatsappSocketBot({
                     title: 'למי לשלוח את ההודעה',
                     buttons: [
                         { id: 'phone', label: 'מספר טלפון' },
-                        // { id: 'contact', label: 'לאיש קשר' },
                         { id: 'exit', label: 'ביטול פעולה' },
                     ],
                 },
