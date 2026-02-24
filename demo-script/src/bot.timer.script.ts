@@ -27,8 +27,6 @@ const dateTimeSchema: Scenario = {
                             messages: [{ text: { text: 'כתוב את ההודעה שלך' } }],
                             response: {
                                 '': {
-                                    validate: (str) => str.trim().length > 0,
-                                    validationError: 'חובה לכלול הודעה כלשהי',
                                     onSubmit: async ({ remoteJid, data }) => {
                                         if (!data.date) {
                                             logger.warn('bot', 'missing date', data);
