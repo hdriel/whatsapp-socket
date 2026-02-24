@@ -30,9 +30,6 @@ export type Message =
 
 export type ScenarioResponse = {
     field?: string;
-    parseFieldData?: (input: string) => any;
-    validate?: (input: string) => boolean;
-    validationError?: string | ((input?: string) => string);
     onSubmit?: (values: { messageId: string; options?: any; data?: any; remoteJid: string }) => void | Promise<void>;
     next?: Scenario;
 };
@@ -69,5 +66,5 @@ export type BotSchema = {
         | ((remoteJid: string, textMsg: string, fromMe?: boolean) => boolean | Promise<boolean>)
     )[];
     flow?: Scenario;
-    fields: Record<string, FieldSchema>;
+    fields?: Record<string, FieldSchema>;
 };

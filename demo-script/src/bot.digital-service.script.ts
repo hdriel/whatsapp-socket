@@ -25,6 +25,20 @@ const bot = new WhatsappSocketBot(
                 text: 'הזמן שהוקצה לשיחה ללא תגובה היינו 2 דקות והם עברו\nמוזמן ליצור איתנו קשר שוב כאן\nבהצלחה',
             },
         },
+        fields: {
+            name: {
+                validate: (name: string) => name.split(' ').length > 1,
+                parseFieldData: (name) => name.trim(),
+                validationError: 'שם מלא חייב להיות לפחות 2 מילים',
+            },
+            phone: {
+                validate: (phone: string) => phone.startsWith('05'),
+                parseFieldData: (phone) => phone.replace(/\D/g, ''),
+                validationError: (input?: string) =>
+                    'מספר הטלפון: "{phone}" לא חוקי, חייב להתחיל ב05X-XXX-XXXX'.replace('{phone}', input || ''),
+            },
+            message: {},
+        },
         flow: {
             messages: [
                 {
@@ -51,23 +65,14 @@ const bot = new WhatsappSocketBot(
             response: {
                 collect_details: {
                     next: {
+                        field: 'name',
                         messages: [{ text: { text: 'נשמח להכיר! מה השם המלא שלך?' } }],
                         response: {
                             '': {
-                                field: 'name',
-                                validate: (name: string) => name.split(' ').length > 1,
-                                validationError: 'שם מלא חייב להיות לפחות 2 מילים',
                                 next: {
                                     messages: [{ text: { text: 'מעולה, מה מספר הטלפון לחזרה?' } }],
                                     response: {
                                         '': {
-                                            field: 'phone',
-                                            validate: (phone: string) => phone.startsWith('05'),
-                                            validationError: (input?: string) =>
-                                                'מספר הטלפון: "{phone}" לא חוקי, חייב להתחיל ב05X-XXX-XXXX'.replace(
-                                                    '{phone}',
-                                                    input || ''
-                                                ),
                                             next: {
                                                 messages: [
                                                     {
@@ -89,8 +94,8 @@ const bot = new WhatsappSocketBot(
                                                 ],
                                                 response: {
                                                     other: {
-                                                        field: 'message',
                                                         next: {
+                                                            field: 'message',
                                                             messages: [
                                                                 {
                                                                     text: {
@@ -98,10 +103,16 @@ const bot = new WhatsappSocketBot(
                                                                     },
                                                                 },
                                                             ],
+                                                            response: {
+                                                                '': {
+                                                                    onSubmit: (data) => {
+                                                                        logger.info(null, 'SUBMIT DATA', data);
+                                                                    },
+                                                                },
+                                                            },
                                                         },
                                                     },
                                                     '': {
-                                                        field: 'message',
                                                         next: {
                                                             messages: [
                                                                 {
@@ -110,6 +121,13 @@ const bot = new WhatsappSocketBot(
                                                                     },
                                                                 },
                                                             ],
+                                                            response: {
+                                                                '': {
+                                                                    onSubmit: (data) => {
+                                                                        logger.info(null, 'SUBMIT DATA', data);
+                                                                    },
+                                                                },
+                                                            },
                                                         },
                                                     },
                                                 },

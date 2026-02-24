@@ -9,7 +9,7 @@ const TEST_RECIPIENT = TARGET_PHONE;
 let client: WhatsappSocket | null = null;
 const bot = new WhatsappSocketBot({
     name: 'Ping_Bot',
-    matches: ['ping'],
+    matches: [(str) => str.toLowerCase() === 'ping'],
     description: 'בוט שמגיב pong לping',
     flow: { messages: [{ text: { text: 'pong' } }] },
 });

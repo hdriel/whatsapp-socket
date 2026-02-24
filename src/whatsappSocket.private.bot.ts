@@ -269,7 +269,7 @@ export class WhatsappSocketBot {
         const text = msgText || key;
         const field = currentFlow.field;
         const stepMessages = currentFlow.messages;
-        const { parseFieldData, validationError, validate } = FIELDS[field as string] ?? {};
+        const { parseFieldData, validationError, validate } = FIELDS?.[field as string] ?? {};
 
         const forceExit = await this.sendMessageList(remoteJid, stepMessages);
         if (forceExit) {
