@@ -1,11 +1,14 @@
 import type { Logger } from 'stack-trace-logger';
 import { type WASocket } from '@fadzzzslebew/baileys';
+import type { TextMessageProps } from './messages.decs.ts';
 
 export const sendTextMessage = (
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    { text, mentions }: { text: string; mentions?: string[] }
+    { text: _text, mentions }: TextMessageProps & { mentions?: string[] }
 ) => {
+    // @ts-ignore
+    const text = _text?.text ?? _text;
     if (!text) {
         throw new Error('sendTextMessage: No title or buttons required field found.');
     }

@@ -20,13 +20,13 @@ export class WhatsappSocket extends WhatsappSocketPrivateMessages {
     }
 
     onPhoneMessageReceived(phone: string, cb: MessageReceivedCB) {
-        const jid = WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
+        const jid = phone && WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
         this.messageReceivedCBs[jid] ||= [];
         this.messageReceivedCBs[jid].push(cb);
     }
 
-    offPhoneMessageReceived(phone: string, cb: MessageReceivedCB) {
+    offPhoneMessageReceived(phone: string, cb?: MessageReceivedCB) {
         const jid = WhatsappSocket.formatPhoneNumberToWhatsappPattern(phone);
-        this.messageReceivedCBs[jid] = (this.messageReceivedCBs[jid] ?? []).filter((c) => c !== cb);
+        this.messageReceivedCBs[jid] = cb ? (this.messageReceivedCBs[jid] ?? []).filter((c) => c !== cb) : [];
     }
 }

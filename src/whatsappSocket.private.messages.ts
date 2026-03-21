@@ -1,3 +1,4 @@
+import Stream from 'node:stream';
 import { WhatsappSocketBase, type WhatsappSocketBaseProps } from './whatsappSocket.base';
 export type { WhatsappSocketBaseProps as WhatsappSocketMessagesProps } from './whatsappSocket.base';
 import type { CallToActionButtons } from './decs';
@@ -15,11 +16,104 @@ import {
     sendVideoMessage,
     sendImageMessage,
 } from './messages';
-import Stream from 'node:stream';
+import { clearTimeout } from 'node:timers';
+import type { Message } from './bot.schema.ts';
+
+type MessageType = 'text' | 'reply' | 'menu' | 'buttons' | 'image' | 'video' | 'audio' | 'location';
 
 export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
+    protected timers: Record<
+        string,
+        Record<number, { timeoutId: number; date: Date; data: Message; messageType: MessageType }>
+    > = {};
+
     constructor(props: WhatsappSocketBaseProps) {
         super(props);
+    }
+
+    protected async sendMessageByType(remoteJid: string | null, messageType: MessageType, message: any) {
+        switch (messageType) {
+            case 'text':
+                await this.sendTextMessage(remoteJid, message);
+                break;
+            case 'reply':
+                await this.sendReplyButtonsMessage(remoteJid, message);
+                break;
+            case 'menu':
+                await this.sendMenuMessage(remoteJid, message);
+                break;
+            case 'buttons':
+                await this.sendButtonsMessage(remoteJid, message);
+                break;
+            case 'image':
+                await this.sendImageMessage(remoteJid, message);
+                break;
+            case 'video':
+                await this.sendVideoMessage(remoteJid, message);
+                break;
+            case 'audio':
+                await this.sendAudioMessage(remoteJid, message);
+                break;
+            case 'location':
+                await this.sendLocationMessage(remoteJid, message);
+                break;
+        }
+    }
+
+    public async setTimer(
+        remoteJid: string,
+        messageType: MessageType,
+        message: any,
+        timeout: number,
+        autoSelfNotificationFormat: string | null = [
+            '✅ ההודעה תישלח ב-{date}',
+            'אל המספר: {phone}',
+            'מזהה הבקשה: {timerId}',
+        ].join('\n')
+    ) {
+        const timerId = setTimeout(() => this.sendMessageByType(remoteJid, messageType, message), timeout);
+
+        this.timers[remoteJid] ||= {};
+        this.timers[remoteJid][+timerId] = {
+            timeoutId: timeout,
+            date: new Date(new Date().getTime() + timeout),
+            data: message,
+            messageType,
+        };
+
+        if (autoSelfNotificationFormat) {
+            await this.sendTextMessage(
+                null,
+                autoSelfNotificationFormat
+                    .replace('{date}', this.timers[remoteJid][+timerId].date.toLocaleString('he-IL'))
+                    .replace('{timerId}', `${+timerId}`)
+                    .replace('{phone}', remoteJid.split('@')[0])
+            );
+        }
+
+        return timerId;
+    }
+
+    public getTimers(remoteJid: string) {
+        return Object.entries(this.timers[remoteJid] ?? {}).map(([key, message]) => {
+            return { code: key, message }; // todo: defined the message format to display
+        });
+    }
+
+    public removeTimerId(remoteJid: string, timerId: number) {
+        clearTimeout(timerId);
+        delete this.timers[remoteJid][timerId];
+    }
+
+    public resetTimers(remoteJid?: string) {
+        if (remoteJid) {
+            Object.keys(this.timers[remoteJid] ?? {}).forEach(clearTimeout);
+            delete this.timers[remoteJid];
+            return;
+        }
+
+        Object.keys(this.timers).forEach((remoteJid) => Object.keys(this.timers[remoteJid]).forEach(clearTimeout));
+        this.timers = {};
     }
 
     /**
@@ -32,27 +126,31 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         return this.deleteMessage(messageId, chatJid, true);
     }
 
-    async sendTextMessage(to: string, text: string): Promise<any> {
+    async sendTextMessage(to: string | null, text: string): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendTextMessage(baseProps, jid, { text });
     }
 
     async sendButtonsMessage(
-        to: string,
+        to: string | null,
         { subtitle, title, buttons }: { title: string; subtitle?: string; buttons: CallToActionButtons }
     ): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendButtonsMessage(baseProps, jid, { subtitle, title, buttons });
     }
 
     async sendMenuMessage(
-        to: string,
+        to: string | null,
         {
             title,
             subtitle,
@@ -69,14 +167,16 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }
     ): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendMenuMessage(baseProps, jid, { subtitle, title, sections, buttonText });
     }
 
     async sendReplyButtonsMessage(
-        to: string,
+        to: string | null,
         {
             title,
             subtitle,
@@ -88,14 +188,16 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }
     ): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendReplyMessage(baseProps, jid, { subtitle, title, buttons });
     }
 
     async sendLocationMessage(
-        to: string,
+        to: string | null,
         {
             latitude,
             longitude,
@@ -109,14 +211,16 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }
     ): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendLocationMessage(baseProps, jid, { latitude, longitude, name, address });
     }
 
     async sendSurveyMessage(
-        to: string,
+        to: string | null,
         {
             question,
             options,
@@ -124,34 +228,40 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }: { question: string; options: string[]; allowMultipleAnswers?: boolean }
     ): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendSurveyMessage(baseProps, jid, { options, question, allowMultipleAnswers });
     }
 
-    async sendReactionMessage(to: string, messageId: string, emoji: string): Promise<any> {
+    async sendReactionMessage(to: string | null, messageId: string, emoji: string): Promise<any> {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendReactionMessage(baseProps, jid, { messageId, emoji });
     }
 
     async sendImageMessage(
-        to: string,
+        to: string | null,
         imageSrc: string | Buffer<any> | Stream,
         { caption = '', filename }: { caption?: string; filename?: string } = {}
     ) {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendImageMessage(baseProps, jid, imageSrc, { caption, filename });
     }
 
     async sendVideoMessage(
-        to: string,
+        to: string | null,
         videoSrc: string | Buffer<any> | Stream,
         {
             caption = '',
@@ -160,14 +270,16 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }: { caption?: string; sendAsGifPlayback?: boolean; filename?: string } = {}
     ) {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendVideoMessage(baseProps, jid, videoSrc, { caption, filename, sendAsGifPlayback });
     }
 
     async sendAudioMessage(
-        to: string,
+        to: string | null,
         audioSrc: string | Buffer<any> | Stream,
         {
             filename,
@@ -177,7 +289,9 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }: { filename?: string; replyToMessageId?: string; mimetype?: string; seconds?: number } = {}
     ) {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendAudioMessage(baseProps, jid, audioSrc, { filename, replyToMessageId, mimetype, seconds });
@@ -192,16 +306,18 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
      * @param to
      * @param imageSrc
      */
-    async sendStickerMessage(to: string, imageSrc: string | Buffer<any> | Stream) {
+    async sendStickerMessage(to: string | null, imageSrc: string | Buffer<any> | Stream) {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendStickerMessage(baseProps, jid, imageSrc);
     }
 
     async sendFileMessage(
-        to: string,
+        to: string | null,
         fileSrc: string | Buffer<any> | Stream,
         {
             caption = '',
@@ -218,7 +334,9 @@ export class WhatsappSocketPrivateMessages extends WhatsappSocketBase {
         }
     ) {
         await this.ensureSocketConnected();
-        const jid = WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to);
+        const jid = (
+            to ? WhatsappSocketPrivateMessages.formatPhoneNumberToWhatsappPattern(to) : this.myJID()
+        ) as string;
         const baseProps = { socket: this.socket, debug: this.debug, logger: this.logger };
 
         return sendFileMessage(baseProps, jid, fileSrc, {

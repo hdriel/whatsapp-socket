@@ -4,26 +4,13 @@ import { ReadStream } from 'node:fs';
 import type { Logger } from 'stack-trace-logger';
 import type { WASocket } from '@fadzzzslebew/baileys';
 import { sendFileFromStream } from './file-stream.message';
+import type { AudioMessageProps } from './messages.decs.ts';
 
 export async function sendAudioMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
     audioSrc: string | Buffer<any> | Stream,
-    {
-        filename = 'audio-message.mp3',
-        replyToMessageId,
-        mimetype,
-        seconds,
-        ptt,
-        mentions,
-    }: {
-        filename?: string;
-        replyToMessageId?: string;
-        mimetype?: string;
-        seconds?: number;
-        ptt?: boolean;
-        mentions?: string[];
-    } = {}
+    { filename = 'audio-message.mp3', replyToMessageId, mimetype, seconds, ptt, mentions }: AudioMessageProps = {}
 ) {
     if (!jid || !audioSrc) {
         throw new Error('sendAudioMessage: jid and audio source are required.');

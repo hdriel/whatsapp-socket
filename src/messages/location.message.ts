@@ -1,20 +1,11 @@
 import { type WASocket } from '@fadzzzslebew/baileys';
 import type { Logger } from 'stack-trace-logger';
+import type { LocationMessageProps } from './messages.decs.ts';
 
 export async function sendLocationMessage(
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    {
-        latitude,
-        longitude,
-        name,
-        address,
-    }: {
-        latitude: number;
-        longitude: number;
-        name?: string;
-        address?: string;
-    }
+    { latitude, longitude, name, address }: LocationMessageProps
 ): Promise<any> {
     if (latitude === undefined || longitude === undefined) {
         throw new Error('sendLocation: latitude and longitude are required fields.');

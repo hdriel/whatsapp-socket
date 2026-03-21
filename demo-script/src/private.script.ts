@@ -1,7 +1,6 @@
 import { MY_PHONE, MONGODB_URI, USE_MONGODB_STORAGE, TARGET_PHONE } from './dotenv';
 import logger from './logger';
-import { WhatsappSocket } from '../../src';
-// import { WhatsappSocket } from '@hdriel/whatsapp-socket';
+import { WhatsappSocket } from './whatsapp-socket';
 import { readFileSync, createReadStream } from 'node:fs';
 import {
     DOCUMENT_ASSET_PATH,

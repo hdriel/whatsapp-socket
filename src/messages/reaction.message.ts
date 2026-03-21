@@ -1,10 +1,11 @@
 import type { Logger } from 'stack-trace-logger';
 import { type WASocket } from '@fadzzzslebew/baileys';
+import type { ReactionMessageProps } from './messages.decs.ts';
 
 export const sendReactionMessage = (
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    { messageId, emoji }: { messageId: string; emoji: string }
+    { messageId, emoji }: ReactionMessageProps
 ) => {
     if (!jid || !messageId || !emoji) {
         throw new Error('sendReactionMessage: message ID, and emoji are required.');

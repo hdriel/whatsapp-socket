@@ -8,23 +8,15 @@ import type {
     ButtonPhone,
     ButtonReminder,
     ButtonURL,
-    CallToActionButtons,
     CallToActionFullButtons,
 } from '../decs.ts';
 import { getTotalSeconds } from '../helpers.ts';
+import type { ButtonsMessageProps } from './messages.decs.ts';
 
 export const sendButtonsMessage = (
     { debug, logger, socket }: { debug?: boolean; logger?: Logger; socket: WASocket | null },
     jid: string,
-    {
-        subtitle,
-        title,
-        buttons,
-    }: {
-        title: string;
-        subtitle?: string;
-        buttons: CallToActionButtons;
-    }
+    { subtitle, title, buttons }: ButtonsMessageProps
 ) => {
     if (!title || !buttons.length) {
         throw new Error('sendButtonsMessage: No title or buttons required field found.');
