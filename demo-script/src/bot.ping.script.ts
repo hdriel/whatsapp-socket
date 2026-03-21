@@ -11,7 +11,7 @@ const bot = new WhatsappSocketBot({
     name: 'Ping_Bot',
     matches: [(str) => str.toLowerCase() === 'ping'],
     description: 'בוט שמגיב pong לping',
-    flow: { messages: [{ text: { text: 'pong' } }] },
+    flow: { messages: [{ text: { text: 'pong' }, timeout: '5s' }] },
 });
 
 async function runWhatsAppTests() {
